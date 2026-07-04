@@ -9,6 +9,7 @@ const Tab = createBottomTabNavigator();
 function BottomTabNavigator() {
     return (
         <Tab.Navigator screenOptions={({route}) => ({
+            headerShown: false, // 헤더를 숨기도록 설정
             headerTitleAlign: 'center',
             tabBarLabelStyle: {
                 marginTop: 4,
