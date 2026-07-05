@@ -1,15 +1,8 @@
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Plus } from 'lucide-react-native';
-import DiaryCover from '../../components/DiaryCover.tsx';
-
-interface Diary {
-  id: string;
-  title: string;
-  recordCount: number;
-  coverColor: string;
-  photoUri?: string;
-}
+import DiarySection from './components/DiarySection.tsx';
+import { Diary } from './types.ts';
 
 const diaries: Diary[] = [
   {
@@ -33,6 +26,8 @@ const diaries: Diary[] = [
 ];
 
 function HomeScreen() {
+  const hasDiaries = diaries.length > 0;
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -42,45 +37,19 @@ function HomeScreen() {
             <Text style={styles.subtitle}>내가 모은 스포츠 티켓북</Text>
           </View>
 
-          <Pressable style={styles.addButton}>
-            <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
-            <Text style={styles.addButtonText}>다이어리 추가</Text>
-          </Pressable>
+          {hasDiaries && (
+            <Pressable style={styles.addButton}>
+              <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
+              <Text style={styles.addButtonText}>다이어리 추가</Text>
+            </Pressable>
+          )}
         </View>
 
         <View style={styles.headerDivider} />
       </View>
 
-      <View style={styles.ticketBookSection}>
-        <Text style={styles.sectionTitle}>내 티켓북</Text>
-        <FlatList
-          data={diaries}
-          keyExtractor={item => item.id}
-          renderItem={({ item }) => <DiaryCard diary={item} />}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.diaryList}
-        />
-      </View>
+      <DiarySection diaries={diaries} />
     </SafeAreaView>
-  );
-}
-
-function DiaryCard({ diary }: { diary: Diary }) {
-  const recordText =
-    diary.recordCount > 0 ? `${diary.recordCount}개의 기록` : '기록 없음';
-
-  return (
-    <Pressable style={styles.diaryCard}>
-      <View style={styles.coverContainer}>
-        <DiaryCover size={150} coverColor={diary.coverColor} />
-      </View>
-
-      <View style={styles.diaryTextBox}>
-        <Text style={styles.diaryTitle}>{diary.title}</Text>
-        <Text style={styles.recordCount}>{recordText}</Text>
-      </View>
-    </Pressable>
   );
 }
 
@@ -134,42 +103,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: '#FFFFFF',
-  },
-  ticketBookSection: {
-    paddingTop: 24,
-  },
-  sectionTitle: {
-    paddingHorizontal: 24,
-    marginBottom: 16,
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#111111',
-  },
-  diaryList: {
-    paddingHorizontal: 16,
-  },
-
-  diaryCard: {
-    width: 160,
-  },
-  coverContainer: {
-    width: 160,
-    height: 180,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  diaryTextBox: {
-    paddingLeft: 12,
-  },
-  diaryTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#111111',
-  },
-  recordCount: {
-    marginTop: 4,
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#8A8A8A',
   },
 });
