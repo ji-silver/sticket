@@ -2,26 +2,55 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Plus } from 'lucide-react-native';
 import DiarySection from './components/DiarySection.tsx';
-import { Diary } from './types.ts';
+import { Bucket, Diary } from './types.ts';
+import BucketListSection from './components/BucketListSection.tsx';
 
 const diaries: Diary[] = [
   {
-    id: 'baseball',
+    id: 1,
     title: '야구',
     recordCount: 12,
     coverColor: '#e1e1e1',
   },
   {
-    id: 'soccer',
+    id: 2,
     title: '축구',
     recordCount: 3,
     coverColor: '#e1e1e1',
   },
   {
-    id: 'basketball',
+    id: 3,
     title: '농구',
     recordCount: 0,
     coverColor: '#e1e1e1',
+  },
+];
+
+const buckets: Bucket[] = [
+  {
+    id: 1,
+    title: '야구장 원정 가기',
+    isCompleted: false,
+  },
+  {
+    id: 2,
+    title: '개막전 직관하기',
+    isCompleted: true,
+  },
+  {
+    id: 3,
+    title: '가을야구 직관하기',
+    isCompleted: false,
+  },
+  {
+    id: 4,
+    title: '유니폼 사기',
+    isCompleted: true,
+  },
+  {
+    id: 5,
+    title: '싸인 받기',
+    isCompleted: false,
   },
 ];
 
@@ -49,6 +78,8 @@ function HomeScreen() {
       </View>
 
       <DiarySection diaries={diaries} />
+
+      <BucketListSection buckets={buckets} />
     </SafeAreaView>
   );
 }

@@ -1,13 +1,13 @@
-import {FlatList, Pressable, StyleSheet, Text, View} from 'react-native';
-import {Plus} from 'lucide-react-native';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Plus } from 'lucide-react-native';
 import DiaryCover from '../../../components/DiaryCover';
-import type {Diary} from '../types';
+import type { Diary } from '../types';
 
 interface DiarySectionProps {
   diaries: Diary[];
 }
 
-function DiarySection({diaries}: DiarySectionProps) {
+function DiarySection({ diaries }: DiarySectionProps) {
   const hasDiaries = diaries.length > 0;
 
   return (
@@ -17,8 +17,8 @@ function DiarySection({diaries}: DiarySectionProps) {
       {hasDiaries ? (
         <FlatList
           data={diaries}
-          keyExtractor={item => item.id}
-          renderItem={({item}) => <DiaryCard diary={item} />}
+          keyExtractor={item => String(item.id)}
+          renderItem={({ item }) => <DiaryCard diary={item} />}
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.diaryList}
@@ -30,7 +30,7 @@ function DiarySection({diaries}: DiarySectionProps) {
   );
 }
 
-function DiaryCard({diary}: {diary: Diary}) {
+function DiaryCard({ diary }: { diary: Diary }) {
   const recordText =
     diary.recordCount > 0 ? `${diary.recordCount}개의 기록` : '기록 없음';
 
