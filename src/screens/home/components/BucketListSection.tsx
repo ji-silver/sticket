@@ -56,7 +56,7 @@ function BucketListSection({ initialBuckets }: BucketListSectionProps) {
           <Text style={styles.bucketTitle}>올해 버킷리스트</Text>
           {!isBucketEmpty && (
             <Text style={styles.bucketProgress}>
-              {completedCount} / ${buckets.length} 완료
+              {completedCount} / {buckets.length} 완료
             </Text>
           )}
         </View>

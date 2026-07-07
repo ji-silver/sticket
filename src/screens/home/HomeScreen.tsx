@@ -4,6 +4,7 @@ import { Plus } from 'lucide-react-native';
 import DiarySection from './components/DiarySection.tsx';
 import { Bucket, Diary } from './types.ts';
 import BucketListSection from './components/BucketListSection.tsx';
+import { useNavigation } from '@react-navigation/core';
 
 const diaries: Diary[] = [
   {
@@ -61,6 +62,7 @@ const initialBuckets: Bucket[] = [
 
 function HomeScreen() {
   const hasDiaries = diaries.length > 0;
+  const navigation = useNavigation();
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -77,7 +79,10 @@ function HomeScreen() {
             </View>
 
             {hasDiaries && (
-              <Pressable style={styles.addButton}>
+              <Pressable
+                style={styles.addButton}
+                onPress={() => navigation.navigate('AddDiary' as never)}
+              >
                 <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
                 <Text style={styles.addButtonText}>다이어리 추가</Text>
               </Pressable>
