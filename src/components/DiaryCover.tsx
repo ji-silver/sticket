@@ -14,9 +14,13 @@ import Svg, {
   Image as SvgImage,
 } from 'react-native-svg';
 
+type CoverPattern = 'solid' | 'stripe';
+
 type DiaryCoverProps = {
   /** 안쪽 표지 색상 */
   coverColor: string;
+  /** 안쪽 표지 패턴 */
+  coverPattern?: CoverPattern;
   /** 포토카드 슬롯 이미지 URI */
   photoUri?: string;
   /** 컴포넌트 너비 (기본 224) */
@@ -27,7 +31,12 @@ type DiaryCoverProps = {
 const RING_Y = [52, 74, 96, 168, 190, 212];
 const WIDTH_SCALE = 1.06;
 
-function DiaryCover({coverColor, photoUri, size = 224}: DiaryCoverProps) {
+function DiaryCover({
+  coverColor,
+  coverPattern = 'solid',
+  photoUri,
+  size = 224,
+}: DiaryCoverProps) {
   const w = size * WIDTH_SCALE;
   const h = size * (300 / 250);
 
@@ -120,6 +129,21 @@ function DiaryCover({coverColor, photoUri, size = 224}: DiaryCoverProps) {
           d="M 38 14 H 172 Q 186 14, 186 28 V 240 Q 186 254, 172 254 H 38 Z"
           fill={coverColor}
         />
+        {coverPattern === 'stripe' && (
+          <G opacity="0.7">
+            {[46, 58, 70, 82, 94, 106, 118, 130, 142, 154, 166, 178].map(x => (
+              <Line
+                key={`stripe-${x}`}
+                x1={x}
+                y1="14"
+                x2={x}
+                y2="254"
+                stroke="rgba(0,0,0,0.3)"
+                strokeWidth="1.6"
+              />
+            ))}
+          </G>
+        )}
         <Path
           d="M 52 14 L 174 14 Q 186 14, 186 26 L 186 72 Q 138 84, 38 72 L 38 26 Q 38 14, 52 14 Z"
           fill="rgba(255,255,255,0.10)"
