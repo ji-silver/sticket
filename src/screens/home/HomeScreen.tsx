@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Plus } from 'lucide-react-native';
 import DiarySection from './components/DiarySection.tsx';
@@ -26,7 +26,7 @@ const diaries: Diary[] = [
   },
 ];
 
-const buckets: Bucket[] = [
+const initialBuckets: Bucket[] = [
   {
     id: 1,
     title: '야구장 원정 가기',
@@ -52,34 +52,44 @@ const buckets: Bucket[] = [
     title: '싸인 받기',
     isCompleted: false,
   },
+  {
+    id: 6,
+    title: '친구랑 야구장 가기',
+    isCompleted: false,
+  },
 ];
 
 function HomeScreen() {
   const hasDiaries = diaries.length > 0;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerRow}>
-          <View>
-            <Text style={styles.logo}>STICKET</Text>
-            <Text style={styles.subtitle}>내가 모은 스포츠 티켓북</Text>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      {/* SafeAreaView 안전 영역을 위에만 적용하기 */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        <View style={styles.header}>
+          <View style={styles.headerRow}>
+            <View>
+              <Text style={styles.logo}>STICKET</Text>
+              <Text style={styles.subtitle}>내가 모은 스포츠 티켓북</Text>
+            </View>
+
+            {hasDiaries && (
+              <Pressable style={styles.addButton}>
+                <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
+                <Text style={styles.addButtonText}>다이어리 추가</Text>
+              </Pressable>
+            )}
           </View>
 
-          {hasDiaries && (
-            <Pressable style={styles.addButton}>
-              <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
-              <Text style={styles.addButtonText}>다이어리 추가</Text>
-            </Pressable>
-          )}
+          <View style={styles.headerDivider} />
         </View>
 
-        <View style={styles.headerDivider} />
-      </View>
-
-      <DiarySection diaries={diaries} />
-
-      <BucketListSection buckets={buckets} />
+        <DiarySection diaries={diaries} />
+        <BucketListSection initialBuckets={initialBuckets} />
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -90,6 +100,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  scrollContent: {
+    paddingBottom: 24,
   },
   header: {
     paddingHorizontal: 24,
