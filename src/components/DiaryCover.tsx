@@ -42,7 +42,7 @@ function DiaryCover({
 
   return (
     <View style={{width: w, height: h}}>
-      <Svg width={w} height={h} viewBox="0 0 250 300">
+      <Svg width={w} height={h} viewBox="-12 0 250 300">
         <Defs>
           {/* ── 바인더 봉 금속 ── */}
           <LinearGradient id="barGrad" x1="0" y1="0" x2="1" y2="0">

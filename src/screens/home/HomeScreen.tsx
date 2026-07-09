@@ -5,6 +5,7 @@ import DiarySection from './components/DiarySection.tsx';
 import { Bucket, Diary } from './types.ts';
 import BucketListSection from './components/BucketListSection.tsx';
 import { useNavigation } from '@react-navigation/core';
+import { useState } from 'react';
 
 const diaries: Diary[] = [
   {
@@ -27,42 +28,68 @@ const diaries: Diary[] = [
   },
 ];
 
-const initialBuckets: Bucket[] = [
-  {
-    id: 1,
-    title: '야구장 원정 가기',
-    isCompleted: false,
-  },
-  {
-    id: 2,
-    title: '개막전 직관하기',
-    isCompleted: true,
-  },
-  {
-    id: 3,
-    title: '가을야구 직관하기',
-    isCompleted: false,
-  },
-  {
-    id: 4,
-    title: '유니폼 사기',
-    isCompleted: true,
-  },
-  {
-    id: 5,
-    title: '싸인 받기',
-    isCompleted: false,
-  },
-  {
-    id: 6,
-    title: '친구랑 야구장 가기',
-    isCompleted: false,
-  },
-];
+const initialBucketsByDiaryId: Record<number, Bucket[]> = {
+  1: [
+    {
+      id: 1,
+      title: '야구장 원정 가기',
+      isCompleted: false,
+    },
+    {
+      id: 2,
+      title: '개막전 직관하기',
+      isCompleted: true,
+    },
+    {
+      id: 3,
+      title: '가을야구 직관하기',
+      isCompleted: false,
+    },
+    {
+      id: 4,
+      title: '유니폼 사기',
+      isCompleted: true,
+    },
+    {
+      id: 5,
+      title: '싸인 받기',
+      isCompleted: false,
+    },
+    {
+      id: 6,
+      title: '친구랑 야구장 가기',
+      isCompleted: false,
+    },
+  ],
+  2: [],
+  3: [],
+};
 
 function HomeScreen() {
   const hasDiaries = diaries.length > 0;
   const navigation = useNavigation();
+  const [selectedDiaryIndex, setSelectedDiaryIndex] = useState(0);
+  const [bucketsByDiaryId, setBucketsByDiaryId] = useState(
+    initialBucketsByDiaryId,
+  );
+
+  const selectedDiary = diaries[selectedDiaryIndex];
+  const selectedBuckets = selectedDiary
+    ? bucketsByDiaryId[selectedDiary.id] ?? []
+    : [];
+
+  const handlePressAddDiary = () => {
+    navigation.navigate('AddDiary' as never);
+  };
+
+  const handleChangeSelectedBuckets = (nextBuckets: Bucket[]) => {
+    if (!selectedDiary) return;
+
+    setBucketsByDiaryId(prev => ({
+      ...prev,
+      [selectedDiary.id]: nextBuckets,
+    }));
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -79,10 +106,7 @@ function HomeScreen() {
             </View>
 
             {hasDiaries && (
-              <Pressable
-                style={styles.addButton}
-                onPress={() => navigation.navigate('AddDiary' as never)}
-              >
+              <Pressable style={styles.addButton} onPress={handlePressAddDiary}>
                 <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
                 <Text style={styles.addButtonText}>다이어리 추가</Text>
               </Pressable>
@@ -92,8 +116,21 @@ function HomeScreen() {
           <View style={styles.headerDivider} />
         </View>
 
-        <DiarySection diaries={diaries} />
-        <BucketListSection initialBuckets={initialBuckets} />
+        <DiarySection
+          diaries={diaries}
+          selectedIndex={selectedDiaryIndex}
+          onChangeIndex={setSelectedDiaryIndex}
+          onPressAddDiary={handlePressAddDiary}
+        />
+
+        {selectedDiary && (
+          <BucketListSection
+            diaryId={selectedDiary.id}
+            diaryTitle={selectedDiary.title}
+            buckets={selectedBuckets}
+            onChangeBuckets={handleChangeSelectedBuckets}
+          />
+        )}
       </ScrollView>
     </SafeAreaView>
   );

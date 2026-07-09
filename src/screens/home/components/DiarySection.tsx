@@ -1,30 +1,79 @@
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  FlatList,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  Pressable,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { Plus } from 'lucide-react-native';
 import DiaryCover from '../../../components/DiaryCover';
 import type { Diary } from '../types';
 
 interface DiarySectionProps {
   diaries: Diary[];
+  selectedIndex: number;
+  onChangeIndex: (index: number) => void;
+  onPressAddDiary: () => void;
 }
 
-function DiarySection({ diaries }: DiarySectionProps) {
+function DiarySection({
+  diaries,
+  selectedIndex,
+  onChangeIndex,
+  onPressAddDiary,
+}: DiarySectionProps) {
   const hasDiaries = diaries.length > 0;
+  const { width } = useWindowDimensions();
+
+  const handleMomentumScrollEnd = (
+    event: NativeSyntheticEvent<NativeScrollEvent>,
+  ) => {
+    const pageWidth = event.nativeEvent.layoutMeasurement.width;
+    const nextIndex = Math.round(event.nativeEvent.contentOffset.x / pageWidth);
+    const clampedIndex = Math.min(Math.max(nextIndex, 0), diaries.length - 1);
+
+    if (clampedIndex !== selectedIndex) {
+      onChangeIndex(clampedIndex);
+    }
+  };
 
   return (
     <View style={styles.ticketBookSection}>
       <Text style={styles.sectionTitle}>내 티켓북</Text>
 
       {hasDiaries ? (
-        <FlatList
-          data={diaries}
-          keyExtractor={item => String(item.id)}
-          renderItem={({ item }) => <DiaryCard diary={item} />}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.diaryList}
-        />
+        <>
+          <FlatList
+            data={diaries}
+            keyExtractor={item => String(item.id)}
+            renderItem={({ item }) => (
+              <View style={[styles.diaryPage, { width }]}>
+                <DiaryCard diary={item} />
+              </View>
+            )}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onMomentumScrollEnd={handleMomentumScrollEnd}
+          />
+
+          <View style={styles.pageDots}>
+            {diaries.map((diary, index) => (
+              <View
+                key={String(diary.id)}
+                style={[
+                  styles.pageDot,
+                  index === selectedIndex && styles.pageDotActive,
+                ]}
+              />
+            ))}
+          </View>
+        </>
       ) : (
-        <EmptyDiaryState />
+        <EmptyDiaryState onPressAddDiary={onPressAddDiary} />
       )}
     </View>
   );
@@ -38,7 +87,7 @@ function DiaryCard({ diary }: { diary: Diary }) {
     <Pressable style={styles.diaryCard}>
       <View style={styles.coverContainer}>
         <DiaryCover
-          size={150}
+          size={168}
           coverColor={diary.coverColor}
           photoUri={diary.photoUri}
         />
@@ -52,14 +101,14 @@ function DiaryCard({ diary }: { diary: Diary }) {
   );
 }
 
-function EmptyDiaryState() {
+function EmptyDiaryState({ onPressAddDiary }: { onPressAddDiary: () => void }) {
   return (
     <View style={styles.emptyDiaryCard}>
       <DiaryCover coverColor="#F1F1F1" size={96} />
 
       <Text style={styles.emptyDiaryTitle}>아직 만든 티켓북이 없어요</Text>
 
-      <Pressable style={styles.emptyDiaryButton}>
+      <Pressable style={styles.emptyDiaryButton} onPress={onPressAddDiary}>
         <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
         <Text style={styles.emptyDiaryButtonText}>티켓북 만들기</Text>
       </Pressable>
@@ -80,31 +129,52 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#111111',
   },
-  diaryList: {
-    paddingHorizontal: 16,
+  diaryPage: {
+    alignItems: 'center',
   },
   diaryCard: {
-    width: 160,
+    width: 192,
+    alignItems: 'center',
   },
   coverContainer: {
-    width: 160,
-    height: 180,
+    width: 192,
+    height: 198,
     alignItems: 'center',
     justifyContent: 'center',
   },
   diaryTextBox: {
-    paddingLeft: 12,
+    width: 192,
+    paddingHorizontal: 18,
+    alignItems: 'center',
   },
   diaryTitle: {
     fontSize: 15,
     fontWeight: '800',
     color: '#111111',
+    textAlign: 'center',
   },
   recordCount: {
     marginTop: 4,
     fontSize: 12,
     fontWeight: '500',
     color: '#8A8A8A',
+    textAlign: 'center',
+  },
+  pageDots: {
+    marginTop: 18,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 7,
+  },
+  pageDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#DDDDDD',
+  },
+  pageDotActive: {
+    width: 18,
+    backgroundColor: '#111111',
   },
   emptyDiaryCard: {
     marginHorizontal: 24,

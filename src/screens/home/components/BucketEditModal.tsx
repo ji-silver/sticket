@@ -14,6 +14,7 @@ import { useRef, useState } from 'react';
 interface BucketEditModalProps {
   visible: boolean;
   buckets: Bucket[];
+드  title: string;
   onClose: () => void;
   onToggleBucket: (id: number) => void;
   onAddBucket: (title: string) => void;
@@ -24,6 +25,7 @@ interface BucketEditModalProps {
 function BucketEditModal({
   visible,
   buckets,
+  title,
   onClose,
   onToggleBucket,
   onAddBucket,
@@ -60,7 +62,7 @@ function BucketEditModal({
 
           <View style={styles.sheetHeader}>
             <View>
-              <Text style={styles.sheetTitle}>버킷리스트 수정</Text>
+              <Text style={styles.sheetTitle}>{title}</Text>
               <Text style={styles.sheetSubtitle}>
                 추가하고 싶은 직관 목표를 적어주세요
               </Text>

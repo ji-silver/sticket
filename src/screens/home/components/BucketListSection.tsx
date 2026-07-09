@@ -1,25 +1,40 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Bucket } from '../types.ts';
 import { Check, ChevronDown, ChevronUp } from 'lucide-react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import BucketEditModal from './BucketEditModal.tsx';
 
 interface BucketListSectionProps {
-  initialBuckets: Bucket[];
+  diaryId: number;
+  diaryTitle: string;
+  buckets: Bucket[];
+  onChangeBuckets: (buckets: Bucket[]) => void;
 }
 
-function BucketListSection({ initialBuckets }: BucketListSectionProps) {
-  const [buckets, setBuckets] = useState<Bucket[]>(initialBuckets);
+function BucketListSection({
+  diaryId,
+  diaryTitle,
+  buckets,
+  onChangeBuckets,
+}: BucketListSectionProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditVisible, setIsEditVisible] = useState(false);
 
-  const completedCount = buckets.filter(bucket => bucket.isCompleted).length;
   const visibleBuckets = isExpanded ? buckets : buckets.slice(0, 5);
   const canToggle = buckets.length > 5;
   const isBucketEmpty = buckets.length === 0;
 
+  useEffect(() => {
+    setIsExpanded(false);
+    setIsEditVisible(false);
+  }, [diaryId]);
+
+  const updateBuckets = (updater: (buckets: Bucket[]) => Bucket[]) => {
+    onChangeBuckets(updater(buckets));
+  };
+
   const handleToggleBucket = (id: number) => {
-    setBuckets(prev =>
+    updateBuckets(prev =>
       prev.map(bucket =>
         bucket.id === id
           ? { ...bucket, isCompleted: !bucket.isCompleted }
@@ -29,7 +44,7 @@ function BucketListSection({ initialBuckets }: BucketListSectionProps) {
   };
 
   const handleAddBucket = (title: string) => {
-    setBuckets(prev => [
+    updateBuckets(prev => [
       ...prev, // 앞에 둠으로써 목록 뒤에 새 항목이 붙을 수 있음
       {
         id: Date.now(),
@@ -40,25 +55,22 @@ function BucketListSection({ initialBuckets }: BucketListSectionProps) {
   };
 
   const handleUpdateBucket = (id: number, title: string) => {
-    setBuckets(prev =>
+    updateBuckets(prev =>
       prev.map(bucket => (bucket.id === id ? { ...bucket, title } : bucket)),
     );
   };
 
   const handleDeleteBucket = (id: number) => {
-    setBuckets(prev => prev.filter(bucket => bucket.id !== id));
+    updateBuckets(prev => prev.filter(bucket => bucket.id !== id));
   };
 
   return (
     <View style={styles.bucketSection}>
       <View style={styles.bucketHeader}>
         <View>
-          <Text style={styles.bucketTitle}>올해 버킷리스트</Text>
-          {!isBucketEmpty && (
-            <Text style={styles.bucketProgress}>
-              {completedCount} / {buckets.length} 완료
-            </Text>
-          )}
+          <Text style={styles.bucketTitle}>
+            {diaryTitle} 직관 버킷리스트
+          </Text>
         </View>
 
         <Pressable
@@ -76,7 +88,7 @@ function BucketListSection({ initialBuckets }: BucketListSectionProps) {
         {isBucketEmpty ? (
           <View style={styles.emptyBucketBox}>
             <Text style={styles.emptyBucketTitle}>
-              올해 직관 목표를 추가해보세요
+              {diaryTitle} 직관 버킷리스트를 추가해보세요
             </Text>
           </View>
         ) : (
@@ -114,6 +126,7 @@ function BucketListSection({ initialBuckets }: BucketListSectionProps) {
       <BucketEditModal
         visible={isEditVisible}
         buckets={buckets}
+        title={isBucketEmpty ? '버킷리스트 추가' : '버킷리스트 수정'}
         onClose={() => setIsEditVisible(false)}
         onToggleBucket={handleToggleBucket}
         onAddBucket={handleAddBucket}
@@ -165,7 +178,7 @@ export default BucketListSection;
 
 const styles = StyleSheet.create({
   bucketSection: {
-    marginTop: 34,
+    marginTop: 46,
     paddingHorizontal: 24,
   },
   bucketHeader: {
@@ -214,12 +227,6 @@ const styles = StyleSheet.create({
     color: '#666666',
   },
 
-  bucketProgress: {
-    marginTop: 5,
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#8A8A8A',
-  },
   editButton: {
     paddingHorizontal: 4,
     minHeight: 32,
