@@ -4,6 +4,7 @@ import { ChevronLeft } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/core';
 import DiaryCover from '../../components/DiaryCover.tsx';
 import { useState } from 'react';
+import { launchImageLibrary } from 'react-native-image-picker';
 
 type SportId = 'baseball' | 'soccer' | 'basketball' | 'volleyball';
 
@@ -104,12 +105,29 @@ function AddDiaryScreen() {
   const [selectedCoverColorId, setSelectedCoverColorId] = useState(
     COVER_COLORS[0].id,
   );
+  const [photoUri, setPhotoUri] = useState<string | undefined>();
 
   const selectSport = SPORTS.find(sport => sport.id === selectedSportId);
   const isSelectedSportReady = selectSport?.isReady ?? false;
   const selectedCoverColor =
     COVER_COLORS.find(color => color.id === selectedCoverColorId) ??
     COVER_COLORS[0];
+
+  const handlePressSelectPhoto = async () => {
+    const result = await launchImageLibrary({
+      mediaType: 'photo',
+      selectionLimit: 1,
+      quality: 0.9,
+    });
+
+    if (result.didCancel) return; // 선택 취소면 return
+
+    const selectedAsset = result.assets?.[0];
+
+    if (!selectedAsset?.uri) return;
+
+    setPhotoUri(selectedAsset.uri);
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -129,6 +147,7 @@ function AddDiaryScreen() {
             size={178}
             coverColor={selectedCoverColor.color}
             coverPattern={selectedCoverColor.type}
+            photoUri={photoUri}
           />
         </View>
 
@@ -206,10 +225,17 @@ function AddDiaryScreen() {
             <View style={styles.formSection}>
               <Text style={styles.sectionTitle}>포토카드</Text>
 
-              <View style={styles.photoCardRow}>
-                <Text style={styles.photoCardText}>이미지 추가</Text>
-                <Text style={styles.photoCardOptionalText}>선택사항</Text>
-              </View>
+              <Pressable
+                onPress={handlePressSelectPhoto}
+                style={styles.photoCardRow}
+              >
+                <Text style={styles.photoCardText}>
+                  {photoUri ? '이미지 변경' : '이미지 추가'}
+                </Text>
+                <Text style={styles.photoCardOptionalText}>
+                  {photoUri ? '선택됨' : '선택사항'}
+                </Text>
+              </Pressable>
             </View>
           </>
         ) : (
