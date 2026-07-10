@@ -18,6 +18,7 @@ interface DiarySectionProps {
   onChangeIndex: (index: number) => void;
   onPressAddDiary: () => void;
   onPressDiaryMenu: (diary: Diary) => void;
+  onPressDiary: (diary: Diary) => void;
 }
 
 function DiarySection({
@@ -26,6 +27,7 @@ function DiarySection({
   onChangeIndex,
   onPressAddDiary,
   onPressDiaryMenu,
+  onPressDiary,
 }: DiarySectionProps) {
   const hasDiaries = diaries.length > 0;
   const { width } = useWindowDimensions();
@@ -64,7 +66,7 @@ function DiarySection({
             keyExtractor={item => String(item.id)}
             renderItem={({ item }) => (
               <View style={[styles.diaryPage, { width }]}>
-                <DiaryCard diary={item} />
+                <DiaryCard diary={item} onPressDiary={onPressDiary} />
               </View>
             )}
             horizontal
@@ -94,15 +96,20 @@ function DiarySection({
 
 function DiaryCard({
   diary,
+  onPressDiary,
 }: {
   diary: Diary;
+  onPressDiary: (diary: Diary) => void;
 }) {
   const recordText =
     diary.recordCount > 0 ? `${diary.recordCount}개의 기록` : '기록 없음';
 
   return (
     <View style={styles.diaryCard}>
-      <Pressable style={styles.diaryPressArea}>
+      <Pressable
+        style={styles.diaryPressArea}
+        onPress={() => onPressDiary(diary)}
+      >
         <View style={styles.coverContainer}>
           <DiaryCover
             size={168}

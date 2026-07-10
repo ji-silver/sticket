@@ -7,6 +7,10 @@ import BucketListSection from './components/BucketListSection.tsx';
 import { useNavigation } from '@react-navigation/core';
 import { useState } from 'react';
 import DiaryActionSheet from './components/DiaryActionSheet.tsx';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
+
+type HomeNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const initialDiaries: Diary[] = [
   {
@@ -66,7 +70,7 @@ const initialBucketsByDiaryId: Record<number, Bucket[]> = {
 };
 
 function HomeScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<HomeNavigationProp>();
   const [diaryList, setDiaryList] = useState<Diary[]>(initialDiaries);
   const [selectedDiaryIndex, setSelectedDiaryIndex] = useState(0);
   const [bucketsByDiaryId, setBucketsByDiaryId] = useState(
@@ -81,7 +85,11 @@ function HomeScreen() {
     : [];
 
   const handlePressAddDiary = () => {
-    navigation.navigate('AddDiary' as never);
+    navigation.navigate('AddDiary');
+  };
+
+  const handlePressDiary = () => {
+    navigation.navigate('TicketList');
   };
 
   const handleChangeSelectedBuckets = (nextBuckets: Bucket[]) => {
@@ -147,6 +155,7 @@ function HomeScreen() {
           selectedIndex={selectedDiaryIndex}
           onChangeIndex={setSelectedDiaryIndex}
           onPressAddDiary={handlePressAddDiary}
+          onPressDiary={handlePressDiary}
           onPressDiaryMenu={setMenuDiary}
         />
 
