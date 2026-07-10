@@ -8,7 +8,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import { Plus } from 'lucide-react-native';
+import { MoreHorizontal, Plus } from 'lucide-react-native';
 import DiaryCover from '../../../components/DiaryCover';
 import type { Diary } from '../types';
 
@@ -17,6 +17,7 @@ interface DiarySectionProps {
   selectedIndex: number;
   onChangeIndex: (index: number) => void;
   onPressAddDiary: () => void;
+  onPressDiaryMenu: (diary: Diary) => void;
 }
 
 function DiarySection({
@@ -24,6 +25,7 @@ function DiarySection({
   selectedIndex,
   onChangeIndex,
   onPressAddDiary,
+  onPressDiaryMenu,
 }: DiarySectionProps) {
   const hasDiaries = diaries.length > 0;
   const { width } = useWindowDimensions();
@@ -42,8 +44,19 @@ function DiarySection({
 
   return (
     <View style={styles.ticketBookSection}>
-      <Text style={styles.sectionTitle}>내 티켓북</Text>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>내 티켓북</Text>
 
+        {hasDiaries && (
+          <Pressable
+            style={styles.sectionMenuButton}
+            onPress={() => onPressDiaryMenu(diaries[selectedIndex])}
+            hitSlop={8}
+          >
+            <MoreHorizontal size={22} color="#777777" strokeWidth={2.5} />
+          </Pressable>
+        )}
+      </View>
       {hasDiaries ? (
         <>
           <FlatList
@@ -79,25 +92,31 @@ function DiarySection({
   );
 }
 
-function DiaryCard({ diary }: { diary: Diary }) {
+function DiaryCard({
+  diary,
+}: {
+  diary: Diary;
+}) {
   const recordText =
     diary.recordCount > 0 ? `${diary.recordCount}개의 기록` : '기록 없음';
 
   return (
-    <Pressable style={styles.diaryCard}>
-      <View style={styles.coverContainer}>
-        <DiaryCover
-          size={168}
-          coverColor={diary.coverColor}
-          photoUri={diary.photoUri}
-        />
-      </View>
+    <View style={styles.diaryCard}>
+      <Pressable style={styles.diaryPressArea}>
+        <View style={styles.coverContainer}>
+          <DiaryCover
+            size={168}
+            coverColor={diary.coverColor}
+            photoUri={diary.photoUri}
+          />
+        </View>
 
-      <View style={styles.diaryTextBox}>
-        <Text style={styles.diaryTitle}>{diary.title}</Text>
-        <Text style={styles.recordCount}>{recordText}</Text>
-      </View>
-    </Pressable>
+        <View style={styles.diaryTextBox}>
+          <Text style={styles.diaryTitle}>{diary.title}</Text>
+          <Text style={styles.recordCount}>{recordText}</Text>
+        </View>
+      </Pressable>
+    </View>
   );
 }
 
@@ -122,17 +141,36 @@ const styles = StyleSheet.create({
   ticketBookSection: {
     paddingTop: 24,
   },
-  sectionTitle: {
-    paddingHorizontal: 24,
+  sectionHeader: {
     marginBottom: 16,
+    paddingHorizontal: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+
+  sectionTitle: {
     fontSize: 22,
     fontWeight: '800',
     color: '#111111',
   },
+  sectionMenuButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
   diaryPage: {
     alignItems: 'center',
   },
   diaryCard: {
+    width: 192,
+    alignItems: 'center',
+    position: 'relative',
+  },
+  diaryPressArea: {
     width: 192,
     alignItems: 'center',
   },
@@ -160,6 +198,7 @@ const styles = StyleSheet.create({
     color: '#8A8A8A',
     textAlign: 'center',
   },
+
   pageDots: {
     marginTop: 18,
     flexDirection: 'row',

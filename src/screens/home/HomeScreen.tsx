@@ -6,8 +6,9 @@ import { Bucket, Diary } from './types.ts';
 import BucketListSection from './components/BucketListSection.tsx';
 import { useNavigation } from '@react-navigation/core';
 import { useState } from 'react';
+import DiaryActionSheet from './components/DiaryActionSheet.tsx';
 
-const diaries: Diary[] = [
+const initialDiaries: Diary[] = [
   {
     id: 1,
     title: '야구',
@@ -27,7 +28,6 @@ const diaries: Diary[] = [
     coverColor: '#e1e1e1',
   },
 ];
-
 const initialBucketsByDiaryId: Record<number, Bucket[]> = {
   1: [
     {
@@ -66,14 +66,16 @@ const initialBucketsByDiaryId: Record<number, Bucket[]> = {
 };
 
 function HomeScreen() {
-  const hasDiaries = diaries.length > 0;
   const navigation = useNavigation();
+  const [diaryList, setDiaryList] = useState<Diary[]>(initialDiaries);
   const [selectedDiaryIndex, setSelectedDiaryIndex] = useState(0);
   const [bucketsByDiaryId, setBucketsByDiaryId] = useState(
     initialBucketsByDiaryId,
   );
+  const [menuDiary, setMenuDiary] = useState<Diary | null>(null);
+  const hasDiaries = diaryList.length > 0;
 
-  const selectedDiary = diaries[selectedDiaryIndex];
+  const selectedDiary = diaryList[selectedDiaryIndex];
   const selectedBuckets = selectedDiary
     ? bucketsByDiaryId[selectedDiary.id] ?? []
     : [];
@@ -90,6 +92,30 @@ function HomeScreen() {
       [selectedDiary.id]: nextBuckets,
     }));
   };
+
+  // 티켓북, 버킷리스트 같이 삭제
+  const handleDeleteDiary = (diaryId: number) => {
+    const nextDiaries = diaryList.filter(diary => diary.id !== diaryId); // 삭제할 티켓북빼고 새 목록 만들기
+
+    setDiaryList(nextDiaries);
+    setSelectedDiaryIndex(currentIndex => {
+      const lastIndex = nextDiaries.length - 1;
+
+      if (currentIndex > lastIndex) {
+        return Math.max(lastIndex, 0); // 0일때 -1을 빼더라도 음수가 되지 않음
+      }
+
+      return currentIndex;
+    });
+    setBucketsByDiaryId(currentBucket => {
+      const nextBuckets = { ...currentBucket }; // 기존 버킷리스트 객체 복사
+      delete nextBuckets[diaryId]; // 삭제한 티켓북의 버킷리스트도 지우기
+      return nextBuckets;
+    });
+  };
+
+  // 티켓북 수정
+  const handleUpdateDiary = () => {};
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -117,10 +143,11 @@ function HomeScreen() {
         </View>
 
         <DiarySection
-          diaries={diaries}
+          diaries={diaryList}
           selectedIndex={selectedDiaryIndex}
           onChangeIndex={setSelectedDiaryIndex}
           onPressAddDiary={handlePressAddDiary}
+          onPressDiaryMenu={setMenuDiary}
         />
 
         {selectedDiary && (
@@ -132,6 +159,20 @@ function HomeScreen() {
           />
         )}
       </ScrollView>
+
+      <DiaryActionSheet
+        visible={menuDiary !== null}
+        diary={menuDiary}
+        onClose={() => setMenuDiary(null)}
+        onEditDiary={() => {
+          setMenuDiary(null);
+          navigation.navigate('AddDiary' as never);
+        }}
+        onDeleteDiary={diaryId => {
+          handleDeleteDiary(diaryId);
+          setMenuDiary(null);
+        }}
+      />
     </SafeAreaView>
   );
 }

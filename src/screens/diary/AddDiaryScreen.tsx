@@ -112,7 +112,7 @@ function AddDiaryScreen() {
     COVER_COLORS[0];
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <Pressable
           style={styles.backButton}
@@ -120,10 +120,10 @@ function AddDiaryScreen() {
         >
           <ChevronLeft size={26} color={'#111111'} strokeWidth={2.4} />
         </Pressable>
-        <Text style={styles.headerTitle}>새 다이어리</Text>
+        <Text style={styles.headerTitle}>새 티켓북</Text>
       </View>
 
-      <ScrollView>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.previewSection}>
           <DiaryCover
             size={178}
@@ -161,55 +161,84 @@ function AddDiaryScreen() {
           </View>
         </View>
 
-        <View style={styles.formSection}>
-          <Text style={styles.sectionTitle}>속표지 색상</Text>
+        {isSelectedSportReady ? (
+          <>
+            <View style={styles.formSection}>
+              <Text style={styles.sectionTitle}>표지 색상</Text>
 
-          <View style={styles.colorGrid}>
-            {COVER_COLORS.map(colorOption => {
-              const isSelected = selectedCoverColorId === colorOption.id;
+              <View style={styles.colorGrid}>
+                {COVER_COLORS.map(colorOption => {
+                  const isSelected = selectedCoverColorId === colorOption.id;
 
-              return (
-                <Pressable
-                  key={colorOption.id}
-                  style={[
-                    styles.colorSwatchButton,
-                    isSelected && styles.colorSwatchButtonSelected,
-                  ]}
-                  onPress={() => setSelectedCoverColorId(colorOption.id)}
-                  hitSlop={8}
-                >
-                  <View
-                    style={[
-                      styles.colorSwatch,
-                      { backgroundColor: colorOption.color },
-                    ]}
-                  >
-                    {colorOption.type === 'stripe' && (
-                      <>
-                        {[3, 8, 13, 18, 23, 28].map(left => (
-                          <View
-                            key={`stripe-${left}`}
-                            style={[styles.stripeLine, { left }]}
-                          />
-                        ))}
-                      </>
-                    )}
-                  </View>
-                </Pressable>
-              );
-            })}
+                  return (
+                    <Pressable
+                      key={colorOption.id}
+                      style={[
+                        styles.colorSwatchButton,
+                        isSelected && styles.colorSwatchButtonSelected,
+                      ]}
+                      onPress={() => setSelectedCoverColorId(colorOption.id)}
+                      hitSlop={8}
+                    >
+                      <View
+                        style={[
+                          styles.colorSwatch,
+                          { backgroundColor: colorOption.color },
+                        ]}
+                      >
+                        {colorOption.type === 'stripe' && (
+                          <>
+                            {[3, 8, 13, 18, 23, 28].map(left => (
+                              <View
+                                key={`stripe-${left}`}
+                                style={[styles.stripeLine, { left }]}
+                              />
+                            ))}
+                          </>
+                        )}
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+
+            <View style={styles.formSection}>
+              <Text style={styles.sectionTitle}>포토카드</Text>
+
+              <View style={styles.photoCardRow}>
+                <Text style={styles.photoCardText}>이미지 추가</Text>
+                <Text style={styles.photoCardOptionalText}>선택사항</Text>
+              </View>
+            </View>
+          </>
+        ) : (
+          <View style={styles.readySoonBox}>
+            <Text style={styles.readySoonTitle}>
+              {selectSport?.label} 티켓북은 준비중이에요
+            </Text>
           </View>
-        </View>
-
-        <View style={styles.formSection}>
-          <Text style={styles.sectionTitle}>포토카드</Text>
-
-          <View style={styles.photoCardRow}>
-            <Text style={styles.photoCardText}>이미지 추가</Text>
-            <Text style={styles.photoCardOptionalText}>선택사항</Text>
-          </View>
-        </View>
+        )}
       </ScrollView>
+
+      <View style={styles.footer}>
+        <Pressable
+          style={[
+            styles.createButton,
+            !isSelectedSportReady && styles.createButtonDisabled,
+          ]}
+          disabled={!isSelectedSportReady}
+        >
+          <Text
+            style={[
+              styles.createButtonText,
+              !isSelectedSportReady && styles.createButtonTextDisabled,
+            ]}
+          >
+            티켓북 만들기
+          </Text>
+        </Pressable>
+      </View>
     </SafeAreaView>
   );
 }
@@ -240,6 +269,10 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#111111',
   },
+  scrollContent: {
+    paddingBottom: 24,
+  },
+
   previewSection: {
     paddingTop: 20,
     alignItems: 'center',
@@ -342,7 +375,49 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#A0A0A0',
   },
+  readySoonBox: {
+    marginTop: 28,
+    marginHorizontal: 24,
+    minHeight: 124,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#EEEEEE',
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  readySoonTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#777777',
+    textAlign: 'center',
+  },
 
-  footer: {},
-  createButton: {},
+  footer: {
+    paddingHorizontal: 24,
+    paddingTop: 12,
+    paddingBottom: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F1F1',
+    backgroundColor: '#FFFFFF',
+  },
+  createButton: {
+    height: 54,
+    borderRadius: 18,
+    backgroundColor: '#111111',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  createButtonDisabled: {
+    backgroundColor: '#E8E8E8',
+  },
+  createButtonText: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#FFFFFF',
+  },
+  createButtonTextDisabled: {
+    color: '#AAAAAA',
+  },
 });

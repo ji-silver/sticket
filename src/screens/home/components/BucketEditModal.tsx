@@ -14,7 +14,7 @@ import { useRef, useState } from 'react';
 interface BucketEditModalProps {
   visible: boolean;
   buckets: Bucket[];
-드  title: string;
+  title: string;
   onClose: () => void;
   onToggleBucket: (id: number) => void;
   onAddBucket: (title: string) => void;
