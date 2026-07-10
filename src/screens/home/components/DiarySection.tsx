@@ -4,13 +4,14 @@ import {
   NativeSyntheticEvent,
   Pressable,
   StyleSheet,
-  Text,
   useWindowDimensions,
   View,
 } from 'react-native';
 import { MoreHorizontal, Plus } from 'lucide-react-native';
 import DiaryCover from '../../../components/DiaryCover';
 import type { Diary } from '../types';
+import { fonts } from '../../../styles/fonts.ts';
+import AppText from '../../../components/common/AppText.tsx';
 
 interface DiarySectionProps {
   diaries: Diary[];
@@ -47,7 +48,7 @@ function DiarySection({
   return (
     <View style={styles.ticketBookSection}>
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>내 티켓북</Text>
+        <AppText style={styles.sectionTitle}>내 티켓북</AppText>
 
         {hasDiaries && (
           <Pressable
@@ -119,8 +120,8 @@ function DiaryCard({
         </View>
 
         <View style={styles.diaryTextBox}>
-          <Text style={styles.diaryTitle}>{diary.title}</Text>
-          <Text style={styles.recordCount}>{recordText}</Text>
+          <AppText style={styles.diaryTitle}>{diary.title}</AppText>
+          <AppText style={styles.recordCount}>{recordText}</AppText>
         </View>
       </Pressable>
     </View>
@@ -132,11 +133,13 @@ function EmptyDiaryState({ onPressAddDiary }: { onPressAddDiary: () => void }) {
     <View style={styles.emptyDiaryCard}>
       <DiaryCover coverColor="#F1F1F1" size={96} />
 
-      <Text style={styles.emptyDiaryTitle}>아직 만든 티켓북이 없어요</Text>
+      <AppText style={styles.emptyDiaryTitle}>
+        아직 만든 티켓북이 없어요
+      </AppText>
 
       <Pressable style={styles.emptyDiaryButton} onPress={onPressAddDiary}>
         <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
-        <Text style={styles.emptyDiaryButtonText}>티켓북 만들기</Text>
+        <AppText style={styles.emptyDiaryButtonText}>티켓북 만들기</AppText>
       </Pressable>
     </View>
   );
@@ -158,6 +161,7 @@ const styles = StyleSheet.create({
 
   sectionTitle: {
     fontSize: 22,
+    fontFamily: fonts.extraBold,
     fontWeight: '800',
     color: '#111111',
   },
@@ -194,6 +198,7 @@ const styles = StyleSheet.create({
   },
   diaryTitle: {
     fontSize: 15,
+    fontFamily: fonts.extraBold,
     fontWeight: '800',
     color: '#111111',
     textAlign: 'center',
@@ -201,6 +206,7 @@ const styles = StyleSheet.create({
   recordCount: {
     marginTop: 4,
     fontSize: 12,
+    fontFamily: fonts.medium,
     fontWeight: '500',
     color: '#8A8A8A',
     textAlign: 'center',
@@ -236,6 +242,7 @@ const styles = StyleSheet.create({
   emptyDiaryTitle: {
     marginTop: 18,
     fontSize: 16,
+    fontFamily: fonts.extraBold,
     fontWeight: '800',
     color: '#111111',
     textAlign: 'center',
@@ -252,6 +259,7 @@ const styles = StyleSheet.create({
   },
   emptyDiaryButtonText: {
     fontSize: 14,
+    fontFamily: fonts.extraBold,
     fontWeight: '800',
     color: '#FFFFFF',
   },

@@ -3,13 +3,14 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
 import { Check, Plus, Trash2 } from 'lucide-react-native';
 import { Bucket } from '../types.ts';
 import { useRef, useState } from 'react';
+import { fonts } from '../../../styles/fonts.ts';
+import AppText from '../../../components/common/AppText.tsx';
 
 interface BucketEditModalProps {
   visible: boolean;
@@ -62,14 +63,14 @@ function BucketEditModal({
 
           <View style={styles.sheetHeader}>
             <View>
-              <Text style={styles.sheetTitle}>{title}</Text>
-              <Text style={styles.sheetSubtitle}>
+              <AppText style={styles.sheetTitle}>{title}</AppText>
+              <AppText style={styles.sheetSubtitle}>
                 추가하고 싶은 직관 목표를 적어주세요
-              </Text>
+              </AppText>
             </View>
 
             <Pressable style={styles.doneButton} onPress={onClose}>
-              <Text style={styles.doneButtonText}>완료</Text>
+              <AppText style={styles.doneButtonText}>완료</AppText>
             </Pressable>
           </View>
 
@@ -186,12 +187,14 @@ const styles = StyleSheet.create({
   },
   sheetTitle: {
     fontSize: 22,
+    fontFamily: fonts.black,
     fontWeight: '900',
     color: '#111111',
   },
   sheetSubtitle: {
     marginTop: 6,
     fontSize: 13,
+    fontFamily: fonts.semiBold,
     fontWeight: '600',
     color: '#9A9A9A',
   },
@@ -203,6 +206,7 @@ const styles = StyleSheet.create({
   },
   doneButtonText: {
     fontSize: 15,
+    fontFamily: fonts.extraBold,
     fontWeight: '800',
     color: '#111111',
   },
@@ -222,6 +226,7 @@ const styles = StyleSheet.create({
     borderColor: '#E7E7E7',
     backgroundColor: '#FAFAFA',
     fontSize: 14,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#111111',
   },
@@ -238,6 +243,7 @@ const styles = StyleSheet.create({
   },
   addSubmitButtonText: {
     fontSize: 14,
+    fontFamily: fonts.extraBold,
     fontWeight: '800',
     color: '#FFFFFF',
   },
@@ -268,6 +274,7 @@ const styles = StyleSheet.create({
   },
   addRowText: {
     fontSize: 15,
+    fontFamily: fonts.extraBold,
     fontWeight: '800',
     color: '#9A9A9A',
   },
@@ -310,6 +317,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E6E6E6',
     fontSize: 14,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#111111',
   },

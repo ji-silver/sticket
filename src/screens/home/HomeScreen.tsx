@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Plus } from 'lucide-react-native';
 import DiarySection from './components/DiarySection.tsx';
@@ -9,6 +9,8 @@ import { useState } from 'react';
 import DiaryActionSheet from './components/DiaryActionSheet.tsx';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
+import { fonts } from '../../styles/fonts.ts';
+import AppText from '../../components/common/AppText.tsx';
 
 type HomeNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -135,14 +137,14 @@ function HomeScreen() {
         <View style={styles.header}>
           <View style={styles.headerRow}>
             <View>
-              <Text style={styles.logo}>STICKET</Text>
-              <Text style={styles.subtitle}>내가 모은 스포츠 티켓북</Text>
+              <AppText style={styles.logo}>STICKET</AppText>
+              <AppText style={styles.subtitle}>내가 모은 스포츠 티켓북</AppText>
             </View>
 
             {hasDiaries && (
               <Pressable style={styles.addButton} onPress={handlePressAddDiary}>
                 <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
-                <Text style={styles.addButtonText}>다이어리 추가</Text>
+                <AppText style={styles.addButtonText}>다이어리 추가</AppText>
               </Pressable>
             )}
           </View>
@@ -212,12 +214,14 @@ const styles = StyleSheet.create({
   },
   logo: {
     fontSize: 20,
+    fontFamily: fonts.black,
     fontWeight: '900',
     color: '#111111',
   },
   subtitle: {
     marginTop: 4,
     fontSize: 12,
+    fontFamily: fonts.medium,
     fontWeight: '500',
     color: '#9CA3AF',
   },
@@ -237,6 +241,7 @@ const styles = StyleSheet.create({
   },
   addButtonText: {
     fontSize: 13,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#FFFFFF',
   },

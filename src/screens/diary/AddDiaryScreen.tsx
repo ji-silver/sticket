@@ -1,10 +1,12 @@
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { ChevronLeft } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/core';
 import DiaryCover from '../../components/DiaryCover.tsx';
 import { useState } from 'react';
 import { launchImageLibrary } from 'react-native-image-picker';
+import { fonts } from '../../styles/fonts.ts';
+import AppText from '../../components/common/AppText.tsx';
 
 type SportId = 'baseball' | 'soccer' | 'basketball' | 'volleyball';
 
@@ -138,7 +140,7 @@ function AddDiaryScreen() {
         >
           <ChevronLeft size={26} color={'#111111'} strokeWidth={2.4} />
         </Pressable>
-        <Text style={styles.headerTitle}>새 티켓북</Text>
+        <AppText style={styles.headerTitle}>새 티켓북</AppText>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -152,7 +154,7 @@ function AddDiaryScreen() {
         </View>
 
         <View style={styles.formSection}>
-          <Text style={styles.sectionTitle}>스포츠</Text>
+          <AppText style={styles.sectionTitle}>스포츠</AppText>
           <View style={styles.sportList}>
             {SPORTS.map(sport => {
               const isSelected = selectedSportId === sport.id;
@@ -166,14 +168,14 @@ function AddDiaryScreen() {
                   ]}
                   onPress={() => setSelectedSportId(sport.id)}
                 >
-                  <Text
+                  <AppText
                     style={[
                       styles.sportChipText,
                       isSelected && styles.sportChipTextSelected,
                     ]}
                   >
                     {sport.label}
-                  </Text>
+                  </AppText>
                 </Pressable>
               );
             })}
@@ -183,7 +185,7 @@ function AddDiaryScreen() {
         {isSelectedSportReady ? (
           <>
             <View style={styles.formSection}>
-              <Text style={styles.sectionTitle}>표지 색상</Text>
+              <AppText style={styles.sectionTitle}>표지 색상</AppText>
 
               <View style={styles.colorGrid}>
                 {COVER_COLORS.map(colorOption => {
@@ -223,26 +225,26 @@ function AddDiaryScreen() {
             </View>
 
             <View style={styles.formSection}>
-              <Text style={styles.sectionTitle}>포토카드</Text>
+              <AppText style={styles.sectionTitle}>포토카드</AppText>
 
               <Pressable
                 onPress={handlePressSelectPhoto}
                 style={styles.photoCardRow}
               >
-                <Text style={styles.photoCardText}>
+                <AppText style={styles.photoCardText}>
                   {photoUri ? '이미지 변경' : '이미지 추가'}
-                </Text>
-                <Text style={styles.photoCardOptionalText}>
+                </AppText>
+                <AppText style={styles.photoCardOptionalText}>
                   {photoUri ? '선택됨' : '선택사항'}
-                </Text>
+                </AppText>
               </Pressable>
             </View>
           </>
         ) : (
           <View style={styles.readySoonBox}>
-            <Text style={styles.readySoonTitle}>
+            <AppText style={styles.readySoonTitle}>
               {selectSport?.label} 티켓북은 준비중이에요
-            </Text>
+            </AppText>
           </View>
         )}
       </ScrollView>
@@ -255,14 +257,14 @@ function AddDiaryScreen() {
           ]}
           disabled={!isSelectedSportReady}
         >
-          <Text
+          <AppText
             style={[
               styles.createButtonText,
               !isSelectedSportReady && styles.createButtonTextDisabled,
             ]}
           >
             티켓북 만들기
-          </Text>
+          </AppText>
         </Pressable>
       </View>
     </SafeAreaView>
@@ -292,6 +294,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 19,
+    fontFamily: fonts.extraBold,
     fontWeight: '800',
     color: '#111111',
   },
@@ -311,6 +314,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     marginBottom: 12,
     fontSize: 16,
+    fontFamily: fonts.extraBold,
     fontWeight: '800',
     color: '#111111',
   },
@@ -336,6 +340,7 @@ const styles = StyleSheet.create({
 
   sportChipText: {
     fontSize: 14,
+    fontFamily: fonts.extraBold,
     fontWeight: '800',
     color: '#777777',
   },
@@ -393,11 +398,13 @@ const styles = StyleSheet.create({
   },
   photoCardText: {
     fontSize: 14,
+    fontFamily: fonts.extraBold,
     fontWeight: '800',
     color: '#222222',
   },
   photoCardOptionalText: {
     fontSize: 12,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#A0A0A0',
   },
@@ -415,6 +422,7 @@ const styles = StyleSheet.create({
   },
   readySoonTitle: {
     fontSize: 15,
+    fontFamily: fonts.extraBold,
     fontWeight: '800',
     color: '#777777',
     textAlign: 'center',
@@ -440,6 +448,7 @@ const styles = StyleSheet.create({
   },
   createButtonText: {
     fontSize: 16,
+    fontFamily: fonts.black,
     fontWeight: '900',
     color: '#FFFFFF',
   },

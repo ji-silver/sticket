@@ -1,5 +1,7 @@
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { Diary } from '../types.ts';
+import { fonts } from '../../../styles/fonts.ts';
+import AppText from '../../../components/common/AppText.tsx';
 
 interface DiaryActionSheetProps {
   visible: boolean;
@@ -43,17 +45,17 @@ function DiaryActionSheet({
         <View style={styles.sheet}>
           <View style={styles.handle} />
 
-          <Text style={styles.title}>{diary.title} 티켓북</Text>
+          <AppText style={styles.title}>{diary.title} 티켓북</AppText>
 
-          <Text style={styles.description}>
+          <AppText style={styles.description}>
             {cannotDelete
               ? '기록이 있는 티켓북은 삭제할 수 없어요.'
               : '티켓북을 수정하거나 삭제할 수 있어요.'}
-          </Text>
+          </AppText>
 
           <View style={styles.actionList}>
             <Pressable style={styles.actionRow} onPress={handlePressEdit}>
-              <Text style={styles.actionText}>수정하기</Text>
+              <AppText style={styles.actionText}>수정하기</AppText>
             </Pressable>
 
             <View style={styles.divider} />
@@ -63,7 +65,7 @@ function DiaryActionSheet({
               onPress={handlePressDelete}
               disabled={cannotDelete}
             >
-              <Text
+              <AppText
                 style={[
                   styles.actionText,
                   styles.deleteText,
@@ -71,13 +73,13 @@ function DiaryActionSheet({
                 ]}
               >
                 삭제하기
-              </Text>
+              </AppText>
             </Pressable>
 
             <View style={styles.divider} />
 
             <Pressable style={styles.actionRow} onPress={onClose}>
-              <Text style={styles.cancelText}>취소</Text>
+              <AppText style={styles.cancelText}>취소</AppText>
             </Pressable>
           </View>
         </View>
@@ -117,6 +119,7 @@ const styles = StyleSheet.create({
 
   title: {
     fontSize: 22,
+    fontFamily: fonts.black,
     fontWeight: '900',
     color: '#111111',
   },
@@ -125,6 +128,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 24,
     fontSize: 14,
+    fontFamily: fonts.semiBold,
     fontWeight: '600',
     lineHeight: 20,
     color: '#8A8A8A',
@@ -142,6 +146,7 @@ const styles = StyleSheet.create({
 
   actionText: {
     fontSize: 16,
+    fontFamily: fonts.extraBold,
     fontWeight: '800',
     color: '#111111',
   },
@@ -156,6 +161,7 @@ const styles = StyleSheet.create({
 
   cancelText: {
     fontSize: 16,
+    fontFamily: fonts.extraBold,
     fontWeight: '800',
     color: '#6F6F6F',
   },

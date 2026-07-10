@@ -1,8 +1,10 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Bucket } from '../types.ts';
 import { Check, ChevronDown, ChevronUp } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import BucketEditModal from './BucketEditModal.tsx';
+import { fonts } from '../../../styles/fonts.ts';
+import AppText from '../../../components/common/AppText.tsx';
 
 interface BucketListSectionProps {
   diaryId: number;
@@ -68,9 +70,9 @@ function BucketListSection({
     <View style={styles.bucketSection}>
       <View style={styles.bucketHeader}>
         <View>
-          <Text style={styles.bucketTitle}>
+          <AppText style={styles.bucketTitle}>
             {diaryTitle} 직관 버킷리스트
-          </Text>
+          </AppText>
         </View>
 
         <Pressable
@@ -78,18 +80,18 @@ function BucketListSection({
           style={styles.editButton}
           hitSlop={8}
         >
-          <Text style={styles.editButtonText}>
+          <AppText style={styles.editButtonText}>
             {isBucketEmpty ? '추가' : '수정'}
-          </Text>
+          </AppText>
         </Pressable>
       </View>
 
       <View style={styles.bucketCard}>
         {isBucketEmpty ? (
           <View style={styles.emptyBucketBox}>
-            <Text style={styles.emptyBucketTitle}>
+            <AppText style={styles.emptyBucketTitle}>
               {diaryTitle} 직관 버킷리스트를 추가해보세요
-            </Text>
+            </AppText>
           </View>
         ) : (
           <>
@@ -110,9 +112,9 @@ function BucketListSection({
             onPress={() => setIsExpanded(prev => !prev)}
             hitSlop={8}
           >
-            <Text style={styles.moreButtonText}>
+            <AppText style={styles.moreButtonText}>
               {isExpanded ? '접기' : '더보기'}
-            </Text>
+            </AppText>
 
             {isExpanded ? (
               <ChevronUp size={16} color={'#666666'} strokeWidth={2.5} />
@@ -161,7 +163,7 @@ function BucketListItem({
         )}
       </Pressable>
 
-      <Text
+      <AppText
         style={[
           styles.bucketItemText,
           bucket.isCompleted && styles.bucketItemTextCompleted,
@@ -169,7 +171,7 @@ function BucketListItem({
         numberOfLines={1}
       >
         {bucket.title}
-      </Text>
+      </AppText>
     </View>
   );
 }
@@ -189,6 +191,7 @@ const styles = StyleSheet.create({
   },
   bucketTitle: {
     fontSize: 22,
+    fontFamily: fonts.extraBold,
     fontWeight: '800',
     color: '#111111',
   },
@@ -210,6 +213,7 @@ const styles = StyleSheet.create({
   },
   emptyBucketTitle: {
     fontSize: 15,
+    fontFamily: fonts.extraBold,
     fontWeight: '800',
     color: '#777777',
   },
@@ -223,6 +227,7 @@ const styles = StyleSheet.create({
   },
   moreButtonText: {
     fontSize: 13,
+    fontFamily: fonts.extraBold,
     fontWeight: '800',
     color: '#666666',
   },
@@ -235,6 +240,7 @@ const styles = StyleSheet.create({
   },
   editButtonText: {
     fontSize: 14,
+    fontFamily: fonts.extraBold,
     fontWeight: '800',
     color: '#777777',
   },
@@ -267,6 +273,7 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     flex: 1,
     fontSize: 14,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#222222',
   },
