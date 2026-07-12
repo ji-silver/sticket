@@ -293,9 +293,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerTitle: {
-    fontSize: 19,
-    fontFamily: fonts.extraBold,
-    fontWeight: '800',
+    fontSize: 18,
+    fontFamily: fonts.bold,
+    fontWeight: '700',
     color: '#111111',
   },
   scrollContent: {
@@ -314,8 +314,8 @@ const styles = StyleSheet.create({
   sectionTitle: {
     marginBottom: 12,
     fontSize: 16,
-    fontFamily: fonts.extraBold,
-    fontWeight: '800',
+    fontFamily: fonts.bold,
+    fontWeight: '700',
     color: '#111111',
   },
   sportList: {
@@ -340,8 +340,8 @@ const styles = StyleSheet.create({
 
   sportChipText: {
     fontSize: 14,
-    fontFamily: fonts.extraBold,
-    fontWeight: '800',
+    fontFamily: fonts.bold,
+    fontWeight: '700',
     color: '#777777',
   },
   sportChipTextSelected: {
@@ -398,8 +398,8 @@ const styles = StyleSheet.create({
   },
   photoCardText: {
     fontSize: 14,
-    fontFamily: fonts.extraBold,
-    fontWeight: '800',
+    fontFamily: fonts.bold,
+    fontWeight: '700',
     color: '#222222',
   },
   photoCardOptionalText: {
@@ -422,8 +422,8 @@ const styles = StyleSheet.create({
   },
   readySoonTitle: {
     fontSize: 15,
-    fontFamily: fonts.extraBold,
-    fontWeight: '800',
+    fontFamily: fonts.bold,
+    fontWeight: '700',
     color: '#777777',
     textAlign: 'center',
   },
@@ -448,8 +448,8 @@ const styles = StyleSheet.create({
   },
   createButtonText: {
     fontSize: 16,
-    fontFamily: fonts.black,
-    fontWeight: '900',
+    fontFamily: fonts.bold,
+    fontWeight: '700',
     color: '#FFFFFF',
   },
   createButtonTextDisabled: {

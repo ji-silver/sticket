@@ -161,8 +161,8 @@ const styles = StyleSheet.create({
 
   sectionTitle: {
     fontSize: 22,
-    fontFamily: fonts.extraBold,
-    fontWeight: '800',
+    fontFamily: fonts.bold,
+    fontWeight: '700',
     color: '#111111',
   },
   sectionMenuButton: {
@@ -198,8 +198,8 @@ const styles = StyleSheet.create({
   },
   diaryTitle: {
     fontSize: 15,
-    fontFamily: fonts.extraBold,
-    fontWeight: '800',
+    fontFamily: fonts.bold,
+    fontWeight: '700',
     color: '#111111',
     textAlign: 'center',
   },
@@ -242,8 +242,8 @@ const styles = StyleSheet.create({
   emptyDiaryTitle: {
     marginTop: 18,
     fontSize: 16,
-    fontFamily: fonts.extraBold,
-    fontWeight: '800',
+    fontFamily: fonts.bold,
+    fontWeight: '700',
     color: '#111111',
     textAlign: 'center',
   },
@@ -259,8 +259,8 @@ const styles = StyleSheet.create({
   },
   emptyDiaryButtonText: {
     fontSize: 14,
-    fontFamily: fonts.extraBold,
-    fontWeight: '800',
+    fontFamily: fonts.bold,
+    fontWeight: '700',
     color: '#FFFFFF',
   },
 });

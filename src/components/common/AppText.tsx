@@ -41,13 +41,13 @@ function AppText({
         styles.text,
         {
           fontFamily: fonts[weight],
-          fontWeight: undefined,
           fontSize: size,
           color,
           textAlign: align,
           lineHeight,
         },
         style,
+        styles.fontWeightReset,
       ]}
     >
       {children}
@@ -61,5 +61,8 @@ const styles = StyleSheet.create({
   text: {
     fontFamily: fonts.regular,
     color: '#111111',
+  },
+  fontWeightReset: {
+    fontWeight: undefined,
   },
 });

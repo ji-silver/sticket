@@ -191,8 +191,8 @@ const styles = StyleSheet.create({
   },
   bucketTitle: {
     fontSize: 22,
-    fontFamily: fonts.extraBold,
-    fontWeight: '800',
+    fontFamily: fonts.bold,
+    fontWeight: '700',
     color: '#111111',
   },
 
@@ -213,8 +213,8 @@ const styles = StyleSheet.create({
   },
   emptyBucketTitle: {
     fontSize: 15,
-    fontFamily: fonts.extraBold,
-    fontWeight: '800',
+    fontFamily: fonts.bold,
+    fontWeight: '700',
     color: '#777777',
   },
   moreButton: {
@@ -227,8 +227,8 @@ const styles = StyleSheet.create({
   },
   moreButtonText: {
     fontSize: 13,
-    fontFamily: fonts.extraBold,
-    fontWeight: '800',
+    fontFamily: fonts.bold,
+    fontWeight: '700',
     color: '#666666',
   },
 
@@ -240,8 +240,8 @@ const styles = StyleSheet.create({
   },
   editButtonText: {
     fontSize: 14,
-    fontFamily: fonts.extraBold,
-    fontWeight: '800',
+    fontFamily: fonts.bold,
+    fontWeight: '700',
     color: '#777777',
   },
 

@@ -187,8 +187,8 @@ const styles = StyleSheet.create({
   },
   sheetTitle: {
     fontSize: 22,
-    fontFamily: fonts.black,
-    fontWeight: '900',
+    fontFamily: fonts.bold,
+    fontWeight: '700',
     color: '#111111',
   },
   sheetSubtitle: {
@@ -206,8 +206,8 @@ const styles = StyleSheet.create({
   },
   doneButtonText: {
     fontSize: 15,
-    fontFamily: fonts.extraBold,
-    fontWeight: '800',
+    fontFamily: fonts.bold,
+    fontWeight: '700',
     color: '#111111',
   },
   addInputRow: {
@@ -226,8 +226,8 @@ const styles = StyleSheet.create({
     borderColor: '#E7E7E7',
     backgroundColor: '#FAFAFA',
     fontSize: 14,
-    fontFamily: fonts.bold,
-    fontWeight: '700',
+    fontFamily: fonts.regular,
+    fontWeight: '400',
     color: '#111111',
   },
   addSubmitButton: {
@@ -243,8 +243,8 @@ const styles = StyleSheet.create({
   },
   addSubmitButtonText: {
     fontSize: 14,
-    fontFamily: fonts.extraBold,
-    fontWeight: '800',
+    fontFamily: fonts.bold,
+    fontWeight: '700',
     color: '#FFFFFF',
   },
   addSubmitButtonTextDisabled: {
@@ -274,8 +274,8 @@ const styles = StyleSheet.create({
   },
   addRowText: {
     fontSize: 15,
-    fontFamily: fonts.extraBold,
-    fontWeight: '800',
+    fontFamily: fonts.bold,
+    fontWeight: '700',
     color: '#9A9A9A',
   },
   editRow: {
@@ -317,8 +317,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E6E6E6',
     fontSize: 14,
-    fontFamily: fonts.bold,
-    fontWeight: '700',
+    fontFamily: fonts.regular,
+    fontWeight: '400',
     color: '#111111',
   },
   deleteButton: {

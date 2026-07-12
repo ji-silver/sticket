@@ -21,8 +21,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    fontFamily: fonts.extraBold,
-    fontWeight: '800',
+    fontFamily: fonts.bold,
+    fontWeight: '700',
     color: '#111111',
   },
 });

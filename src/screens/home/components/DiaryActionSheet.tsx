@@ -119,8 +119,8 @@ const styles = StyleSheet.create({
 
   title: {
     fontSize: 22,
-    fontFamily: fonts.black,
-    fontWeight: '900',
+    fontFamily: fonts.bold,
+    fontWeight: '700',
     color: '#111111',
   },
 
@@ -146,8 +146,8 @@ const styles = StyleSheet.create({
 
   actionText: {
     fontSize: 16,
-    fontFamily: fonts.extraBold,
-    fontWeight: '800',
+    fontFamily: fonts.bold,
+    fontWeight: '700',
     color: '#111111',
   },
 
@@ -161,8 +161,8 @@ const styles = StyleSheet.create({
 
   cancelText: {
     fontSize: 16,
-    fontFamily: fonts.extraBold,
-    fontWeight: '800',
+    fontFamily: fonts.bold,
+    fontWeight: '700',
     color: '#6F6F6F',
   },
 

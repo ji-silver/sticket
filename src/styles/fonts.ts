@@ -3,6 +3,6 @@ export const fonts = {
   medium: 'Pretendard-Regular',
   semiBold: 'Pretendard-Bold',
   bold: 'Pretendard-Bold',
-  extraBold: 'Pretendard-Black',
+  extraBold: 'Pretendard-Bold',
   black: 'Pretendard-Black',
 } as const;

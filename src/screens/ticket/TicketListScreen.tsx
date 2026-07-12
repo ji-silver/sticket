@@ -212,9 +212,9 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     marginLeft: 2,
-    fontSize: 19,
-    fontFamily: fonts.black,
-    fontWeight: '900',
+    fontSize: 18,
+    fontFamily: fonts.bold,
+    fontWeight: '700',
     color: '#111111',
   },
   heroContent: {
@@ -237,8 +237,8 @@ const styles = StyleSheet.create({
   },
   addButtonText: {
     fontSize: 13,
-    fontFamily: fonts.extraBold,
-    fontWeight: '800',
+    fontFamily: fonts.bold,
+    fontWeight: '700',
     color: '#FFFFFF',
   },
   ticketCountRow: {
@@ -258,15 +258,15 @@ const styles = StyleSheet.create({
   },
   ticketCountUnit: {
     fontSize: 24,
-    fontFamily: fonts.black,
-    fontWeight: '900',
+    fontFamily: fonts.bold,
+    fontWeight: '700',
     color: '#111111',
     lineHeight: 28,
   },
   ticketCountTitle: {
     fontSize: 24,
-    fontFamily: fonts.black,
-    fontWeight: '900',
+    fontFamily: fonts.bold,
+    fontWeight: '700',
     color: '#111111',
     lineHeight: 28,
   },
@@ -291,8 +291,8 @@ const styles = StyleSheet.create({
   },
   seasonChipText: {
     fontSize: 14,
-    fontFamily: fonts.extraBold,
-    fontWeight: '800',
+    fontFamily: fonts.bold,
+    fontWeight: '700',
     color: '#777777',
   },
   seasonChipTextSelected: {
@@ -338,8 +338,8 @@ const styles = StyleSheet.create({
   },
   emptyTicketTitle: {
     fontSize: 18,
-    fontFamily: fonts.black,
-    fontWeight: '900',
+    fontFamily: fonts.bold,
+    fontWeight: '700',
     color: '#111111',
   },
   emptyTicketDescription: {
@@ -361,8 +361,8 @@ const styles = StyleSheet.create({
   },
   emptyTicketButtonText: {
     fontSize: 13,
-    fontFamily: fonts.black,
-    fontWeight: '900',
+    fontFamily: fonts.bold,
+    fontWeight: '700',
     color: '#FFFFFF',
   },
 });
