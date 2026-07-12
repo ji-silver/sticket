@@ -5,20 +5,8 @@ import { ChevronLeft, Plus } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/core';
 import { fonts } from '../../styles/fonts.ts';
 import AppText from '../../components/common/AppText.tsx';
-
-type SportId = 'baseball' | 'soccer' | 'basketball' | 'volleyball';
-
-interface Ticket {
-  id: number;
-  matchDate: string;
-  stadiumName: string;
-  seatName: string;
-  homeTeamName: string;
-  awayTeamName: string;
-  homeScore: number;
-  awayScore: number;
-  barcodeValue?: string;
-}
+import TicketCard from './components/TicketCard.tsx';
+import type { SportId, Ticket } from './types.ts';
 
 interface TicketListResponse {
   diary: {
@@ -36,28 +24,32 @@ const mockTicketListResponse: TicketListResponse = {
     sport: 'baseball',
   },
   tickets: [
-    // {
-    //   id: 1,
-    //   matchDate: '2026-04-12',
-    //   stadiumName: '고척스카이돔',
-    //   seatName: '1루 102구역 8열 12번',
-    //   homeTeamName: '키움',
-    //   awayTeamName: '두산',
-    //   homeScore: 5,
-    //   awayScore: 3,
-    //   barcodeValue: 'STICKET-20260412-0001',
-    // },
-    // {
-    //   id: 2,
-    //   matchDate: '2025-09-21',
-    //   stadiumName: '잠실야구장',
-    //   seatName: '3루 네이비석 214블록 6열 3번',
-    //   homeTeamName: 'LG',
-    //   awayTeamName: '키움',
-    //   homeScore: 2,
-    //   awayScore: 4,
-    //   barcodeValue: 'STICKET-20250921-0002',
-    // },
+    {
+      id: 1,
+      matchDate: '2026-04-12',
+      stadiumName: '고척스카이돔',
+      seatName: '1루 102구역 8열 12번',
+      homeTeamName: '키움',
+      awayTeamName: '두산',
+      homeScore: 5,
+      awayScore: 3,
+      matchTime: '14:00',
+
+      barcodeValue: 'STICKET-20260412-0001',
+    },
+    {
+      id: 2,
+      matchDate: '2025-09-21',
+      stadiumName: '잠실야구장',
+      seatName: '3루 네이비석 214블록 6열 3번',
+      homeTeamName: 'LG',
+      awayTeamName: '키움',
+      homeScore: 2,
+      awayScore: 4,
+      matchTime: '14:00',
+
+      barcodeValue: 'STICKET-20250921-0002',
+    },
   ],
 };
 
@@ -77,6 +69,13 @@ function TicketListScreen() {
   const [selectedSeason, setSelectedSeason] = useState<number | null>(
     seasons[0] ?? null,
   );
+
+  const filteredTickets =
+    selectedSeason === null
+      ? tickets
+      : tickets.filter(
+          ticket => new Date(ticket.matchDate).getFullYear() === selectedSeason,
+        );
 
   const handlePressAddTicket = () => {};
 
@@ -152,7 +151,13 @@ function TicketListScreen() {
         style={styles.content}
         contentContainerStyle={styles.contentContainer}
       >
-        {hasTickets ? null : (
+        {hasTickets ? (
+          <View style={styles.ticketList}>
+            {filteredTickets.map(ticket => (
+              <TicketCard key={String(ticket.id)} ticket={ticket} />
+            ))}
+          </View>
+        ) : (
           <EmptyTicketState onPressAddTicket={handlePressAddTicket} />
         )}
       </ScrollView>
@@ -300,11 +305,15 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    backgroundColor: '#F7F7F7',
   },
   contentContainer: {
     paddingHorizontal: 24,
     paddingTop: 28,
     paddingBottom: 32,
+  },
+  ticketList: {
+    gap: 16,
   },
   emptyTicketCard: {
     position: 'relative',
@@ -328,7 +337,7 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     borderWidth: 1,
     borderColor: '#ECECEC',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F7F7F7',
   },
   ticketNotchLeft: {
     left: -17,
