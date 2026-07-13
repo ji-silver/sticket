@@ -216,18 +216,22 @@ function EmptyTicketState({
 }) {
   return (
     <View style={styles.emptyTicketCard}>
-      <View style={[styles.ticketNotch, styles.ticketNotchLeft]} />
-      <View style={[styles.ticketNotch, styles.ticketNotchRight]} />
+      <View style={styles.emptyLeftCutout} />
+      <View style={styles.emptyRightCutout} />
 
-      <AppText style={styles.emptyTicketTitle}>아직 남긴 티켓이 없어요</AppText>
-      <AppText style={styles.emptyTicketDescription}>
-        첫 직관 티켓을 추가해보세요
-      </AppText>
+      <View style={styles.emptyTicketContent}>
+        <AppText style={styles.emptyTicketTitle}>
+          아직 남긴 티켓이 없어요
+        </AppText>
+        <AppText style={styles.emptyTicketDescription}>
+          첫 직관 티켓을 추가해보세요
+        </AppText>
 
-      <Pressable style={styles.emptyTicketButton} onPress={onPressAddTicket}>
-        <Plus size={15} color="#FFFFFF" strokeWidth={2.7} />
-        <AppText style={styles.emptyTicketButtonText}>티켓 추가</AppText>
-      </Pressable>
+        <Pressable style={styles.emptyTicketButton} onPress={onPressAddTicket}>
+          <Plus size={15} color="#FFFFFF" strokeWidth={2.7} />
+          <AppText style={styles.emptyTicketButtonText}>티켓 추가</AppText>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -357,33 +361,42 @@ const styles = StyleSheet.create({
   },
   emptyTicketCard: {
     position: 'relative',
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  emptyTicketContent: {
     minHeight: 214,
     paddingHorizontal: 24,
     paddingVertical: 26,
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: '#ECECEC',
-    backgroundColor: '#FAFAFA',
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
   },
-  ticketNotch: {
+  emptyLeftCutout: {
     position: 'absolute',
+    left: -12,
     top: '50%',
-    width: 34,
-    height: 34,
-    marginTop: -17,
-    borderRadius: 17,
-    borderWidth: 1,
-    borderColor: '#ECECEC',
+    zIndex: 3,
+    width: 24,
+    height: 24,
+    marginTop: -12,
+    borderRadius: 12,
     backgroundColor: '#F7F7F7',
   },
-  ticketNotchLeft: {
-    left: -17,
-  },
-  ticketNotchRight: {
-    right: -17,
+  emptyRightCutout: {
+    position: 'absolute',
+    right: -12,
+    top: '50%',
+    zIndex: 3,
+    width: 24,
+    height: 24,
+    marginTop: -12,
+    borderRadius: 12,
+    backgroundColor: '#F7F7F7',
   },
   emptyTicketTitle: {
     fontSize: 18,
