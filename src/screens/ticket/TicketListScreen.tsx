@@ -7,6 +7,8 @@ import { fonts } from '../../styles/fonts.ts';
 import AppText from '../../components/common/AppText.tsx';
 import TicketCard from './components/TicketCard.tsx';
 import type { SportId, Ticket } from './types.ts';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
 
 interface TicketListResponse {
   diary: {
@@ -85,7 +87,8 @@ const mockTicketListResponse: TicketListResponse = {
 };
 
 function TicketListScreen() {
-  const navigation = useNavigation();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const data = mockTicketListResponse;
   const tickets = data.tickets;
@@ -108,7 +111,10 @@ function TicketListScreen() {
           ticket => new Date(ticket.matchDate).getFullYear() === selectedSeason,
         );
 
-  const handlePressAddTicket = () => {};
+  // 티켓 추가
+  const handlePressAddTicket = () => {
+    navigation.navigate('AddTicket');
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
