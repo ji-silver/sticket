@@ -13,6 +13,19 @@ const barcodeModules = [
 
 const perforationDashes = Array.from({ length: 28 });
 
+const teamColors: Record<string, string> = {
+  키움: '#570514',
+  LG: '#C30452',
+  한화: '#FC4E00',
+  SSG: '#CE0E2D',
+  삼성: '#074CA1',
+  NC: '#315288',
+  KT: '#000000',
+  롯데: '#041E42',
+  KIA: '#EA0029',
+  두산: '#1A1748',
+};
+
 function TicketCard({ ticket }: TicketCardProps) {
   const date = new Date(ticket.matchDate);
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -37,7 +50,14 @@ function TicketCard({ ticket }: TicketCardProps) {
             <AppText style={styles.teamName} numberOfLines={1}>
               {ticket.awayTeamName}
             </AppText>
-            <AppText style={styles.teamRole}>AWAY</AppText>
+            <AppText
+              style={[
+                styles.teamRole,
+                { color: teamColors[ticket.awayTeamName] ?? '#AAAAAA' },
+              ]}
+            >
+              AWAY
+            </AppText>
           </View>
 
           <View style={styles.scoreCenter}>
@@ -53,7 +73,14 @@ function TicketCard({ ticket }: TicketCardProps) {
             <AppText style={styles.teamName} numberOfLines={1}>
               {ticket.homeTeamName}
             </AppText>
-            <AppText style={styles.teamRole}>HOME</AppText>
+            <AppText
+              style={[
+                styles.teamRole,
+                { color: teamColors[ticket.homeTeamName] ?? '#AAAAAA' },
+              ]}
+            >
+              HOME
+            </AppText>
           </View>
         </View>
       </View>
@@ -268,14 +295,14 @@ const styles = StyleSheet.create({
 
   barcode: {
     width: 108,
-    height: 32,
+    height: 28,
     flexDirection: 'row',
     alignItems: 'stretch',
     justifyContent: 'center',
   },
 
   barcodeBar: {
-    height: 32,
+    height: 28,
     backgroundColor: '#111111',
   },
 });
