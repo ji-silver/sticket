@@ -47,8 +47,39 @@ const mockTicketListResponse: TicketListResponse = {
       homeScore: 2,
       awayScore: 4,
       matchTime: '14:00',
-
-      barcodeValue: 'STICKET-20250921-0002',
+    },
+    {
+      id: 3,
+      matchDate: '2025-09-21',
+      stadiumName: '잠실야구장',
+      seatName: '3루 네이비석 214블록 6열 3번',
+      homeTeamName: 'LG',
+      awayTeamName: '키움',
+      homeScore: 2,
+      awayScore: 4,
+      matchTime: '14:00',
+    },
+    {
+      id: 4,
+      matchDate: '2025-09-21',
+      stadiumName: '잠실야구장',
+      seatName: '3루 네이비석 214블록 6열 3번',
+      homeTeamName: 'LG',
+      awayTeamName: '키움',
+      homeScore: 2,
+      awayScore: 4,
+      matchTime: '14:00',
+    },
+    {
+      id: 5,
+      matchDate: '2025-09-21',
+      stadiumName: '잠실야구장',
+      seatName: '3루 네이비석 214블록 6열 3번',
+      homeTeamName: 'LG',
+      awayTeamName: '키움',
+      homeScore: 2,
+      awayScore: 4,
+      matchTime: '14:00',
     },
   ],
 };
@@ -81,85 +112,96 @@ function TicketListScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.hero}>
-        <View style={styles.topBar}>
+      <View style={styles.topBar}>
+        <Pressable
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="뒤로 가기"
+        >
+          <ChevronLeft size={26} color="#111111" strokeWidth={2.4} />
+        </Pressable>
+
+        <AppText style={styles.headerTitle}>{diaryTitle} 티켓북</AppText>
+
+        {hasTickets && (
           <Pressable
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
+            style={styles.headerAddButton}
+            onPress={handlePressAddTicket}
             hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="티켓 추가"
           >
-            <ChevronLeft size={26} color="#111111" strokeWidth={2.4} />
+            <Plus size={16} color="#111111" strokeWidth={2.5} />
+            <AppText style={styles.headerAddButtonText}>추가</AppText>
           </Pressable>
-
-          <AppText style={styles.headerTitle}>{diaryTitle} 티켓북</AppText>
-        </View>
-
-        <View style={styles.heroContent}>
-          <View style={styles.heroTextBox}>
-            <View style={styles.ticketCountRow}>
-              <AppText style={styles.ticketCountNumber}>{ticketCount}</AppText>
-
-              <View style={styles.ticketCountTextBox}>
-                <AppText style={styles.ticketCountUnit}>개의</AppText>
-                <AppText style={styles.ticketCountTitle}>직관 티켓</AppText>
-              </View>
-            </View>
-          </View>
-
-          {hasTickets && (
-            <Pressable style={styles.addButton} onPress={handlePressAddTicket}>
-              <Plus size={17} color="#FFFFFF" strokeWidth={2.7} />
-              <AppText style={styles.addButtonText}>티켓 추가</AppText>
-            </Pressable>
-          )}
-        </View>
-
-        {hasTickets && seasons.length > 0 && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.seasonList}
-          >
-            {seasons.map(season => {
-              const isSelected = selectedSeason === season;
-
-              return (
-                <Pressable
-                  key={season}
-                  style={[
-                    styles.seasonChip,
-                    isSelected && styles.seasonChipSelected,
-                  ]}
-                  onPress={() => setSelectedSeason(season)}
-                >
-                  <AppText
-                    style={[
-                      styles.seasonChipText,
-                      isSelected && styles.seasonChipTextSelected,
-                    ]}
-                  >
-                    {season}
-                  </AppText>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
         )}
       </View>
 
       <ScrollView
         style={styles.content}
-        contentContainerStyle={styles.contentContainer}
+        stickyHeaderIndices={hasTickets ? [1] : []}
+        showsVerticalScrollIndicator={false}
       >
-        {hasTickets ? (
-          <View style={styles.ticketList}>
-            {filteredTickets.map(ticket => (
-              <TicketCard key={String(ticket.id)} ticket={ticket} />
-            ))}
+        <View style={styles.hero}>
+          <View style={styles.ticketCountRow}>
+            <AppText style={styles.ticketCountNumber}>{ticketCount}</AppText>
+
+            <View style={styles.ticketCountTextBox}>
+              <AppText style={styles.ticketCountUnit}>개의</AppText>
+              <AppText style={styles.ticketCountTitle}>직관 티켓</AppText>
+            </View>
           </View>
-        ) : (
-          <EmptyTicketState onPressAddTicket={handlePressAddTicket} />
+        </View>
+
+        {hasTickets && seasons.length > 0 && (
+          <View style={styles.seasonBar}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.seasonList}
+            >
+              {seasons.map(season => {
+                const isSelected = selectedSeason === season;
+
+                return (
+                  <Pressable
+                    key={season}
+                    style={[
+                      styles.seasonChip,
+                      isSelected && styles.seasonChipSelected,
+                    ]}
+                    onPress={() => setSelectedSeason(season)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isSelected }}
+                  >
+                    <AppText
+                      style={[
+                        styles.seasonChipText,
+                        isSelected && styles.seasonChipTextSelected,
+                      ]}
+                    >
+                      {season}
+                    </AppText>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
         )}
+
+        <View style={styles.contentContainer}>
+          {hasTickets ? (
+            <View style={styles.ticketList}>
+              {filteredTickets.map(ticket => (
+                <TicketCard key={String(ticket.id)} ticket={ticket} />
+              ))}
+            </View>
+          ) : (
+            <EmptyTicketState onPressAddTicket={handlePressAddTicket} />
+          )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -197,14 +239,13 @@ const styles = StyleSheet.create({
   },
   hero: {
     paddingHorizontal: 24,
-    paddingTop: 8,
+    paddingTop: 22,
     paddingBottom: 26,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F1F1',
+    backgroundColor: '#FFFFFF',
   },
   topBar: {
-    height: 38,
-    marginBottom: 22,
+    height: 52,
+    paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -216,35 +257,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerTitle: {
+    flex: 1,
     marginLeft: 2,
     fontSize: 18,
     fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#111111',
   },
-  heroContent: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    gap: 16,
-  },
-  heroTextBox: {
-    flex: 1,
-  },
-  addButton: {
-    height: 42,
-    paddingHorizontal: 14,
-    borderRadius: 21,
-    backgroundColor: '#111111',
+  headerAddButton: {
+    minWidth: 44,
+    height: 44,
+    marginRight: -4,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    justifyContent: 'flex-end',
+    gap: 4,
   },
-  addButtonText: {
-    fontSize: 13,
+  headerAddButtonText: {
+    fontSize: 15,
     fontFamily: fonts.bold,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#111111',
   },
   ticketCountRow: {
     flexDirection: 'row',
@@ -276,14 +309,21 @@ const styles = StyleSheet.create({
     lineHeight: 28,
   },
   seasonList: {
-    marginTop: 26,
+    paddingHorizontal: 24,
     gap: 8,
   },
+  seasonBar: {
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderColor: '#F1F1F1',
+    backgroundColor: '#FFFFFF',
+  },
   seasonChip: {
-    height: 38,
+    height: 34,
     minWidth: 68,
     paddingHorizontal: 16,
-    borderRadius: 19,
+    marginBottom: 8,
+    borderRadius: 17,
     borderWidth: 1,
     borderColor: '#E7E7E7',
     backgroundColor: '#FFFFFF',
