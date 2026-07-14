@@ -13,6 +13,7 @@ import { useNavigation } from '@react-navigation/core';
 import { useMemo, useState } from 'react';
 import AppCalendar from '../../components/common/AppCalendar.tsx';
 import { DateData } from 'react-native-calendars';
+import { colors } from '../../styles/colors.ts';
 
 interface KboGame {
   id: number;
@@ -94,8 +95,8 @@ function AddTicketScreen() {
     return {
       [selectedDate]: {
         selected: true,
-        selectedColor: '#111111',
-        selectedTextColor: '#FFFFFF',
+        selectedColor: colors.primary,
+        selectedTextColor: colors.onPrimary,
       },
     };
   }, [selectedDate]);
@@ -138,7 +139,7 @@ function AddTicketScreen() {
           accessibilityRole={'button'}
           accessibilityLabel={'뒤로 가기'}
         >
-          <ChevronLeft size={26} color={'#111111'} strokeWidth={2.4} />
+          <ChevronLeft size={26} color={colors.text} strokeWidth={2.4} />
         </Pressable>
 
         <AppText style={styles.headerTitle}>티켓 추가</AppText>
@@ -232,7 +233,11 @@ function AddTicketScreen() {
                           ]}
                         >
                           {isSelected && (
-                            <Check size={13} color="#FFFFFF" strokeWidth={3} />
+                            <Check
+                              size={13}
+                              color={colors.onPrimary}
+                              strokeWidth={3}
+                            />
                           )}
                         </View>
                       </View>
@@ -318,7 +323,7 @@ export default AddTicketScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
   },
   topBar: {
     height: 52,
@@ -337,7 +342,7 @@ const styles = StyleSheet.create({
     marginLeft: 2,
     fontSize: 18,
     fontFamily: fonts.bold,
-    color: '#111111',
+    color: colors.text,
   },
 
   content: {
@@ -354,7 +359,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontFamily: fonts.bold,
-    color: '#111111',
+    color: colors.text,
   },
 
   dateSummaryCard: {
@@ -377,16 +382,16 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontSize: 18,
     fontFamily: fonts.bold,
-    color: '#111111',
+    color: colors.text,
   },
   changeButtonText: {
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 14,
-    backgroundColor: '#111111',
+    backgroundColor: colors.primary,
     fontSize: 13,
     fontFamily: fonts.bold,
-    color: '#FFFFFF',
+    color: colors.onPrimary,
   },
   gameSection: {
     marginTop: 28,
@@ -454,8 +459,8 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   gameCardSelected: {
-    borderColor: '#111111',
-    backgroundColor: '#F7F7F7',
+    borderColor: colors.primary,
+    backgroundColor: colors.primarySoft,
   },
   gameCardPressed: {
     opacity: 0.78,
@@ -482,7 +487,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F2F2F2',
   },
   timeBadgeSelected: {
-    backgroundColor: '#111111',
+    backgroundColor: colors.primary,
   },
   gameTime: {
     fontSize: 12,
@@ -490,7 +495,7 @@ const styles = StyleSheet.create({
     color: '#555555',
   },
   gameTimeSelected: {
-    color: '#FFFFFF',
+    color: colors.onPrimary,
   },
   stadiumName: {
     flex: 1,
@@ -510,8 +515,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   selectionIndicatorSelected: {
-    borderColor: '#111111',
-    backgroundColor: '#111111',
+    borderColor: colors.primary,
+    backgroundColor: colors.primary,
   },
   matchupRow: {
     flexDirection: 'row',
@@ -531,7 +536,7 @@ const styles = StyleSheet.create({
   teamName: {
     fontSize: 20,
     fontFamily: fonts.bold,
-    color: '#111111',
+    color: colors.text,
     textAlign: 'center',
   },
   vsText: {
@@ -563,7 +568,7 @@ const styles = StyleSheet.create({
     padding: 0,
     fontSize: 16,
     fontFamily: fonts.regular,
-    color: '#111111',
+    color: colors.text,
   },
 
   saveButton: {
@@ -571,16 +576,16 @@ const styles = StyleSheet.create({
     marginTop: 30,
     borderRadius: 26,
     borderCurve: 'continuous',
-    backgroundColor: '#111111',
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   saveButtonDisabled: {
-    backgroundColor: '#D8D8D8',
+    backgroundColor: colors.disabled,
   },
   saveButtonText: {
     fontSize: 15,
     fontFamily: fonts.bold,
-    color: '#FFFFFF',
+    color: colors.onPrimary,
   },
 });

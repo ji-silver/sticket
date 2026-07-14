@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { fonts } from '../../styles/fonts.ts';
 import AppText from '../../components/common/AppText.tsx';
+import { colors } from '../../styles/colors.ts';
 
 type SportId = 'baseball' | 'soccer' | 'basketball' | 'volleyball';
 
@@ -138,7 +139,7 @@ function AddDiaryScreen() {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <ChevronLeft size={26} color={'#111111'} strokeWidth={2.4} />
+          <ChevronLeft size={26} color={colors.text} strokeWidth={2.4} />
         </Pressable>
         <AppText style={styles.headerTitle}>새 티켓북</AppText>
       </View>
@@ -276,7 +277,7 @@ export default AddDiaryScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
   },
   header: {
     height: 60,
@@ -296,7 +297,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: fonts.bold,
     fontWeight: '700',
-    color: '#111111',
+    color: colors.text,
   },
   scrollContent: {
     paddingBottom: 24,
@@ -316,7 +317,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: fonts.bold,
     fontWeight: '700',
-    color: '#111111',
+    color: colors.text,
   },
   sportList: {
     flexDirection: 'row',
@@ -334,8 +335,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   sportChipSelected: {
-    borderColor: '#111111',
-    backgroundColor: '#111111',
+    borderColor: colors.primary,
+    backgroundColor: colors.primary,
   },
 
   sportChipText: {
@@ -345,7 +346,7 @@ const styles = StyleSheet.create({
     color: '#777777',
   },
   sportChipTextSelected: {
-    color: '#FFFFFF',
+    color: colors.onPrimary,
   },
 
   colorGrid: {
@@ -366,7 +367,7 @@ const styles = StyleSheet.create({
   },
   colorSwatchButtonSelected: {
     borderWidth: 2,
-    borderColor: '#111111',
+    borderColor: colors.primary,
   },
   colorSwatch: {
     width: 30,
@@ -382,7 +383,7 @@ const styles = StyleSheet.create({
     top: 0,
     width: 1,
     height: 30,
-    backgroundColor: '#000000',
+    backgroundColor: colors.text,
   },
 
   photoCardRow: {
@@ -439,7 +440,7 @@ const styles = StyleSheet.create({
   createButton: {
     height: 54,
     borderRadius: 18,
-    backgroundColor: '#111111',
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -450,7 +451,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: fonts.bold,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.onPrimary,
   },
   createButtonTextDisabled: {
     color: '#AAAAAA',

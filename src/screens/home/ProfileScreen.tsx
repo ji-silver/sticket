@@ -1,6 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 import AppText from '../../components/common/AppText.tsx';
 import { fonts } from '../../styles/fonts.ts';
+import { colors } from '../../styles/colors.ts';
 
 function ProfileScreen() {
   return (
@@ -17,12 +18,12 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
   },
   title: {
     fontSize: 18,
     fontFamily: fonts.bold,
     fontWeight: '700',
-    color: '#111111',
+    color: colors.text,
   },
 });

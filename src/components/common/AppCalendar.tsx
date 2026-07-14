@@ -2,6 +2,7 @@ import { Calendar, CalendarProps } from 'react-native-calendars';
 import { StyleSheet, View } from 'react-native';
 import '../../config/calendarLocale.ts';
 import { fonts } from '../../styles/fonts.ts';
+import { colors } from '../../styles/colors.ts';
 
 interface AppCalendarProps extends CalendarProps {
   contained?: boolean;
@@ -15,15 +16,15 @@ function AppCalendar({ contained = true, theme, ...props }: AppCalendarProps) {
         monthFormat={'yyyy년 M월'}
         {...props}
         theme={{
-          calendarBackground: '#FFFFFF',
+          calendarBackground: colors.surface,
           textSectionTitleColor: '#9A9A9A',
-          selectedDayBackgroundColor: '#111111',
-          selectedDayTextColor: '#FFFFFF',
-          todayTextColor: '#111111',
-          dayTextColor: '#111111',
-          textDisabledColor: '#D8D8D8',
-          monthTextColor: '#111111',
-          arrowColor: '#111111',
+          selectedDayBackgroundColor: colors.primary,
+          selectedDayTextColor: colors.onPrimary,
+          todayTextColor: colors.primary,
+          dayTextColor: colors.text,
+          textDisabledColor: colors.disabled,
+          monthTextColor: colors.text,
+          arrowColor: colors.primary,
           textDayFontFamily: fonts.regular,
           textMonthFontFamily: fonts.regular,
           textDayHeaderFontFamily: fonts.regular,
@@ -46,8 +47,8 @@ const styles = StyleSheet.create({
   calendarCard: {
     paddingVertical: 12,
     borderRadius: 18,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000000',
+    backgroundColor: colors.surface,
+    shadowColor: colors.shadow,
     shadowOffset: {
       width: 0,
       height: 3,

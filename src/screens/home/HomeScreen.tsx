@@ -11,6 +11,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
 import { fonts } from '../../styles/fonts.ts';
 import AppText from '../../components/common/AppText.tsx';
+import { colors } from '../../styles/colors.ts';
 
 type HomeNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -124,9 +125,6 @@ function HomeScreen() {
     });
   };
 
-  // 티켓북 수정
-  const handleUpdateDiary = () => {};
-
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* SafeAreaView 안전 영역을 위에만 적용하기 */}
@@ -143,7 +141,7 @@ function HomeScreen() {
 
             {hasDiaries && (
               <Pressable style={styles.addButton} onPress={handlePressAddDiary}>
-                <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
+                <Plus size={16} color={colors.onPrimary} strokeWidth={2.5} />
                 <AppText style={styles.addButtonText}>다이어리 추가</AppText>
               </Pressable>
             )}
@@ -193,7 +191,7 @@ export default HomeScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
   },
   scrollContent: {
     paddingBottom: 24,
@@ -216,7 +214,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontFamily: fonts.black,
     fontWeight: '900',
-    color: '#111111',
+    color: colors.primary,
   },
   subtitle: {
     marginTop: 4,
@@ -229,11 +227,11 @@ const styles = StyleSheet.create({
     height: 42,
     paddingHorizontal: 14,
     borderRadius: 21,
-    backgroundColor: '#111111',
+    backgroundColor: colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    shadowColor: '#000000',
+    shadowColor: colors.shadow,
     shadowOpacity: 0.18,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 5 },
@@ -243,6 +241,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: fonts.bold,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.onPrimary,
   },
 });

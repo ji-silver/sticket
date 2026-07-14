@@ -11,6 +11,7 @@ import { Bucket } from '../types.ts';
 import { useRef, useState } from 'react';
 import { fonts } from '../../../styles/fonts.ts';
 import AppText from '../../../components/common/AppText.tsx';
+import { colors } from '../../../styles/colors.ts';
 
 interface BucketEditModalProps {
   visible: boolean;
@@ -95,7 +96,7 @@ function BucketEditModal({
             >
               <Plus
                 size={20}
-                color={canAddBucket ? '#FFFFFF' : '#A8A8A8'}
+                color={canAddBucket ? colors.onPrimary : '#A8A8A8'}
                 strokeWidth={2.7}
               />
             </Pressable>
@@ -123,7 +124,7 @@ function BucketEditModal({
                   hitSlop={8}
                 >
                   {bucket.isCompleted && (
-                    <Check size={16} color="#FFFFFF" strokeWidth={3} />
+                    <Check size={16} color={colors.onPrimary} strokeWidth={3} />
                   )}
                 </Pressable>
 
@@ -169,7 +170,7 @@ const styles = StyleSheet.create({
     paddingBottom: 30,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
   },
   sheetHandle: {
     alignSelf: 'center',
@@ -189,7 +190,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontFamily: fonts.bold,
     fontWeight: '700',
-    color: '#111111',
+    color: colors.text,
   },
   sheetSubtitle: {
     marginTop: 6,
@@ -208,7 +209,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: fonts.bold,
     fontWeight: '700',
-    color: '#111111',
+    color: colors.text,
   },
   addInputRow: {
     height: 48,
@@ -228,13 +229,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: fonts.regular,
     fontWeight: '400',
-    color: '#111111',
+    color: colors.text,
   },
   addSubmitButton: {
     width: 44,
     height: 44,
     borderRadius: 10,
-    backgroundColor: '#111111',
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -245,7 +246,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: fonts.bold,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.onPrimary,
   },
   addSubmitButtonTextDisabled: {
     color: '#A8A8A8',
@@ -268,7 +269,7 @@ const styles = StyleSheet.create({
     height: 26,
     marginRight: 12,
     borderRadius: 13,
-    backgroundColor: '#111111',
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -290,13 +291,13 @@ const styles = StyleSheet.create({
     borderRadius: 7,
     borderWidth: 1.5,
     borderColor: '#D6D6D6',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   checkBoxCompleted: {
-    borderColor: '#111111',
-    backgroundColor: '#111111',
+    borderColor: colors.primary,
+    backgroundColor: colors.primary,
   },
   editInputWrap: {
     flex: 1,
@@ -319,7 +320,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: fonts.regular,
     fontWeight: '400',
-    color: '#111111',
+    color: colors.text,
   },
   deleteButton: {
     width: 36,

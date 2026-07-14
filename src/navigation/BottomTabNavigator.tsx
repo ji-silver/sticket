@@ -4,6 +4,7 @@ import CalendarScreen from '../screens/home/CalendarScreen.tsx';
 import ProfileScreen from '../screens/home/ProfileScreen.tsx';
 import { CalendarDays, Home, User } from 'lucide-react-native';
 import { fonts } from '../styles/fonts.ts';
+import { colors } from '../styles/colors.ts';
 
 const Tab = createBottomTabNavigator();
 
@@ -13,6 +14,8 @@ function BottomTabNavigator() {
       screenOptions={({ route }) => ({
         headerShown: false, // 헤더를 숨기도록 설정
         headerTitleAlign: 'center',
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.secondary,
         tabBarLabelStyle: {
           marginTop: 4,
           fontFamily: fonts.bold,

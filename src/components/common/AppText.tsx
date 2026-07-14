@@ -6,6 +6,7 @@ import {
   StyleProp,
 } from 'react-native';
 import { fonts } from '../../styles/fonts.ts';
+import { colors } from '../../styles/colors.ts';
 
 type AppTextWeight =
   | 'regular'
@@ -60,7 +61,7 @@ export default AppText;
 const styles = StyleSheet.create({
   text: {
     fontFamily: fonts.regular,
-    color: '#111111',
+    color: colors.text,
   },
   fontWeightReset: {
     fontWeight: undefined,

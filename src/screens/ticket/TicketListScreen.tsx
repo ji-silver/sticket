@@ -9,6 +9,7 @@ import TicketCard from './components/TicketCard.tsx';
 import type { SportId, Ticket } from './types.ts';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
+import { colors } from '../../styles/colors.ts';
 
 interface TicketListResponse {
   diary: {
@@ -126,7 +127,7 @@ function TicketListScreen() {
           accessibilityRole="button"
           accessibilityLabel="뒤로 가기"
         >
-          <ChevronLeft size={26} color="#111111" strokeWidth={2.4} />
+          <ChevronLeft size={26} color={colors.text} strokeWidth={2.4} />
         </Pressable>
 
         <AppText style={styles.headerTitle}>{diaryTitle} 티켓북</AppText>
@@ -139,7 +140,7 @@ function TicketListScreen() {
             accessibilityRole="button"
             accessibilityLabel="티켓 추가"
           >
-            <Plus size={16} color="#111111" strokeWidth={2.5} />
+            <Plus size={16} color={colors.text} strokeWidth={2.5} />
             <AppText style={styles.headerAddButtonText}>추가</AppText>
           </Pressable>
         )}
@@ -234,7 +235,7 @@ function EmptyTicketState({
         </AppText>
 
         <Pressable style={styles.emptyTicketButton} onPress={onPressAddTicket}>
-          <Plus size={15} color="#FFFFFF" strokeWidth={2.7} />
+          <Plus size={15} color={colors.onPrimary} strokeWidth={2.7} />
           <AppText style={styles.emptyTicketButtonText}>티켓 추가</AppText>
         </Pressable>
       </View>
@@ -245,13 +246,13 @@ function EmptyTicketState({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
   },
   hero: {
     paddingHorizontal: 24,
     paddingTop: 22,
     paddingBottom: 26,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
   },
   topBar: {
     height: 52,
@@ -272,7 +273,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: fonts.bold,
     fontWeight: '700',
-    color: '#111111',
+    color: colors.text,
   },
   headerAddButton: {
     minWidth: 44,
@@ -287,7 +288,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: fonts.bold,
     fontWeight: '700',
-    color: '#111111',
+    color: colors.text,
   },
   ticketCountRow: {
     flexDirection: 'row',
@@ -297,7 +298,7 @@ const styles = StyleSheet.create({
     fontSize: 64,
     fontFamily: fonts.black,
     fontWeight: '900',
-    color: '#111111',
+    color: colors.text,
     lineHeight: 68,
   },
   ticketCountTextBox: {
@@ -308,14 +309,14 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontFamily: fonts.bold,
     fontWeight: '700',
-    color: '#111111',
+    color: colors.text,
     lineHeight: 28,
   },
   ticketCountTitle: {
     fontSize: 24,
     fontFamily: fonts.bold,
     fontWeight: '700',
-    color: '#111111',
+    color: colors.text,
     lineHeight: 28,
   },
   seasonList: {
@@ -341,8 +342,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   seasonChipSelected: {
-    borderColor: '#111111',
-    backgroundColor: '#111111',
+    borderColor: colors.primary,
+    backgroundColor: colors.primary,
   },
   seasonChipText: {
     fontSize: 14,
@@ -351,11 +352,11 @@ const styles = StyleSheet.create({
     color: '#777777',
   },
   seasonChipTextSelected: {
-    color: '#FFFFFF',
+    color: colors.onPrimary,
   },
   content: {
     flex: 1,
-    backgroundColor: '#F7F7F7',
+    backgroundColor: colors.background,
   },
   contentContainer: {
     paddingHorizontal: 24,
@@ -408,7 +409,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: fonts.bold,
     fontWeight: '700',
-    color: '#111111',
+    color: colors.text,
   },
   emptyTicketDescription: {
     marginTop: 8,
@@ -422,7 +423,7 @@ const styles = StyleSheet.create({
     marginTop: 22,
     paddingHorizontal: 16,
     borderRadius: 20,
-    backgroundColor: '#111111',
+    backgroundColor: colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
@@ -431,6 +432,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: fonts.bold,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.onPrimary,
   },
 });

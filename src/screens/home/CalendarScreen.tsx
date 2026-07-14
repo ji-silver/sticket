@@ -1,6 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 import { fonts } from '../../styles/fonts.ts';
 import AppText from '../../components/common/AppText.tsx';
+import { colors } from '../../styles/colors.ts';
 
 function CalendarScreen() {
   return (
@@ -17,12 +18,12 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
   },
   title: {
     fontSize: 18,
     fontFamily: fonts.bold,
     fontWeight: '700',
-    color: '#111111',
+    color: colors.text,
   },
 });

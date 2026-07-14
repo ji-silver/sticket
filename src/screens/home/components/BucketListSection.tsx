@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import BucketEditModal from './BucketEditModal.tsx';
 import { fonts } from '../../../styles/fonts.ts';
 import AppText from '../../../components/common/AppText.tsx';
+import { colors } from '../../../styles/colors.ts';
 
 interface BucketListSectionProps {
   diaryId: number;
@@ -159,7 +160,7 @@ function BucketListItem({
         ]}
       >
         {bucket.isCompleted && (
-          <Check size={16} color="#FFFFFF" strokeWidth={3} />
+          <Check size={16} color={colors.onPrimary} strokeWidth={3} />
         )}
       </Pressable>
 
@@ -193,14 +194,14 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontFamily: fonts.bold,
     fontWeight: '700',
-    color: '#111111',
+    color: colors.text,
   },
 
   bucketCard: {
     borderRadius: 14,
     borderWidth: 1,
     borderColor: '#EEEEEE',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     paddingHorizontal: 18,
     paddingTop: 14,
     paddingBottom: 12,
@@ -266,8 +267,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   checkBoxCompleted: {
-    borderColor: '#111111',
-    backgroundColor: '#111111',
+    borderColor: colors.primary,
+    backgroundColor: colors.primary,
   },
   bucketItemText: {
     marginLeft: 12,

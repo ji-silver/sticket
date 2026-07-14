@@ -12,6 +12,7 @@ import DiaryCover from '../../../components/DiaryCover';
 import type { Diary } from '../types';
 import { fonts } from '../../../styles/fonts.ts';
 import AppText from '../../../components/common/AppText.tsx';
+import { colors } from '../../../styles/colors.ts';
 
 interface DiarySectionProps {
   diaries: Diary[];
@@ -138,7 +139,7 @@ function EmptyDiaryState({ onPressAddDiary }: { onPressAddDiary: () => void }) {
       </AppText>
 
       <Pressable style={styles.emptyDiaryButton} onPress={onPressAddDiary}>
-        <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
+        <Plus size={16} color={colors.onPrimary} strokeWidth={2.5} />
         <AppText style={styles.emptyDiaryButtonText}>티켓북 만들기</AppText>
       </Pressable>
     </View>
@@ -163,7 +164,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontFamily: fonts.bold,
     fontWeight: '700',
-    color: '#111111',
+    color: colors.text,
   },
   sectionMenuButton: {
     width: 36,
@@ -200,7 +201,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: fonts.bold,
     fontWeight: '700',
-    color: '#111111',
+    color: colors.text,
     textAlign: 'center',
   },
   recordCount: {
@@ -226,14 +227,14 @@ const styles = StyleSheet.create({
   },
   pageDotActive: {
     width: 18,
-    backgroundColor: '#111111',
+    backgroundColor: colors.primary,
   },
   emptyDiaryCard: {
     marginHorizontal: 24,
     borderRadius: 24,
     borderWidth: 1,
     borderColor: '#EEEEEE',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     alignItems: 'center',
     paddingHorizontal: 24,
     paddingTop: 28,
@@ -244,7 +245,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: fonts.bold,
     fontWeight: '700',
-    color: '#111111',
+    color: colors.text,
     textAlign: 'center',
   },
   emptyDiaryButton: {
@@ -252,7 +253,7 @@ const styles = StyleSheet.create({
     height: 46,
     paddingHorizontal: 18,
     borderRadius: 23,
-    backgroundColor: '#111111',
+    backgroundColor: colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
@@ -261,6 +262,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: fonts.bold,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.onPrimary,
   },
 });
