@@ -6,14 +6,15 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CalendarX, Check, ChevronLeft } from 'lucide-react-native';
+import { Check, ChevronLeft } from 'lucide-react-native';
 import AppText from '../../components/common/AppText.tsx';
 import { fonts } from '../../styles/fonts.ts';
 import { useNavigation } from '@react-navigation/core';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import AppCalendar from '../../components/common/AppCalendar.tsx';
 import { DateData } from 'react-native-calendars';
 import { colors } from '../../styles/colors.ts';
+import EmptyCard from '../../components/common/EmptyCard.tsx';
 
 interface KboGame {
   id: number;
@@ -77,29 +78,17 @@ function AddTicketScreen() {
 
   const canSaveTicket = selectedDate.length > 0 && selectedGameId !== null;
 
-  const selectedDateText = useMemo(() => {
-    if (!selectedDate) return '';
+  const selectedDateText = selectedDate ? formatDateText(selectedDate) : '';
 
-    const date = new Date(selectedDate);
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    const weekday = ['일', '월', '화', '수', '목', '금', '토'][date.getDay()];
-
-    return `${year}년 ${month}월 ${day}일 ${weekday}요일`;
-  }, [selectedDate]);
-
-  const markedDates = useMemo(() => {
-    if (!selectedDate) return {};
-
-    return {
-      [selectedDate]: {
-        selected: true,
-        selectedColor: colors.primary,
-        selectedTextColor: colors.onPrimary,
-      },
-    };
-  }, [selectedDate]);
+  const markedDates = selectedDate
+    ? {
+        [selectedDate]: {
+          selected: true,
+          selectedColor: colors.primary,
+          selectedTextColor: colors.onPrimary,
+        },
+      }
+    : {};
 
   const handlePressDay = (day: DateData) => {
     if (selectedDate !== day.dateString) {
@@ -123,11 +112,9 @@ function AddTicketScreen() {
     setSelectedGameId(gameId);
   };
 
-  const gamesForSelectedDate = useMemo(() => {
-    if (!selectedDate) return [];
-
-    return mockKboGames.filter(game => game.date === selectedDate);
-  }, [selectedDate]);
+  const gamesForSelectedDate = selectedDate
+    ? mockKboGames.filter(game => game.date === selectedDate)
+    : [];
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -263,20 +250,10 @@ function AddTicketScreen() {
                   );
                 })
               ) : (
-                <View style={styles.emptyGameCard}>
-                  <View style={styles.emptyGameIcon}>
-                    <CalendarX size={22} color="#777777" strokeWidth={2} />
-                  </View>
-
-                  <View style={styles.emptyGameTextGroup}>
-                    <AppText style={styles.emptyGameTitle}>
-                      이 날짜에는 경기가 없어요
-                    </AppText>
-                    <AppText style={styles.emptyGameDescription}>
-                      다른 날짜를 선택해 직관 경기를 찾아보세요
-                    </AppText>
-                  </View>
-                </View>
+                <EmptyCard
+                  title="이 날짜에는 경기가 없어요"
+                  description="다른 날짜를 선택해 직관 경기를 찾아보세요"
+                />
               )}
             </View>
           </View>
@@ -319,6 +296,16 @@ function AddTicketScreen() {
 }
 
 export default AddTicketScreen;
+
+const formatDateText = (dateString: string) => {
+  const date = new Date(dateString);
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const weekday = ['일', '월', '화', '수', '목', '금', '토'][date.getDay()];
+
+  return `${year}년 ${month}월 ${day}일 ${weekday}요일`;
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -402,48 +389,6 @@ const styles = StyleSheet.create({
 
   gameList: {
     gap: 10,
-  },
-
-  emptyGameCard: {
-    minHeight: 210,
-    padding: 28,
-    borderRadius: 18,
-    borderCurve: 'continuous',
-    borderWidth: 1,
-    borderColor: '#EEEEEE',
-    backgroundColor: '#F7F7F7',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 16,
-  },
-
-  emptyGameIcon: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  emptyGameTextGroup: {
-    alignItems: 'center',
-    gap: 6,
-  },
-
-  emptyGameTitle: {
-    fontSize: 15,
-    fontFamily: fonts.bold,
-    color: '#333333',
-    textAlign: 'center',
-  },
-
-  emptyGameDescription: {
-    fontSize: 13,
-    lineHeight: 19,
-    fontFamily: fonts.regular,
-    color: '#777777',
-    textAlign: 'center',
   },
 
   gameCard: {

@@ -68,8 +68,6 @@ const initialBucketsByDiaryId: Record<number, Bucket[]> = {
       isCompleted: false,
     },
   ],
-  2: [],
-  3: [],
 };
 
 function HomeScreen() {
