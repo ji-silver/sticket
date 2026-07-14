@@ -47,9 +47,6 @@ function TicketCard({ ticket }: TicketCardProps) {
 
         <View style={styles.scoreBoard}>
           <View style={styles.teamSide}>
-            <AppText style={styles.teamName} numberOfLines={1}>
-              {ticket.awayTeamName}
-            </AppText>
             <AppText
               style={[
                 styles.teamRole,
@@ -57,6 +54,9 @@ function TicketCard({ ticket }: TicketCardProps) {
               ]}
             >
               AWAY
+            </AppText>
+            <AppText style={styles.teamName} numberOfLines={1}>
+              {ticket.awayTeamName}
             </AppText>
           </View>
 
@@ -70,9 +70,6 @@ function TicketCard({ ticket }: TicketCardProps) {
           </View>
 
           <View style={styles.teamSide}>
-            <AppText style={styles.teamName} numberOfLines={1}>
-              {ticket.homeTeamName}
-            </AppText>
             <AppText
               style={[
                 styles.teamRole,
@@ -80,6 +77,9 @@ function TicketCard({ ticket }: TicketCardProps) {
               ]}
             >
               HOME
+            </AppText>
+            <AppText style={styles.teamName} numberOfLines={1}>
+              {ticket.homeTeamName}
             </AppText>
           </View>
         </View>
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
   },
 
   teamRole: {
-    marginTop: 5,
+    marginBottom: 5,
     fontSize: 9,
     fontFamily: fonts.bold,
     color: '#AAAAAA',
