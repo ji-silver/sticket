@@ -3,7 +3,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronRight, LogOut } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useState } from 'react';
 import AppText from '../../components/common/AppText.tsx';
+import ConfirmDialog from '../../components/common/ConfirmDialog.tsx';
 import InlineActionButton from '../../components/common/InlineActionButton.tsx';
 import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
@@ -31,6 +33,7 @@ const appVersion = '0.0.1';
 
 function ProfileScreen() {
   const navigation = useNavigation<ProfileNavigationProp>();
+  const [isLogoutDialogVisible, setIsLogoutDialogVisible] = useState(false);
   const totalGames =
     attendanceRecord.win + attendanceRecord.lose + attendanceRecord.draw;
 
@@ -154,7 +157,7 @@ function ProfileScreen() {
                 styles.serviceRow,
                 pressed && styles.serviceRowPressed,
               ]}
-              onPress={() => {}}
+              onPress={() => setIsLogoutDialogVisible(true)}
               accessibilityRole="button"
             >
               <AppText style={styles.serviceRowText}>로그아웃</AppText>
@@ -177,6 +180,15 @@ function ProfileScreen() {
           </View>
         </View>
       </ScrollView>
+
+      <ConfirmDialog
+        visible={isLogoutDialogVisible}
+        title="로그아웃할까요?"
+        description="다시 이용하려면 로그인이 필요해요."
+        confirmLabel="로그아웃"
+        onConfirm={() => setIsLogoutDialogVisible(false)}
+        onCancel={() => setIsLogoutDialogVisible(false)}
+      />
     </SafeAreaView>
   );
 }
