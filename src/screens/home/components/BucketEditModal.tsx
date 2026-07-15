@@ -11,6 +11,7 @@ import { Bucket } from '../types.ts';
 import { useRef, useState } from 'react';
 import { fonts } from '../../../styles/fonts.ts';
 import AppText from '../../../components/common/AppText.tsx';
+import InlineActionButton from '../../../components/common/InlineActionButton.tsx';
 import { colors } from '../../../styles/colors.ts';
 
 interface BucketEditModalProps {
@@ -70,9 +71,11 @@ function BucketEditModal({
               </AppText>
             </View>
 
-            <Pressable style={styles.doneButton} onPress={onClose}>
-              <AppText style={styles.doneButtonText}>완료</AppText>
-            </Pressable>
+            <InlineActionButton
+              label="완료"
+              tone="primary"
+              onPress={onClose}
+            />
           </View>
 
           <View style={styles.addInputRow}>
@@ -198,18 +201,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semiBold,
     fontWeight: '600',
     color: '#9A9A9A',
-  },
-  doneButton: {
-    height: 40,
-    paddingHorizontal: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  doneButtonText: {
-    fontSize: 15,
-    fontFamily: fonts.bold,
-    fontWeight: '700',
-    color: colors.text,
   },
   addInputRow: {
     height: 48,

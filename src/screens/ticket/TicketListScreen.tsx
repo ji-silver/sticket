@@ -11,6 +11,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
 import { colors } from '../../styles/colors.ts';
 import FilterChip from '../../components/common/FilterChip.tsx';
+import InlineActionButton from '../../components/common/InlineActionButton.tsx';
 
 interface TicketListResponse {
   diary: {
@@ -134,16 +135,15 @@ function TicketListScreen() {
         <AppText style={styles.headerTitle}>{diaryTitle} 티켓북</AppText>
 
         {hasTickets && (
-          <Pressable
-            style={styles.headerAddButton}
+          <InlineActionButton
+            label="추가"
+            tone="primary"
             onPress={handlePressAddTicket}
-            hitSlop={8}
-            accessibilityRole="button"
             accessibilityLabel="티켓 추가"
-          >
-            <Plus size={16} color={colors.text} strokeWidth={2.5} />
-            <AppText style={styles.headerAddButtonText}>추가</AppText>
-          </Pressable>
+            icon={
+              <Plus size={16} color={colors.primary} strokeWidth={2.5} />
+            }
+          />
         )}
       </View>
 
@@ -259,21 +259,6 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 2,
     fontSize: 18,
-    fontFamily: fonts.bold,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  headerAddButton: {
-    minWidth: 44,
-    height: 44,
-    marginRight: -4,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 4,
-  },
-  headerAddButtonText: {
-    fontSize: 15,
     fontFamily: fonts.bold,
     fontWeight: '700',
     color: colors.text,

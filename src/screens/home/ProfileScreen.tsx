@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ChevronRight, LogOut } from 'lucide-react-native';
 import AppText from '../../components/common/AppText.tsx';
 import FilterChip from '../../components/common/FilterChip.tsx';
+import InlineActionButton from '../../components/common/InlineActionButton.tsx';
 import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
 
@@ -57,15 +58,11 @@ function ProfileScreen() {
               <AppText style={styles.nickname}>{profile.nickname}</AppText>
             </View>
 
-            <Pressable
+            <InlineActionButton
+              label="수정"
               onPress={() => {}}
-              style={styles.editButton}
-              hitSlop={8}
-              accessibilityRole={'button'}
-              accessibilityLabel={'프로필 수정'}
-            >
-              <AppText style={styles.editButtonText}>수정</AppText>
-            </Pressable>
+              accessibilityLabel="프로필 수정"
+            />
           </View>
 
           <View style={styles.divider} />
@@ -266,20 +263,6 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
 
-  editButton: {
-    minWidth: 54,
-    height: 34,
-    paddingHorizontal: 14,
-    borderRadius: 17,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.primarySoft,
-  },
-  editButtonText: {
-    fontSize: 13,
-    fontFamily: fonts.bold,
-    color: colors.primary,
-  },
   divider: {
     height: 1,
     marginVertical: 20,

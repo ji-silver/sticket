@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import BucketEditModal from './BucketEditModal.tsx';
 import { fonts } from '../../../styles/fonts.ts';
 import AppText from '../../../components/common/AppText.tsx';
+import InlineActionButton from '../../../components/common/InlineActionButton.tsx';
 import { colors } from '../../../styles/colors.ts';
 
 interface BucketListSectionProps {
@@ -76,15 +77,10 @@ function BucketListSection({
           </AppText>
         </View>
 
-        <Pressable
+        <InlineActionButton
+          label={isBucketEmpty ? '추가' : '수정'}
           onPress={() => setIsEditVisible(true)}
-          style={styles.editButton}
-          hitSlop={8}
-        >
-          <AppText style={styles.editButtonText}>
-            {isBucketEmpty ? '추가' : '수정'}
-          </AppText>
-        </Pressable>
+        />
       </View>
 
       <View style={styles.bucketCard}>
@@ -231,19 +227,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#666666',
-  },
-
-  editButton: {
-    paddingHorizontal: 4,
-    minHeight: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  editButtonText: {
-    fontSize: 14,
-    fontFamily: fonts.bold,
-    fontWeight: '700',
-    color: '#777777',
   },
 
   bucketItem: {
