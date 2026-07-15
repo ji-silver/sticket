@@ -2,11 +2,19 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import { ChevronRight, LogOut } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AppText from '../../components/common/AppText.tsx';
 import FilterChip from '../../components/common/FilterChip.tsx';
 import InlineActionButton from '../../components/common/InlineActionButton.tsx';
 import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
+import type { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
+
+type ProfileNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'MainTab'
+>;
 
 const profile = {
   nickname: '지은',
@@ -33,6 +41,7 @@ const attendanceRecords = [
 const appVersion = '0.0.1';
 
 function ProfileScreen() {
+  const navigation = useNavigation<ProfileNavigationProp>();
   const [selectedRecordId, setSelectedRecordId] = useState(0);
   const attendanceRecord =
     attendanceRecords.find(record => record.id === selectedRecordId) ??
@@ -60,7 +69,7 @@ function ProfileScreen() {
 
             <InlineActionButton
               label="수정"
-              onPress={() => {}}
+              onPress={() => navigation.navigate('ProfileEdit')}
               accessibilityLabel="프로필 수정"
             />
           </View>
@@ -383,7 +392,7 @@ const styles = StyleSheet.create({
   },
   serviceDivider: {
     height: 1,
-    marginLeft: 18,
+    marginHorizontal: 18,
     backgroundColor: colors.border,
   },
   accountSection: {
