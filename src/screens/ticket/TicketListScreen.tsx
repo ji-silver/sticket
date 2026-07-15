@@ -10,6 +10,7 @@ import type { SportId, Ticket } from './types.ts';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
 import { colors } from '../../styles/colors.ts';
+import FilterChip from '../../components/common/FilterChip.tsx';
 
 interface TicketListResponse {
   diary: {
@@ -173,25 +174,12 @@ function TicketListScreen() {
                 const isSelected = selectedSeason === season;
 
                 return (
-                  <Pressable
+                  <FilterChip
                     key={season}
-                    style={[
-                      styles.seasonChip,
-                      isSelected && styles.seasonChipSelected,
-                    ]}
+                    label={season}
+                    selected={isSelected}
                     onPress={() => setSelectedSeason(season)}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: isSelected }}
-                  >
-                    <AppText
-                      style={[
-                        styles.seasonChipText,
-                        isSelected && styles.seasonChipTextSelected,
-                      ]}
-                    >
-                      {season}
-                    </AppText>
-                  </Pressable>
+                  />
                 );
               })}
             </ScrollView>
@@ -321,38 +309,13 @@ const styles = StyleSheet.create({
   },
   seasonList: {
     paddingHorizontal: 24,
-    gap: 8,
+    gap: 10,
   },
   seasonBar: {
     paddingVertical: 8,
     borderBottomWidth: 1,
     borderColor: '#F1F1F1',
     backgroundColor: '#FFFFFF',
-  },
-  seasonChip: {
-    height: 34,
-    minWidth: 68,
-    paddingHorizontal: 16,
-    marginBottom: 8,
-    borderRadius: 17,
-    borderWidth: 1,
-    borderColor: '#E7E7E7',
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  seasonChipSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primary,
-  },
-  seasonChipText: {
-    fontSize: 14,
-    fontFamily: fonts.bold,
-    fontWeight: '700',
-    color: '#777777',
-  },
-  seasonChipTextSelected: {
-    color: colors.onPrimary,
   },
   content: {
     flex: 1,

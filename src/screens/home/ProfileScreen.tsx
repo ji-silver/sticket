@@ -3,6 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import { ChevronRight, LogOut } from 'lucide-react-native';
 import AppText from '../../components/common/AppText.tsx';
+import FilterChip from '../../components/common/FilterChip.tsx';
 import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
 
@@ -93,27 +94,12 @@ function ProfileScreen() {
               const isSelected = selectedRecordId === record.id;
 
               return (
-                <Pressable
+                <FilterChip
                   key={record.id}
-                  style={({ pressed }) => [
-                    styles.summaryFilter,
-                    isSelected && styles.summaryFilterSelected,
-                    pressed && styles.summaryFilterPressed,
-                  ]}
+                  label={record.label}
+                  selected={isSelected}
                   onPress={() => setSelectedRecordId(record.id)}
-                  hitSlop={4}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: isSelected }}
-                >
-                  <AppText
-                    style={[
-                      styles.summaryFilterText,
-                      isSelected && styles.summaryFilterTextSelected,
-                    ]}
-                  >
-                    {record.label}
-                  </AppText>
-                </Pressable>
+                />
               );
             })}
           </View>
@@ -337,34 +323,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     flexDirection: 'row',
     gap: 10,
-  },
-  summaryFilter: {
-    width: 72,
-    height: 40,
-    paddingHorizontal: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 20,
-    borderCurve: 'continuous',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surface,
-  },
-  summaryFilterSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primary,
-  },
-  summaryFilterPressed: {
-    opacity: 0.78,
-  },
-  summaryFilterText: {
-    fontSize: 13,
-    fontFamily: fonts.regular,
-    color: colors.secondary,
-  },
-  summaryFilterTextSelected: {
-    fontFamily: fonts.bold,
-    color: colors.onPrimary,
   },
   summaryCard: {
     minHeight: 108,

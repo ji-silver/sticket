@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { fonts } from '../../styles/fonts.ts';
 import AppText from '../../components/common/AppText.tsx';
+import FilterChip from '../../components/common/FilterChip.tsx';
 import { colors } from '../../styles/colors.ts';
 
 type SportId = 'baseball' | 'soccer' | 'basketball' | 'volleyball';
@@ -161,23 +162,12 @@ function AddDiaryScreen() {
               const isSelected = selectedSportId === sport.id;
 
               return (
-                <Pressable
+                <FilterChip
                   key={sport.id}
-                  style={[
-                    styles.sportChip,
-                    isSelected && styles.sportChipSelected,
-                  ]}
+                  label={sport.label}
+                  selected={isSelected}
                   onPress={() => setSelectedSportId(sport.id)}
-                >
-                  <AppText
-                    style={[
-                      styles.sportChipText,
-                      isSelected && styles.sportChipTextSelected,
-                    ]}
-                  >
-                    {sport.label}
-                  </AppText>
-                </Pressable>
+                />
               );
             })}
           </View>
@@ -321,32 +311,8 @@ const styles = StyleSheet.create({
   },
   sportList: {
     flexDirection: 'row',
-    gap: 8,
-  },
-  sportChip: {
-    minWidth: 72,
-    height: 42,
-    paddingHorizontal: 14,
-    borderRadius: 21,
-    borderWidth: 1,
-    borderColor: '#E7E7E7',
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sportChipSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primary,
-  },
-
-  sportChipText: {
-    fontSize: 14,
-    fontFamily: fonts.bold,
-    fontWeight: '700',
-    color: '#777777',
-  },
-  sportChipTextSelected: {
-    color: colors.onPrimary,
+    flexWrap: 'wrap',
+    gap: 10,
   },
 
   colorGrid: {
