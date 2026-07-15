@@ -22,18 +22,6 @@ const initialDiaries: Diary[] = [
     recordCount: 12,
     coverColor: '#e1e1e1',
   },
-  {
-    id: 2,
-    title: '축구',
-    recordCount: 3,
-    coverColor: '#e1e1e1',
-  },
-  {
-    id: 3,
-    title: '농구',
-    recordCount: 0,
-    coverColor: '#e1e1e1',
-  },
 ];
 const initialBucketsByDiaryId: Record<number, Bucket[]> = {
   1: [

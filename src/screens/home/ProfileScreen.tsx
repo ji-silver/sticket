@@ -1,11 +1,9 @@
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState } from 'react';
 import { ChevronRight, LogOut } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AppText from '../../components/common/AppText.tsx';
-import FilterChip from '../../components/common/FilterChip.tsx';
 import InlineActionButton from '../../components/common/InlineActionButton.tsx';
 import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
@@ -24,28 +22,15 @@ const profile = {
       sport: '야구',
       team: 'SSG 랜더스',
     },
-    {
-      id: 2,
-      sport: '축구',
-      team: 'FC 서울',
-    },
   ],
 };
 
-const attendanceRecords = [
-  { id: 0, label: '전체', win: 3, lose: 1, draw: 1 },
-  { id: 1, label: '야구', win: 2, lose: 1, draw: 0 },
-  { id: 2, label: '축구', win: 1, lose: 0, draw: 1 },
-];
+const attendanceRecord = { win: 2, lose: 1, draw: 0 };
 
 const appVersion = '0.0.1';
 
 function ProfileScreen() {
   const navigation = useNavigation<ProfileNavigationProp>();
-  const [selectedRecordId, setSelectedRecordId] = useState(0);
-  const attendanceRecord =
-    attendanceRecords.find(record => record.id === selectedRecordId) ??
-    attendanceRecords[0];
   const totalGames =
     attendanceRecord.win + attendanceRecord.lose + attendanceRecord.draw;
 
@@ -94,21 +79,6 @@ function ProfileScreen() {
 
         <View style={styles.summarySection}>
           <AppText style={styles.sectionTitle}>직관 요약</AppText>
-
-          <View style={styles.summaryFilterList}>
-            {attendanceRecords.map(record => {
-              const isSelected = selectedRecordId === record.id;
-
-              return (
-                <FilterChip
-                  key={record.id}
-                  label={record.label}
-                  selected={isSelected}
-                  onPress={() => setSelectedRecordId(record.id)}
-                />
-              );
-            })}
-          </View>
 
           <View style={styles.summaryCard}>
             <View style={styles.summaryMetric}>
@@ -310,11 +280,6 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontFamily: fonts.bold,
     color: colors.text,
-  },
-  summaryFilterList: {
-    marginBottom: 12,
-    flexDirection: 'row',
-    gap: 10,
   },
   summaryCard: {
     minHeight: 108,

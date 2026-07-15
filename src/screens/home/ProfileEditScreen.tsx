@@ -1,5 +1,5 @@
-가import { useNavigation } from '@react-navigation/native';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
+import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -10,18 +10,21 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useState } from 'react';
 import AppText from '../../components/common/AppText.tsx';
-import InlineActionButton from '../../components/common/InlineActionButton.tsx';
 import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
-
-const favoriteTeams = [
-  { id: 1, sport: '야구', team: 'SSG 랜더스' },
-  { id: 2, sport: '축구', team: 'FC 서울' },
-];
+import TeamSelectSheet from './components/TeamSelectSheet.tsx';
 
 function ProfileEditScreen() {
   const navigation = useNavigation();
+  const [favoriteTeam, setFavoriteTeam] = useState('SSG 랜더스');
+  const [isTeamSheetOpen, setIsTeamSheetOpen] = useState(false);
+
+  const handleSelectTeam = (team: string) => {
+    setFavoriteTeam(team);
+    setIsTeamSheetOpen(false);
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -72,44 +75,23 @@ function ProfileEditScreen() {
             <AppText style={styles.sectionTitle}>응원 구단</AppText>
 
             <View style={styles.teamCard}>
-              {favoriteTeams.map((favoriteTeam, index) => (
-                <View key={favoriteTeam.id}>
-                  {index > 0 && <View style={styles.divider} />}
-
-                  <Pressable
-                    style={({ pressed }) => [
-                      styles.teamRow,
-                      pressed && styles.teamRowPressed,
-                    ]}
-                    onPress={() => {}}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${favoriteTeam.sport} 응원 구단, ${favoriteTeam.team}`}
-                  >
-                    <AppText style={styles.sportName}>
-                      {favoriteTeam.sport}
-                    </AppText>
-                    <AppText style={styles.teamName}>
-                      {favoriteTeam.team}
-                    </AppText>
-                    <ChevronRight
-                      size={19}
-                      color={colors.textSecondary}
-                      strokeWidth={2}
-                    />
-                  </Pressable>
-                </View>
-              ))}
-            </View>
-
-            <View style={styles.addTeamButton}>
-              <InlineActionButton
-                label="응원 구단 추가"
-                icon={
-                  <Plus size={18} color={colors.primary} strokeWidth={2.2} />
-                }
-                tone="primary"
-                onPress={() => {}}
-              />
+              <Pressable
+                style={({ pressed }) => [
+                  styles.teamRow,
+                  pressed && styles.teamRowPressed,
+                ]}
+                onPress={() => setIsTeamSheetOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel={`야구 응원 구단, ${favoriteTeam}, 변경`}
+              >
+                <AppText style={styles.sportName}>야구</AppText>
+                <AppText style={styles.teamName}>{favoriteTeam}</AppText>
+                <ChevronRight
+                  size={19}
+                  color={colors.textSecondary}
+                  strokeWidth={2}
+                />
+              </Pressable>
             </View>
           </View>
         </ScrollView>
@@ -127,6 +109,13 @@ function ProfileEditScreen() {
           </Pressable>
         </View>
       </KeyboardAvoidingView>
+
+      <TeamSelectSheet
+        visible={isTeamSheetOpen}
+        selectedTeam={favoriteTeam}
+        onSelect={handleSelectTeam}
+        onClose={() => setIsTeamSheetOpen(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -213,11 +202,6 @@ const styles = StyleSheet.create({
   teamRowPressed: {
     backgroundColor: colors.primarySoft,
   },
-  divider: {
-    height: 1,
-    marginHorizontal: 18,
-    backgroundColor: colors.border,
-  },
   sportName: {
     width: 54,
     fontSize: 13,
@@ -229,10 +213,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: fonts.regular,
     color: colors.text,
-  },
-  addTeamButton: {
-    marginLeft: -8,
-    alignItems: 'flex-start',
   },
   footer: {
     paddingHorizontal: 24,
