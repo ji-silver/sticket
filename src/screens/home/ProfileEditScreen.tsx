@@ -128,16 +128,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    height: 60,
+    height: 52,
     paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
   },
   backButton: {
-    width: 32,
-    height: 32,
+    width: 34,
+    height: 34,
     marginLeft: -8,
-    marginRight: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -145,6 +144,7 @@ const styles = StyleSheet.create({
     opacity: 0.55,
   },
   headerTitle: {
+    marginLeft: 2,
     fontSize: 18,
     fontFamily: fonts.bold,
     color: colors.text,
