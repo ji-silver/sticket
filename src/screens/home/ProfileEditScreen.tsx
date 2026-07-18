@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import { ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { ChevronRight } from 'lucide-react-native';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -15,6 +15,7 @@ import AppText from '../../components/common/AppText.tsx';
 import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
 import TeamSelectSheet from './components/TeamSelectSheet.tsx';
+import ScreenHeader from '../../components/common/ScreenHeader.tsx';
 
 function ProfileEditScreen() {
   const navigation = useNavigation();
@@ -28,22 +29,10 @@ function ProfileEditScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <View style={styles.header}>
-        <Pressable
-          style={({ pressed }) => [
-            styles.backButton,
-            pressed && styles.pressed,
-          ]}
-          onPress={() => navigation.goBack()}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel="뒤로 가기"
-        >
-          <ChevronLeft size={26} color={colors.text} strokeWidth={2.4} />
-        </Pressable>
-
-        <AppText style={styles.headerTitle}>프로필 수정</AppText>
-      </View>
+      <ScreenHeader
+        title="프로필 수정"
+        onPressBack={() => navigation.goBack()}
+      />
 
       <KeyboardAvoidingView
         style={styles.keyboardArea}
@@ -126,28 +115,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-  header: {
-    height: 52,
-    paddingHorizontal: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  backButton: {
-    width: 34,
-    height: 34,
-    marginLeft: -8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pressed: {
-    opacity: 0.55,
-  },
-  headerTitle: {
-    marginLeft: 2,
-    fontSize: 18,
-    fontFamily: fonts.bold,
-    color: colors.text,
   },
   keyboardArea: {
     flex: 1,

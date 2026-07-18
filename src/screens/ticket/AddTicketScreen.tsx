@@ -8,7 +8,6 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft } from 'lucide-react-native';
 import AppText from '../../components/common/AppText.tsx';
 import { fonts } from '../../styles/fonts.ts';
 import { useNavigation } from '@react-navigation/core';
@@ -18,6 +17,7 @@ import { DateData } from 'react-native-calendars';
 import { colors } from '../../styles/colors.ts';
 import EmptyCard from '../../components/common/EmptyCard.tsx';
 import InlineActionButton from '../../components/common/InlineActionButton.tsx';
+import ScreenHeader from '../../components/common/ScreenHeader.tsx';
 
 interface KboGame {
   id: number;
@@ -121,19 +121,10 @@ function AddTicketScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <View style={styles.topBar}>
-        <Pressable
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-          hitSlop={8}
-          accessibilityRole={'button'}
-          accessibilityLabel={'뒤로 가기'}
-        >
-          <ChevronLeft size={26} color={colors.text} strokeWidth={2.4} />
-        </Pressable>
-
-        <AppText style={styles.headerTitle}>티켓 추가</AppText>
-      </View>
+      <ScreenHeader
+        title="티켓 추가"
+        onPressBack={() => navigation.goBack()}
+      />
 
       <KeyboardAvoidingView
         style={styles.keyboardArea}
@@ -313,26 +304,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.surface,
   },
-  topBar: {
-    height: 52,
-    paddingHorizontal: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  backButton: {
-    width: 34,
-    height: 34,
-    marginLeft: -8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    marginLeft: 2,
-    fontSize: 18,
-    fontFamily: fonts.bold,
-    color: colors.text,
-  },
-
   keyboardArea: {
     flex: 1,
   },

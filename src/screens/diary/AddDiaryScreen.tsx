@@ -1,6 +1,5 @@
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { ChevronLeft } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/core';
 import DiaryCover from '../../components/DiaryCover.tsx';
 import { useState } from 'react';
@@ -9,6 +8,7 @@ import { fonts } from '../../styles/fonts.ts';
 import AppText from '../../components/common/AppText.tsx';
 import FilterChip from '../../components/common/FilterChip.tsx';
 import { colors } from '../../styles/colors.ts';
+import ScreenHeader from '../../components/common/ScreenHeader.tsx';
 
 type SportId = 'baseball' | 'soccer' | 'basketball' | 'volleyball';
 
@@ -135,18 +135,10 @@ function AddDiaryScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <View style={styles.header}>
-        <Pressable
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel="뒤로 가기"
-        >
-          <ChevronLeft size={26} color={colors.text} strokeWidth={2.4} />
-        </Pressable>
-        <AppText style={styles.headerTitle}>새 티켓북</AppText>
-      </View>
+      <ScreenHeader
+        title="새 티켓북"
+        onPressBack={() => navigation.goBack()}
+      />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.previewSection}>
@@ -271,26 +263,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.surface,
-  },
-  header: {
-    height: 52,
-    paddingHorizontal: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  backButton: {
-    width: 34,
-    height: 34,
-    marginLeft: -8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    marginLeft: 2,
-    fontSize: 18,
-    fontFamily: fonts.bold,
-    fontWeight: '700',
-    color: colors.text,
   },
   scrollContent: {
     paddingBottom: 24,
