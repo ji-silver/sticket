@@ -6,6 +6,8 @@ import AddTicketScreen from '../screens/ticket/AddTicketScreen.tsx';
 import ProfileEditScreen from '../screens/home/ProfileEditScreen.tsx';
 import AuthScreen from '../screens/auth/AuthScreen.tsx';
 import LoadingScreen from '../screens/auth/LoadingScreen.tsx';
+import TicketDetailScreen from '../screens/ticket/TicketDetailScreen.tsx';
+import { Ticket } from '../screens/ticket/types.ts';
 
 export type RootStackParamList = {
   Loading: undefined;
@@ -15,6 +17,9 @@ export type RootStackParamList = {
   TicketList: undefined;
   AddTicket: undefined;
   ProfileEdit: undefined;
+  TicketDetail: {
+    ticket: Ticket;
+  };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -31,6 +36,7 @@ function RootStackNavigator() {
       <Stack.Screen name={'AddDiary'} component={AddDiaryScreen} />
       <Stack.Screen name={'TicketList'} component={TicketListScreen} />
       <Stack.Screen name={'AddTicket'} component={AddTicketScreen} />
+      <Stack.Screen name={'TicketDetail'} component={TicketDetailScreen} />
       <Stack.Screen name={'ProfileEdit'} component={ProfileEditScreen} />
     </Stack.Navigator>
   );

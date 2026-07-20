@@ -1,10 +1,11 @@
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import AppText from '../../../components/common/AppText.tsx';
 import { fonts } from '../../../styles/fonts.ts';
-import { Ticket } from '../types.ts';
+import type { Ticket } from '../types.ts';
 
 interface TicketCardProps {
   ticket: Ticket;
+  onPress: () => void;
 }
 
 const barcodeModules = [
@@ -26,14 +27,20 @@ const teamColors: Record<string, string> = {
   두산: '#1A1748',
 };
 
-function TicketCard({ ticket }: TicketCardProps) {
+function TicketCard({ ticket, onPress }: TicketCardProps) {
   const date = new Date(ticket.matchDate);
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   const weekday = ['일', '월', '화', '수', '목', '금', '토'][date.getDay()];
 
   return (
-    <View style={styles.ticket}>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.ticket, pressed && styles.ticketPressed]}
+      accessibilityRole="button"
+      accessibilityLabel={`${month}월 ${day}일 ${ticket.awayTeamName} ${ticket.awayScore} 대 ${ticket.homeTeamName} ${ticket.homeScore}, 직관 기록 보기`}
+      accessibilityHint="직관 기록 상세 화면으로 이동합니다"
+    >
       <View style={styles.contentArea}>
         <View style={styles.metaRow}>
           <AppText style={styles.dateText}>
@@ -50,11 +57,14 @@ function TicketCard({ ticket }: TicketCardProps) {
             <AppText
               style={[
                 styles.teamRole,
-                { color: teamColors[ticket.awayTeamName] ?? '#AAAAAA' },
+                {
+                  color: teamColors[ticket.awayTeamName] ?? '#AAAAAA',
+                },
               ]}
             >
               AWAY
             </AppText>
+
             <AppText style={styles.teamName} numberOfLines={1}>
               {ticket.awayTeamName}
             </AppText>
@@ -63,9 +73,12 @@ function TicketCard({ ticket }: TicketCardProps) {
           <View style={styles.scoreCenter}>
             <View style={styles.scoreRow}>
               <AppText style={styles.scoreText}>{ticket.awayScore}</AppText>
+
               <AppText style={styles.scoreDivider}>:</AppText>
+
               <AppText style={styles.scoreText}>{ticket.homeScore}</AppText>
             </View>
+
             <AppText style={styles.vsText}>VS</AppText>
           </View>
 
@@ -73,11 +86,14 @@ function TicketCard({ ticket }: TicketCardProps) {
             <AppText
               style={[
                 styles.teamRole,
-                { color: teamColors[ticket.homeTeamName] ?? '#AAAAAA' },
+                {
+                  color: teamColors[ticket.homeTeamName] ?? '#AAAAAA',
+                },
               ]}
             >
               HOME
             </AppText>
+
             <AppText style={styles.teamName} numberOfLines={1}>
               {ticket.homeTeamName}
             </AppText>
@@ -85,7 +101,6 @@ function TicketCard({ ticket }: TicketCardProps) {
         </View>
       </View>
 
-      {/* 절취선 및 커팅 */}
       <View style={styles.perforationWrap}>
         <View style={styles.leftCutout} />
 
@@ -105,7 +120,6 @@ function TicketCard({ ticket }: TicketCardProps) {
           </AppText>
         </View>
 
-        {/* 바코드 */}
         <View style={styles.barcode}>
           {barcodeModules.map((width, index) => (
             <View
@@ -121,7 +135,7 @@ function TicketCard({ ticket }: TicketCardProps) {
           ))}
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -131,6 +145,7 @@ const styles = StyleSheet.create({
   ticket: {
     position: 'relative',
     borderRadius: 18,
+    borderCurve: 'continuous',
     backgroundColor: '#FFFFFF',
     shadowColor: '#000000',
     shadowOffset: {
@@ -140,6 +155,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 10,
     elevation: 2,
+  },
+
+  ticketPressed: {
+    opacity: 0.82,
   },
 
   contentArea: {
@@ -164,15 +183,15 @@ const styles = StyleSheet.create({
   stadiumText: {
     flex: 1,
     minWidth: 0,
-    textAlign: 'right',
     fontSize: 12,
     fontFamily: fonts.regular,
     color: '#777777',
+    textAlign: 'right',
   },
 
   scoreBoard: {
-    marginTop: 12,
     minHeight: 54,
+    marginTop: 12,
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -255,6 +274,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
+    borderCurve: 'continuous',
     backgroundColor: '#F7F7F7',
   },
 
@@ -266,6 +286,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
+    borderCurve: 'continuous',
     backgroundColor: '#F7F7F7',
   },
 
@@ -274,12 +295,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 2,
     paddingBottom: 12,
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 18,
+    borderCurve: 'continuous',
     backgroundColor: '#FFFFFF',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    borderBottomLeftRadius: 18,
-    borderBottomRightRadius: 18,
   },
 
   seatBox: {

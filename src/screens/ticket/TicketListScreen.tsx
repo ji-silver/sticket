@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, Plus } from 'lucide-react-native';
+import { Plus } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/core';
 import { fonts } from '../../styles/fonts.ts';
 import AppText from '../../components/common/AppText.tsx';
@@ -12,6 +12,7 @@ import { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
 import { colors } from '../../styles/colors.ts';
 import FilterChip from '../../components/common/FilterChip.tsx';
 import InlineActionButton from '../../components/common/InlineActionButton.tsx';
+import ScreenHeader from '../../components/common/ScreenHeader.tsx';
 
 interface TicketListResponse {
   diary: {
@@ -121,31 +122,23 @@ function TicketListScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.topBar}>
-        <Pressable
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel="뒤로 가기"
-        >
-          <ChevronLeft size={26} color={colors.text} strokeWidth={2.4} />
-        </Pressable>
-
-        <AppText style={styles.headerTitle}>{diaryTitle} 티켓북</AppText>
-
-        {hasTickets && (
-          <InlineActionButton
-            label="추가"
-            tone="primary"
-            onPress={handlePressAddTicket}
-            accessibilityLabel="티켓 추가"
-            icon={
-              <Plus size={16} color={colors.primary} strokeWidth={2.5} />
-            }
-          />
-        )}
-      </View>
+      <ScreenHeader
+        title={`${diaryTitle} 티켓북`}
+        onPressBack={() => navigation.goBack()}
+        right={
+          hasTickets ? (
+            <InlineActionButton
+              label="추가"
+              tone="primary"
+              onPress={handlePressAddTicket}
+              accessibilityLabel="티켓 추가"
+              icon={
+                <Plus size={16} color={colors.primary} strokeWidth={2.5} />
+              }
+            />
+          ) : undefined
+        }
+      />
 
       <ScrollView
         style={styles.content}
@@ -190,7 +183,15 @@ function TicketListScreen() {
           {hasTickets ? (
             <View style={styles.ticketList}>
               {filteredTickets.map(ticket => (
-                <TicketCard key={String(ticket.id)} ticket={ticket} />
+                <TicketCard
+                  key={String(ticket.id)}
+                  ticket={ticket}
+                  onPress={() =>
+                    navigation.navigate('TicketDetail', {
+                      ticket,
+                    })
+                  }
+                />
               ))}
             </View>
           ) : (
@@ -241,27 +242,6 @@ const styles = StyleSheet.create({
     paddingTop: 22,
     paddingBottom: 26,
     backgroundColor: colors.surface,
-  },
-  topBar: {
-    height: 52,
-    paddingHorizontal: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  backButton: {
-    width: 34,
-    height: 34,
-    marginLeft: -8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    flex: 1,
-    marginLeft: 2,
-    fontSize: 18,
-    fontFamily: fonts.bold,
-    fontWeight: '700',
-    color: colors.text,
   },
   ticketCountRow: {
     flexDirection: 'row',

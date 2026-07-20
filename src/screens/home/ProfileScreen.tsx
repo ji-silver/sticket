@@ -22,7 +22,7 @@ const profile = {
     {
       id: 1,
       sport: '야구',
-      team: 'SSG 랜더스',
+      team: '키움 히어로즈',
     },
   ],
 };

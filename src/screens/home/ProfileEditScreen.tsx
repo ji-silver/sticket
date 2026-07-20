@@ -19,7 +19,7 @@ import ScreenHeader from '../../components/common/ScreenHeader.tsx';
 
 function ProfileEditScreen() {
   const navigation = useNavigation();
-  const [favoriteTeam, setFavoriteTeam] = useState('SSG 랜더스');
+  const [favoriteTeam, setFavoriteTeam] = useState('키움 히어로즈');
   const [isTeamSheetOpen, setIsTeamSheetOpen] = useState(false);
 
   const handleSelectTeam = (team: string) => {
