@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/core';
 import DiaryCover from '../../components/DiaryCover.tsx';
 import { useState } from 'react';
-import { launchImageLibrary } from 'react-native-image-picker';
+import ImagePicker from 'react-native-image-crop-picker';
 import { fonts } from '../../styles/fonts.ts';
 import AppText from '../../components/common/AppText.tsx';
 import FilterChip from '../../components/common/FilterChip.tsx';
@@ -118,19 +118,30 @@ function AddDiaryScreen() {
     COVER_COLORS[0];
 
   const handlePressSelectPhoto = async () => {
-    const result = await launchImageLibrary({
-      mediaType: 'photo',
-      selectionLimit: 1,
-      quality: 0.9,
-    });
+    try {
+      const image = await ImagePicker.openPicker({
+        mediaType: 'photo',
+        cropping: true,
+        width: 620,
+        height: 920,
+        compressImageQuality: 0.9,
+        cropperToolbarTitle: '사진 편집',
+        cropperCancelText: '취소',
+        cropperChooseText: '선택',
+      });
 
-    if (result.didCancel) return; // 선택 취소면 return
+      setPhotoUri(image.path);
+    } catch (error) {
+      const isCancelled =
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        error.code === 'E_PICKER_CANCELLED';
 
-    const selectedAsset = result.assets?.[0];
-
-    if (!selectedAsset?.uri) return;
-
-    setPhotoUri(selectedAsset.uri);
+      if (!isCancelled) {
+        console.error('사진을 선택하지 못했습니다.', error);
+      }
+    }
   };
 
   return (
