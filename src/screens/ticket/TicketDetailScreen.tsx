@@ -9,11 +9,12 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Plus, X } from 'lucide-react-native';
+import { Plus, Trash2, X } from 'lucide-react-native';
 import { useNavigation, useRoute } from '@react-navigation/core';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AppText from '../../components/common/AppText.tsx';
+import ConfirmDialog from '../../components/common/ConfirmDialog.tsx';
 import InlineActionButton from '../../components/common/InlineActionButton.tsx';
 import ScreenHeader from '../../components/common/ScreenHeader.tsx';
 import type { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
@@ -87,6 +88,7 @@ function TicketDetailScreen() {
   const [foods, setFoods] = useState(initialFoods);
   const [foodDraft, setFoodDraft] = useState('');
   const [isEditingFoods, setIsEditingFoods] = useState(false);
+  const [isDeleteDialogVisible, setIsDeleteDialogVisible] = useState(false);
 
   const trimmedFoodDraft = foodDraft.trim();
   const canAddFood =
@@ -136,9 +138,31 @@ function TicketDetailScreen() {
     );
   };
 
+  const handleDeleteTicket = () => {
+    setIsDeleteDialogVisible(false);
+    navigation.popTo('TicketList', { deletedTicketId: ticket.id });
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScreenHeader title="직관 기록" onPressBack={() => navigation.goBack()} />
+      <ScreenHeader
+        title="직관 기록"
+        onPressBack={() => navigation.goBack()}
+        right={
+          <Pressable
+            style={({ pressed }) => [
+              styles.deleteButton,
+              pressed && styles.deleteButtonPressed,
+            ]}
+            onPress={() => setIsDeleteDialogVisible(true)}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="직관 기록 삭제"
+          >
+            <Trash2 size={20} color={colors.textSecondary} strokeWidth={2.2} />
+          </Pressable>
+        }
+      />
 
       <KeyboardAvoidingView
         style={styles.keyboardArea}
@@ -415,6 +439,16 @@ function TicketDetailScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <ConfirmDialog
+        visible={isDeleteDialogVisible}
+        title="이 기록을 삭제할까요?"
+        description="꾸민 페이지도 함께 삭제되며 되돌릴 수 없어요."
+        confirmLabel="삭제"
+        confirmTone="destructive"
+        onConfirm={handleDeleteTicket}
+        onCancel={() => setIsDeleteDialogVisible(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -458,6 +492,19 @@ const styles = StyleSheet.create({
 
   keyboardArea: {
     flex: 1,
+  },
+
+  deleteButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderCurve: 'continuous',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  deleteButtonPressed: {
+    backgroundColor: colors.primarySoft,
   },
 
   content: {

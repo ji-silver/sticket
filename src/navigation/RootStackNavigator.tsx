@@ -14,7 +14,11 @@ export type RootStackParamList = {
   Auth: undefined;
   MainTab: undefined;
   AddDiary: undefined;
-  TicketList: undefined;
+  TicketList:
+    | {
+        deletedTicketId?: number;
+      }
+    | undefined;
   AddTicket: undefined;
   ProfileEdit: undefined;
   TicketDetail: {

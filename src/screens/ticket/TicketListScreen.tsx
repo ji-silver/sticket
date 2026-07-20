@@ -1,13 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Plus } from 'lucide-react-native';
-import { useNavigation } from '@react-navigation/core';
+import { useNavigation, useRoute } from '@react-navigation/core';
 import { fonts } from '../../styles/fonts.ts';
 import AppText from '../../components/common/AppText.tsx';
 import TicketCard from './components/TicketCard.tsx';
 import type { SportId, Ticket } from './types.ts';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
 import { colors } from '../../styles/colors.ts';
 import FilterChip from '../../components/common/FilterChip.tsx';
@@ -93,9 +94,10 @@ const mockTicketListResponse: TicketListResponse = {
 function TicketListScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const route = useRoute<RouteProp<RootStackParamList, 'TicketList'>>();
 
   const data = mockTicketListResponse;
-  const tickets = data.tickets;
+  const [tickets, setTickets] = useState(data.tickets);
   const diaryTitle = data.diary.title;
   const ticketCount = tickets.length;
   const hasTickets = ticketCount > 0;
@@ -108,11 +110,27 @@ function TicketListScreen() {
     seasons[0] ?? null,
   );
 
+  useEffect(() => {
+    const deletedTicketId = route.params?.deletedTicketId;
+
+    if (deletedTicketId === undefined) return;
+
+    setTickets(currentTickets =>
+      currentTickets.filter(ticket => ticket.id !== deletedTicketId),
+    );
+    navigation.setParams({ deletedTicketId: undefined });
+  }, [navigation, route.params?.deletedTicketId]);
+
+  const activeSeason =
+    selectedSeason !== null && seasons.includes(selectedSeason)
+      ? selectedSeason
+      : seasons[0] ?? null;
+
   const filteredTickets =
-    selectedSeason === null
+    activeSeason === null
       ? tickets
       : tickets.filter(
-          ticket => new Date(ticket.matchDate).getFullYear() === selectedSeason,
+          ticket => new Date(ticket.matchDate).getFullYear() === activeSeason,
         );
 
   // 티켓 추가
@@ -132,9 +150,7 @@ function TicketListScreen() {
               tone="primary"
               onPress={handlePressAddTicket}
               accessibilityLabel="티켓 추가"
-              icon={
-                <Plus size={16} color={colors.primary} strokeWidth={2.5} />
-              }
+              icon={<Plus size={16} color={colors.primary} strokeWidth={2.5} />}
             />
           ) : undefined
         }
@@ -164,7 +180,7 @@ function TicketListScreen() {
               contentContainerStyle={styles.seasonList}
             >
               {seasons.map(season => {
-                const isSelected = selectedSeason === season;
+                const isSelected = activeSeason === season;
 
                 return (
                   <FilterChip
