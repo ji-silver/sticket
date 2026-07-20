@@ -1,7 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 import Svg, { Defs, Path, Pattern, Rect } from 'react-native-svg';
 
-import { colors } from '../../../styles/colors.ts';
+import { colors } from '../../../../styles/colors.ts';
 
 const GRID_SIZE = 20;
 const GRID_LINE_COLOR = '#7A8793';

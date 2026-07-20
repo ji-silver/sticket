@@ -36,7 +36,7 @@
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string></string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>티켓북 포토카드를 설정하기 위해 사진을 선택합니다.</string>
+	<string>사진을 추가하기 위해 사진 보관함에 접근합니다.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

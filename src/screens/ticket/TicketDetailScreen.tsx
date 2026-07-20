@@ -11,7 +11,7 @@ import ScreenHeader from '../../components/common/ScreenHeader.tsx';
 import type { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
 import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
-import TicketDiaryPage from './components/TicketDiaryPage.tsx';
+import TicketDiaryPage from './components/diary/TicketDiaryPage.tsx';
 import TicketRecordPage from './components/TicketRecordPage.tsx';
 
 type TicketDetailNavigationProp = NativeStackNavigationProp<RootStackParamList>;

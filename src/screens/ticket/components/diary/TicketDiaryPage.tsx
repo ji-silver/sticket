@@ -8,8 +8,8 @@ import {
 } from 'lucide-react-native';
 import { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors } from '../../../styles/colors.ts';
-import AppText from '../../../components/common/AppText.tsx';
+import { colors } from '../../../../styles/colors.ts';
+import AppText from '../../../../components/common/AppText.tsx';
 import GridPaper from './GridPaper.tsx';
 
 const DIARY_TOOLS = [
@@ -42,6 +42,21 @@ const DIARY_TOOLS = [
 
 type DiaryToolId = (typeof DIARY_TOOLS)[number]['id'];
 type PaperType = 'plain' | 'grid';
+type EditorSize = {
+  width: number;
+  height: number;
+};
+
+type DiaryPhoto = {
+  id: string;
+  uri: string;
+  width: number;
+  height: number;
+  x: number;
+  y: number;
+  scale: number;
+  rotation: number;
+};
 
 function TicketDiaryPage() {
   const [selectedTool, setSelectedTool] = useState<DiaryToolId | null>(null);
