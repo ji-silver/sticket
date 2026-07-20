@@ -10,6 +10,7 @@ import { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../../../styles/colors.ts';
 import AppText from '../../../components/common/AppText.tsx';
+import GridPaper from './GridPaper.tsx';
 
 const DIARY_TOOLS = [
   {
@@ -40,13 +41,96 @@ const DIARY_TOOLS = [
 ] as const;
 
 type DiaryToolId = (typeof DIARY_TOOLS)[number]['id'];
+type PaperType = 'plain' | 'grid';
 
 function TicketDiaryPage() {
   const [selectedTool, setSelectedTool] = useState<DiaryToolId | null>(null);
+  const [paperType, setPaperType] = useState<PaperType>('plain');
+
+  const handlePaperSelect = (next: PaperType) => {
+    setPaperType(next);
+    setSelectedTool(null);
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <View style={styles.editorArea} />
+      <View style={styles.editorArea}>
+        {paperType === 'grid' ? <GridPaper /> : null}
+
+        {selectedTool === 'paper' ? (
+          <View style={styles.paperSelector}>
+            <AppText size={13} weight={'semiBold'} color={colors.text}>
+              속지 선택
+            </AppText>
+
+            <View style={styles.paperOptions}>
+              <Pressable
+                accessibilityRole={'button'}
+                accessibilityLabel={'무지 속지'}
+                accessibilityState={{
+                  selected: paperType === 'plain',
+                }}
+                onPress={() => handlePaperSelect('plain')}
+                style={({ pressed }) => [
+                  styles.paperOption,
+                  pressed && styles.pressedPaperOption,
+                ]}
+              >
+                <View
+                  style={[
+                    styles.paperPreview,
+                    paperType === 'plain' && styles.selectedPaperPreview,
+                  ]}
+                />
+                <AppText
+                  size={12}
+                  weight={paperType === 'plain' ? 'semiBold' : 'regular'}
+                  color={
+                    paperType === 'plain'
+                      ? colors.primary
+                      : colors.textSecondary
+                  }
+                >
+                  무지
+                </AppText>
+              </Pressable>
+
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="모눈 속지"
+                accessibilityState={{
+                  selected: paperType === 'grid',
+                }}
+                onPress={() => handlePaperSelect('grid')}
+                style={({ pressed }) => [
+                  styles.paperOption,
+                  pressed && styles.pressedPaperOption,
+                ]}
+              >
+                <View
+                  style={[
+                    styles.paperPreview,
+                    paperType === 'grid' && styles.selectedPaperPreview,
+                  ]}
+                >
+                  <GridPaper />
+                </View>
+
+                <AppText
+                  size={12}
+                  weight={paperType === 'grid' ? 'semiBold' : 'regular'}
+                  color={
+                    paperType === 'grid' ? colors.primary : colors.textSecondary
+                  }
+                >
+                  모눈
+                </AppText>
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
+      </View>
+
       <View style={styles.toolbar}>
         {DIARY_TOOLS.map(tool => {
           const Icon = tool.icon;
@@ -101,7 +185,49 @@ const styles = StyleSheet.create({
   editorArea: {
     flex: 1,
     backgroundColor: colors.surface,
+    position: 'relative',
+    overflow: 'hidden',
   },
+  paperSelector: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    left: 0,
+    paddingHorizontal: 24,
+    paddingTop: 12,
+    paddingBottom: 14,
+    gap: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  paperOptions: {
+    flexDirection: 'row',
+    gap: 20,
+  },
+  paperOption: {
+    width: 64,
+    alignItems: 'center',
+    gap: 6,
+  },
+  pressedPaperOption: {
+    opacity: 0.6,
+  },
+  paperPreview: {
+    width: 56,
+    height: 72,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 4,
+    borderCurve: 'continuous',
+    backgroundColor: colors.surface,
+  },
+  selectedPaperPreview: {
+    borderWidth: 2,
+    borderColor: colors.primary,
+  },
+
   toolbar: {
     flexDirection: 'row',
     height: 72,
