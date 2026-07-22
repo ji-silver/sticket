@@ -58,16 +58,6 @@
 			name = Sticket;
 			sourceTree = "<group>";
 		};
-		C10000000000000000000001 /* Fonts */ = {
-			isa = PBXGroup;
-			children = (
-				B10000000000000000000001 /* Pretendard-Black.otf */,
-				B10000000000000000000002 /* Pretendard-Bold.otf */,
-				B10000000000000000000005 /* Pretendard-Regular.otf */,
-			);
-			path = Sticket/Fonts;
-			sourceTree = "<group>";
-		};
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -113,6 +103,16 @@
 				5709B34CF0A7D63546082F79 /* Pods-Sticket.release.xcconfig */,
 			);
 			path = Pods;
+			sourceTree = "<group>";
+		};
+		C10000000000000000000001 /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				B10000000000000000000001 /* Pretendard-Black.otf */,
+				B10000000000000000000002 /* Pretendard-Bold.otf */,
+				B10000000000000000000005 /* Pretendard-Regular.otf */,
+			);
+			path = Sticket/Fonts;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

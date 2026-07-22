@@ -1,16 +1,11 @@
-import { Pressable, StyleSheet, View } from 'react-native';
-import {
-  ImagePlus,
-  Notebook,
-  Pencil,
-  Sticker,
-  Type,
-} from 'lucide-react-native';
+import { type LayoutChangeEvent, Pressable, StyleSheet, View, } from 'react-native';
+import { ImagePlus, Notebook, Pencil, Sticker, Type, } from 'lucide-react-native';
 import { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../../../../styles/colors.ts';
 import AppText from '../../../../components/common/AppText.tsx';
 import GridPaper from './GridPaper.tsx';
+import DiaryPhotos, { type DiaryPhoto, type EditorSize, selectDiaryPhoto, } from './DiaryPhotos.tsx';
 
 const DIARY_TOOLS = [
   {
@@ -42,46 +37,111 @@ const DIARY_TOOLS = [
 
 type DiaryToolId = (typeof DIARY_TOOLS)[number]['id'];
 type PaperType = 'plain' | 'grid';
-type EditorSize = {
-  width: number;
-  height: number;
-};
-
-type DiaryPhoto = {
-  id: string;
-  uri: string;
-  width: number;
-  height: number;
-  x: number;
-  y: number;
-  scale: number;
-  rotation: number;
-};
 
 function TicketDiaryPage() {
   const [selectedTool, setSelectedTool] = useState<DiaryToolId | null>(null);
   const [paperType, setPaperType] = useState<PaperType>('plain');
+
+  // 다이어리 영역 (사진 배치 시 넘어가지 않게)
+  const [editorSize, setEditorSize] = useState<EditorSize>({
+    width: 0,
+    height: 0,
+  });
+
+  const [photos, setPhotos] = useState<DiaryPhoto[]>([]); // 현재 다이어리에 들어있는 모든 사진
+  const [selectedPhotoId, setSelectedPhotoId] = useState<string | null>(null);
+
+  const handleEditorLayout = ({ nativeEvent }: LayoutChangeEvent) => {
+    const { width, height } = nativeEvent.layout;
+
+    setEditorSize({
+      width,
+      height,
+    });
+  };
 
   const handlePaperSelect = (next: PaperType) => {
     setPaperType(next);
     setSelectedTool(null);
   };
 
+  const handleChangePhoto = (changedPhoto: DiaryPhoto) => {
+    setPhotos(currentPhotos =>
+      currentPhotos.map(photo =>
+        photo.id === changedPhoto.id ? changedPhoto : photo,
+      ),
+    );
+  };
+
+  const handleSelectPhoto = (photoId: string) => {
+    setSelectedPhotoId(photoId);
+
+    setPhotos(currentPhotos => {
+      const selectedPhotoIndex = currentPhotos.findIndex(
+        photo => photo.id === photoId,
+      );
+
+      if (
+        selectedPhotoIndex === -1 ||
+        selectedPhotoIndex === currentPhotos.length - 1
+      ) {
+        return currentPhotos;
+      }
+
+      const selectedPhoto = currentPhotos[selectedPhotoIndex];
+
+      return [
+        ...currentPhotos.slice(0, selectedPhotoIndex),
+        ...currentPhotos.slice(selectedPhotoIndex + 1),
+        selectedPhoto,
+      ];
+    });
+  };
+
+  // 사진 선택 후 결과를 받는 함수
+  const handlePressSelectPhoto = async () => {
+    const selectedPhoto = await selectDiaryPhoto(editorSize);
+
+    // 사진 선택 화면에서 취소 시 null
+    if (selectedPhoto === null) {
+      return;
+    }
+
+    setPhotos(currentPhotos => [...currentPhotos, selectedPhoto]);
+    setSelectedPhotoId(selectedPhoto.id);
+  };
+
+  const handlePressTool = (toolId: DiaryToolId) => {
+    setSelectedTool(toolId);
+
+    if (toolId === 'photo') {
+      handlePressSelectPhoto();
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <View style={styles.editorArea}>
+      <View style={styles.editorArea} onLayout={handleEditorLayout}>
         {paperType === 'grid' ? <GridPaper /> : null}
+
+        <DiaryPhotos
+          photos={photos}
+          editorSize={editorSize}
+          selectedPhotoId={selectedPhotoId}
+          onSelectPhoto={handleSelectPhoto}
+          onChangePhoto={handleChangePhoto}
+        />
 
         {selectedTool === 'paper' ? (
           <View style={styles.paperSelector}>
-            <AppText size={13} weight={'semiBold'} color={colors.text}>
+            <AppText size={13} weight="semiBold" color={colors.text}>
               속지 선택
             </AppText>
 
             <View style={styles.paperOptions}>
               <Pressable
-                accessibilityRole={'button'}
-                accessibilityLabel={'무지 속지'}
+                accessibilityRole="button"
+                accessibilityLabel="무지 속지"
                 accessibilityState={{
                   selected: paperType === 'plain',
                 }}
@@ -97,6 +157,7 @@ function TicketDiaryPage() {
                     paperType === 'plain' && styles.selectedPaperPreview,
                   ]}
                 />
+
                 <AppText
                   size={12}
                   weight={paperType === 'plain' ? 'semiBold' : 'regular'}
@@ -156,7 +217,7 @@ function TicketDiaryPage() {
               key={tool.id}
               accessibilityRole={'button'}
               accessibilityLabel={`${tool.label} 도구`}
-              onPress={() => setSelectedTool(tool.id)}
+              onPress={() => handlePressTool(tool.id)}
               style={({ pressed }) => [
                 styles.toolButton,
                 pressed && styles.pressedToolButton,
@@ -197,12 +258,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.surface,
   },
+
   editorArea: {
     flex: 1,
-    backgroundColor: colors.surface,
     position: 'relative',
     overflow: 'hidden',
+    backgroundColor: colors.surface,
   },
+
   paperSelector: {
     position: 'absolute',
     right: 0,
@@ -216,18 +279,22 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
     backgroundColor: colors.surface,
   },
+
   paperOptions: {
     flexDirection: 'row',
     gap: 20,
   },
+
   paperOption: {
     width: 64,
     alignItems: 'center',
     gap: 6,
   },
+
   pressedPaperOption: {
     opacity: 0.6,
   },
+
   paperPreview: {
     width: 56,
     height: 72,
@@ -238,6 +305,7 @@ const styles = StyleSheet.create({
     borderCurve: 'continuous',
     backgroundColor: colors.surface,
   },
+
   selectedPaperPreview: {
     borderWidth: 2,
     borderColor: colors.primary,
@@ -251,15 +319,18 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
     backgroundColor: colors.surface,
   },
+
   toolButton: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
   },
+
   pressedToolButton: {
     opacity: 0.6,
   },
+
   iconContainer: {
     width: 38,
     height: 32,
@@ -268,6 +339,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderCurve: 'continuous',
   },
+
   selectedIconContainer: {
     backgroundColor: colors.primarySoft,
   },
