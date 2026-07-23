@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import { Keyboard, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Trash2 } from 'lucide-react-native';
@@ -25,6 +25,12 @@ function TicketDetailScreen() {
 
   const [activeTab, setActiveTab] = useState<DetailTab>('record');
   const [isDeleteDialogVisible, setIsDeleteDialogVisible] = useState(false);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      gestureEnabled: activeTab !== 'diary',
+    });
+  }, [activeTab, navigation]);
 
   const handleChangeTab = (tab: DetailTab) => {
     Keyboard.dismiss();
