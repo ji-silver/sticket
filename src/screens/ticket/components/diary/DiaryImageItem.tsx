@@ -225,9 +225,14 @@ function DiaryImageItem({
   });
 
   const panGesture = usePanGesture({
-    enabled: isSelected,
     averageTouches: true,
     requireToFail: handleGestures,
+
+    onActivate: () => {
+      if (!isSelected) {
+        scheduleOnRN(onSelect);
+      }
+    },
 
     onUpdate: event => {
       translation.value = {
