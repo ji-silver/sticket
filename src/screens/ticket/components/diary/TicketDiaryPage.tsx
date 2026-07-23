@@ -1,4 +1,10 @@
-import { type LayoutChangeEvent, Pressable, StyleSheet, View, } from 'react-native';
+import {
+  Alert,
+  type LayoutChangeEvent,
+  Pressable,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { ImagePlus, Notebook, Pencil, Sticker, Type, } from 'lucide-react-native';
 import { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,6 +15,8 @@ import DiaryPhotos, { type DiaryPhoto, type EditorSize, selectDiaryPhoto, } from
 import DiaryStickerPicker from './DiaryStickerPicker.tsx';
 import DiaryStickers, { createDiarySticker, type DiarySticker, } from './DiaryStickers.tsx';
 import { type DiaryStickerDefinition } from './diaryStickerPacks.ts';
+
+const MAXIMUM_DIARY_PHOTO_COUNT = 2;
 
 const DIARY_TOOLS = [
   {
@@ -211,6 +219,15 @@ function TicketDiaryPage() {
 
 
   const handlePressSelectPhoto = async () => {
+    if (photos.length >= MAXIMUM_DIARY_PHOTO_COUNT) {
+      Alert.alert(
+        '사진을 추가할 수 없습니다',
+        '사진은 최대 2장까지 추가할 수 있습니다.',
+      );
+
+      return;
+    }
+
     const selectedPhoto = await selectDiaryPhoto(editorSize);
 
     if (selectedPhoto === null) {
