@@ -1,46 +1,41 @@
-import { Alert, StyleSheet } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
 import {
   GestureDetector,
   usePanGesture,
-  usePinchGesture,
-  useRotationGesture,
   useSimultaneousGestures,
   useTapGesture,
 } from 'react-native-gesture-handler';
-import ImagePicker from 'react-native-image-crop-picker';
+import { MoveDiagonal2, RotateCw, X } from 'lucide-react-native';
 import Animated, {
   useAnimatedStyle,
+  useDerivedValue,
   useSharedValue,
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
+import { colors } from '../../../../styles/colors.ts';
+import {
+  applyTransformations,
+  clamp,
+  constrainPhotoPosition,
+  getMaximumPhotoScale,
+  getTransformedPhotoPoint,
+  MINIMUM_PHOTO_SCALE,
+  type DiaryPhoto,
+  type EditorSize,
+  type Matrix3,
+  type Point,
+} from './photoTransform.ts';
 
-const MINIMUM_PHOTO_SCALE = 0.25;
-const MAXIMUM_PHOTO_SCALE = 4;
+export type {
+  DiaryPhoto,
+  EditorSize,
+  Matrix3,
+} from './photoTransform.ts';
+export { selectDiaryPhoto } from './selectDiaryPhoto.ts';
 
-export interface EditorSize {
-  width: number;
-  height: number;
-}
-
-export type Matrix3 = [
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-];
-
-export interface DiaryPhoto {
-  id: string;
-  uri: string;
-  width: number;
-  height: number;
-  matrix: Matrix3;
-}
+const PHOTO_HANDLE_TOUCH_SIZE = 44;
+const PHOTO_HANDLE_SIZE = 28;
+const ROTATION_HANDLE_OFFSET = 28;
 
 interface DiaryPhotosProps {
   photos: DiaryPhoto[];
@@ -48,6 +43,7 @@ interface DiaryPhotosProps {
   selectedPhotoId: string | null;
   onSelectPhoto: (photoId: string) => void;
   onChangePhoto: (photo: DiaryPhoto) => void;
+  onDeletePhoto: (photoId: string) => void;
 }
 
 interface DiaryPhotoItemProps {
@@ -57,240 +53,7 @@ interface DiaryPhotoItemProps {
   isSelected: boolean;
   onSelectPhoto: (photoId: string) => void;
   onChangePhoto: (photo: DiaryPhoto) => void;
-}
-
-interface Point {
-  x: number;
-  y: number;
-}
-
-function clamp(value: number, minimum: number, maximum: number) {
-  'worklet';
-
-  return Math.min(maximum, Math.max(minimum, value));
-}
-
-function identity3(): Matrix3 {
-  'worklet';
-
-  return [1, 0, 0, 0, 1, 0, 0, 0, 1];
-}
-
-function multiply3(first: Matrix3, second: Matrix3): Matrix3 {
-  'worklet';
-
-  return [
-    first[0] * second[0] + first[3] * second[1] + first[6] * second[2],
-
-    first[1] * second[0] + first[4] * second[1] + first[7] * second[2],
-
-    first[2] * second[0] + first[5] * second[1] + first[8] * second[2],
-
-    first[0] * second[3] + first[3] * second[4] + first[6] * second[5],
-
-    first[1] * second[3] + first[4] * second[4] + first[7] * second[5],
-
-    first[2] * second[3] + first[5] * second[4] + first[8] * second[5],
-
-    first[0] * second[6] + first[3] * second[7] + first[6] * second[8],
-
-    first[1] * second[6] + first[4] * second[7] + first[7] * second[8],
-
-    first[2] * second[6] + first[5] * second[7] + first[8] * second[8],
-  ];
-}
-
-function translate3(x: number, y: number): Matrix3 {
-  'worklet';
-
-  return [1, 0, 0, 0, 1, 0, x, y, 1];
-}
-
-function scale3(x: number, y: number): Matrix3 {
-  'worklet';
-
-  return [x, 0, 0, 0, y, 0, 0, 0, 1];
-}
-
-function rotate3(radians: number): Matrix3 {
-  'worklet';
-
-  const cosine = Math.cos(radians);
-  const sine = Math.sin(radians);
-
-  return [cosine, sine, 0, -sine, cosine, 0, 0, 0, 1];
-}
-
-function applyTransformations(
-  translation: Point,
-  scaleValue: number,
-  rotationValue: number,
-  origin: Point,
-  savedTransform: Matrix3,
-): Matrix3 {
-  'worklet';
-
-  let matrix = identity3();
-
-  matrix = multiply3(matrix, translate3(translation.x, translation.y));
-
-  matrix = multiply3(matrix, translate3(origin.x, origin.y));
-
-  matrix = multiply3(matrix, scale3(scaleValue, scaleValue));
-
-  matrix = multiply3(matrix, translate3(-origin.x, -origin.y));
-
-  matrix = multiply3(matrix, translate3(origin.x, origin.y));
-
-  matrix = multiply3(matrix, rotate3(rotationValue));
-
-  matrix = multiply3(matrix, translate3(-origin.x, -origin.y));
-
-  return multiply3(savedTransform, matrix);
-}
-
-function constrainPhotoPosition(
-  matrix: Matrix3,
-  photoWidth: number,
-  photoHeight: number,
-  editorSize: EditorSize,
-): Matrix3 {
-  'worklet';
-
-  if (editorSize.width <= 0 || editorSize.height <= 0) {
-    return matrix;
-  }
-
-  const currentScale = Math.max(Math.hypot(matrix[0], matrix[1]), 0.0001);
-  const rotation = Math.atan2(matrix[1], matrix[0]);
-  const cosine = Math.cos(rotation);
-  const sine = Math.sin(rotation);
-
-  const rotatedWidth =
-    Math.abs(cosine) * photoWidth + Math.abs(sine) * photoHeight;
-  const rotatedHeight =
-    Math.abs(sine) * photoWidth + Math.abs(cosine) * photoHeight;
-
-  const maximumScaleThatFits = Math.min(
-    editorSize.width / rotatedWidth,
-    editorSize.height / rotatedHeight,
-    MAXIMUM_PHOTO_SCALE,
-  );
-  const constrainedScale = Math.min(currentScale, maximumScaleThatFits);
-
-  const boundingWidth = rotatedWidth * constrainedScale;
-  const boundingHeight = rotatedHeight * constrainedScale;
-  const currentCenterX = matrix[6] + photoWidth / 2;
-  const currentCenterY = matrix[7] + photoHeight / 2;
-  const constrainedCenterX = clamp(
-    currentCenterX,
-    boundingWidth / 2,
-    editorSize.width - boundingWidth / 2,
-  );
-  const constrainedCenterY = clamp(
-    currentCenterY,
-    boundingHeight / 2,
-    editorSize.height - boundingHeight / 2,
-  );
-
-  return [
-    cosine * constrainedScale,
-    sine * constrainedScale,
-    matrix[2],
-    -sine * constrainedScale,
-    cosine * constrainedScale,
-    matrix[5],
-    constrainedCenterX - photoWidth / 2,
-    constrainedCenterY - photoHeight / 2,
-    matrix[8],
-  ];
-}
-
-function getPickerErrorCode(error: unknown) {
-  if (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    typeof error.code === 'string'
-  ) {
-    return error.code;
-  }
-
-  return null;
-}
-
-export async function selectDiaryPhoto(
-  editorSize: EditorSize,
-): Promise<DiaryPhoto | null> {
-  // 크기가 0이면 x
-  if (editorSize.width <= 0 || editorSize.height <= 0) {
-    Alert.alert(
-      '사진을 추가할 수 없습니다',
-      '다이어리 화면을 다시 열어주세요.',
-    );
-
-    return null;
-  }
-
-  try {
-    const image = await ImagePicker.openPicker({
-      mediaType: 'photo',
-      cropping: true, // 크롭 사용
-      freeStyleCropEnabled: true, // 자유 크롭
-      width: 2048,
-      height: 2048,
-      compressImageQuality: 0.9,
-      cropperToolbarTitle: '사진 편집',
-      cropperCancelText: '취소',
-      cropperChooseText: '선택',
-    });
-
-    // 처음 표시할 최대 크기 (50%넘지 않음)
-    const maximumPhotoWidth = editorSize.width * 0.5;
-    const maximumPhotoHeight = editorSize.height * 0.5;
-
-    const initialRatio = Math.min(
-      maximumPhotoWidth / image.width,
-      maximumPhotoHeight / image.height,
-      1,
-    );
-
-    const photoWidth = image.width * initialRatio;
-    const photoHeight = image.height * initialRatio;
-
-    // 사진 업로드 시 중앙에 배치 (다이어리 크기에서 사진 크기를 뺀 후 절반으로 나눔)
-    const initialX = (editorSize.width - photoWidth) / 2;
-    const initialY = (editorSize.height - photoHeight) / 2;
-
-    return {
-      id: Date.now().toString(),
-      uri: image.path,
-      width: photoWidth,
-      height: photoHeight,
-      matrix: translate3(initialX, initialY),
-    };
-  } catch (error) {
-    const errorCode = getPickerErrorCode(error);
-
-    if (errorCode === 'E_PICKER_CANCELLED') {
-      return null;
-    }
-
-    if (errorCode === 'E_NO_LIBRARY_PERMISSION') {
-      Alert.alert(
-        '사진 접근 권한이 필요합니다',
-        '기기 설정에서 사진 접근 권한을 허용해주세요.',
-      );
-
-      return null;
-    }
-
-    console.error('사진을 선택하지 못했습니다.', error);
-
-    Alert.alert('사진을 불러오지 못했습니다', '잠시 후 다시 시도해주세요.');
-
-    return null;
-  }
+  onDeletePhoto: (photoId: string) => void;
 }
 
 function DiaryPhotoItem({
@@ -300,24 +63,24 @@ function DiaryPhotoItem({
   isSelected,
   onSelectPhoto,
   onChangePhoto,
+  onDeletePhoto,
 }: DiaryPhotoItemProps) {
-
   const matrix = useSharedValue<Matrix3>(photo.matrix);
   const translation = useSharedValue<Point>({
     x: 0,
     y: 0,
   });
-
-  const origin = useSharedValue<Point>({
+  const resizeStartVector = useSharedValue<Point>({
     x: 0,
     y: 0,
   });
-
+  const resizeStartScale = useSharedValue(1);
+  const rotationStartVector = useSharedValue<Point>({
+    x: 0,
+    y: 0,
+  });
   const scale = useSharedValue(1);
   const rotation = useSharedValue(0);
-
-  const isScaling = useSharedValue(false);
-  const isRotating = useSharedValue(false);
 
   const savePhotoMatrix = (nextMatrix: Matrix3) => {
     onChangePhoto({
@@ -333,7 +96,7 @@ function DiaryPhotoItem({
       translation.value,
       scale.value,
       rotation.value,
-      origin.value,
+      { x: 0, y: 0 },
       matrix.value,
     );
 
@@ -357,7 +120,112 @@ function DiaryPhotoItem({
     scheduleOnRN(savePhotoMatrix, constrainedMatrix);
   };
 
+  const deleteGesture = useTapGesture({
+    enabled: isSelected,
+    onActivate: () => {
+      scheduleOnRN(onDeletePhoto, photo.id);
+    },
+  });
+
+  const resizeGesture = usePanGesture({
+    enabled: isSelected,
+
+    onActivate: () => {
+      const savedScale = Math.max(
+        Math.hypot(matrix.value[0], matrix.value[1]),
+        0.0001,
+      );
+      const savedRotation = Math.atan2(matrix.value[1], matrix.value[0]);
+      const halfWidth = (photo.width * savedScale) / 2;
+      const halfHeight = (photo.height * savedScale) / 2;
+      const cosine = Math.cos(savedRotation);
+      const sine = Math.sin(savedRotation);
+
+      resizeStartScale.value = savedScale;
+      resizeStartVector.value = {
+        x: cosine * halfWidth - sine * halfHeight,
+        y: sine * halfWidth + cosine * halfHeight,
+      };
+    },
+
+    onUpdate: event => {
+      const startVector = resizeStartVector.value;
+      const startDistance = Math.max(
+        Math.hypot(startVector.x, startVector.y),
+        0.0001,
+      );
+      const currentDistance = Math.hypot(
+        startVector.x + event.translationX,
+        startVector.y + event.translationY,
+      );
+      const savedRotation = Math.atan2(matrix.value[1], matrix.value[0]);
+      const maximumScale = getMaximumPhotoScale(
+        photo.width,
+        photo.height,
+        savedRotation,
+        editorSize,
+      );
+      const minimumScale = Math.min(MINIMUM_PHOTO_SCALE, maximumScale);
+      const nextScale = clamp(
+        resizeStartScale.value * (currentDistance / startDistance),
+        minimumScale,
+        maximumScale,
+      );
+
+      scale.value = nextScale / resizeStartScale.value;
+    },
+
+    onDeactivate: commitCurrentTransform,
+  });
+
+  const rotationHandleGesture = usePanGesture({
+    enabled: isSelected,
+
+    onActivate: () => {
+      const savedScale = Math.max(
+        Math.hypot(matrix.value[0], matrix.value[1]),
+        0.0001,
+      );
+      const savedRotation = Math.atan2(matrix.value[1], matrix.value[0]);
+      const handleDistance =
+        (photo.height / 2) * savedScale + ROTATION_HANDLE_OFFSET;
+      const handleAngle = savedRotation - Math.PI / 2;
+
+      rotationStartVector.value = {
+        x: Math.cos(handleAngle) * handleDistance,
+        y: Math.sin(handleAngle) * handleDistance,
+      };
+    },
+
+    onUpdate: event => {
+      const startVector = rotationStartVector.value;
+      const startAngle = Math.atan2(startVector.y, startVector.x);
+      const currentAngle = Math.atan2(
+        startVector.y + event.translationY,
+        startVector.x + event.translationX,
+      );
+      let angleDelta = currentAngle - startAngle;
+
+      if (angleDelta > Math.PI) {
+        angleDelta -= Math.PI * 2;
+      } else if (angleDelta < -Math.PI) {
+        angleDelta += Math.PI * 2;
+      }
+
+      rotation.value = angleDelta;
+    },
+
+    onDeactivate: commitCurrentTransform,
+  });
+
+  const handleGestures = [
+    deleteGesture,
+    resizeGesture,
+    rotationHandleGesture,
+  ];
+
   const selectGesture = useTapGesture({
+    requireToFail: handleGestures,
     onActivate: () => {
       scheduleOnRN(onSelectPhoto, photo.id);
     },
@@ -366,6 +234,7 @@ function DiaryPhotoItem({
   const panGesture = usePanGesture({
     enabled: isSelected,
     averageTouches: true,
+    requireToFail: handleGestures,
 
     onUpdate: event => {
       translation.value = {
@@ -377,88 +246,25 @@ function DiaryPhotoItem({
     onDeactivate: commitCurrentTransform,
   });
 
-  const pinchGesture = usePinchGesture({
-    enabled: isSelected,
-    onActivate: event => {
-      if (!isScaling.value && !isRotating.value) {
-        origin.value = {
-          x: -(event.focalX - photo.width / 2),
-          y: -(event.focalY - photo.height / 2),
-        };
-      }
+  const photoGesture = useSimultaneousGestures(selectGesture, panGesture);
 
-      isScaling.value = true;
-    },
-
-    onUpdate: event => {
-      const savedScale = Math.max(
-        Math.hypot(matrix.value[0], matrix.value[1]),
-        0.0001,
-      );
-
-      const nextGestureScale = scale.value * event.scaleChange;
-      const nextTotalScale = savedScale * nextGestureScale;
-
-      const constrainedTotalScale = clamp(
-        nextTotalScale,
-        MINIMUM_PHOTO_SCALE,
-        MAXIMUM_PHOTO_SCALE,
-      );
-
-      scale.value = constrainedTotalScale / savedScale;
-    },
-
-    onDeactivate: () => {
-      commitCurrentTransform();
-      isScaling.value = false;
-    },
-  });
-
-  const rotationGesture = useRotationGesture({
-    enabled: isSelected,
-    onActivate: event => {
-      if (!isScaling.value && !isRotating.value) {
-        origin.value = {
-          x: -(event.anchorX - photo.width / 2),
-          y: -(event.anchorY - photo.height / 2),
-        };
-      }
-
-      isRotating.value = true;
-    },
-
-    onUpdate: event => {
-      rotation.value += event.rotationChange;
-    },
-
-    onDeactivate: () => {
-      commitCurrentTransform();
-      isRotating.value = false;
-    },
-  });
-
-  const photoGesture = useSimultaneousGestures(
-    selectGesture,
-    panGesture,
-    pinchGesture,
-    rotationGesture,
-  );
-
-  const animatedStyle = useAnimatedStyle(() => {
-    const nextMatrix = applyTransformations(
-      translation.value,
-      scale.value,
-      rotation.value,
-      origin.value,
-      matrix.value,
-    );
-
-    const constrainedMatrix = constrainPhotoPosition(
-      nextMatrix,
+  const displayMatrix = useDerivedValue(() =>
+    constrainPhotoPosition(
+      applyTransformations(
+        translation.value,
+        scale.value,
+        rotation.value,
+        { x: 0, y: 0 },
+        matrix.value,
+      ),
       photo.width,
       photo.height,
       editorSize,
-    );
+    ),
+  );
+
+  const animatedStyle = useAnimatedStyle(() => {
+    const constrainedMatrix = displayMatrix.value;
 
     return {
       transform: [
@@ -481,27 +287,180 @@ function DiaryPhotoItem({
     };
   });
 
+  const deleteHandleStyle = useAnimatedStyle(() => {
+    const point = getTransformedPhotoPoint(
+      displayMatrix.value,
+      photo.width,
+      photo.height,
+      0,
+      0,
+    );
+
+    return {
+      transform: [
+        { translateX: point.x - PHOTO_HANDLE_TOUCH_SIZE / 2 },
+        { translateY: point.y - PHOTO_HANDLE_TOUCH_SIZE / 2 },
+      ],
+    };
+  });
+
+  const rotationHandleStyle = useAnimatedStyle(() => {
+    const matrixValue = displayMatrix.value;
+    const rotationValue = Math.atan2(matrixValue[1], matrixValue[0]);
+    const topCenter = getTransformedPhotoPoint(
+      matrixValue,
+      photo.width,
+      photo.height,
+      photo.width / 2,
+      0,
+    );
+    const point = {
+      x: topCenter.x + Math.sin(rotationValue) * ROTATION_HANDLE_OFFSET,
+      y: topCenter.y - Math.cos(rotationValue) * ROTATION_HANDLE_OFFSET,
+    };
+
+    return {
+      transform: [
+        { translateX: point.x - PHOTO_HANDLE_TOUCH_SIZE / 2 },
+        { translateY: point.y - PHOTO_HANDLE_TOUCH_SIZE / 2 },
+      ],
+    };
+  });
+
+  const rotationConnectorStyle = useAnimatedStyle(() => {
+    const matrixValue = displayMatrix.value;
+    const rotationValue = Math.atan2(matrixValue[1], matrixValue[0]);
+    const topCenter = getTransformedPhotoPoint(
+      matrixValue,
+      photo.width,
+      photo.height,
+      photo.width / 2,
+      0,
+    );
+    const middleX =
+      topCenter.x +
+      (Math.sin(rotationValue) * ROTATION_HANDLE_OFFSET) / 2;
+    const middleY =
+      topCenter.y -
+      (Math.cos(rotationValue) * ROTATION_HANDLE_OFFSET) / 2;
+
+    return {
+      transform: [
+        { translateX: middleX - 0.5 },
+        { translateY: middleY - ROTATION_HANDLE_OFFSET / 2 },
+        { rotateZ: `${rotationValue}rad` },
+      ],
+    };
+  });
+
+  const resizeHandleStyle = useAnimatedStyle(() => {
+    const point = getTransformedPhotoPoint(
+      displayMatrix.value,
+      photo.width,
+      photo.height,
+      photo.width,
+      photo.height,
+    );
+
+    return {
+      transform: [
+        { translateX: point.x - PHOTO_HANDLE_TOUCH_SIZE / 2 },
+        { translateY: point.y - PHOTO_HANDLE_TOUCH_SIZE / 2 },
+      ],
+    };
+  });
+
   return (
-    <GestureDetector gesture={photoGesture}>
-      <Animated.Image
-        accessible
-        accessibilityRole="image"
-        accessibilityLabel={`다이어리 사진 ${index + 1}`}
-        accessibilityState={{ selected: isSelected }}
-        source={{
-          uri: photo.uri,
-        }}
-        resizeMode="contain"
-        style={[
-          styles.photo,
-          {
-            width: photo.width,
-            height: photo.height,
-          },
-          animatedStyle,
-        ]}
-      />
-    </GestureDetector>
+    <>
+      <GestureDetector gesture={photoGesture}>
+        <Animated.View
+          style={[
+            styles.photoContainer,
+            {
+              width: photo.width,
+              height: photo.height,
+            },
+            animatedStyle,
+          ]}
+        >
+          <Image
+            accessible
+            accessibilityRole="image"
+            accessibilityLabel={`다이어리 사진 ${index + 1}`}
+            accessibilityState={{ selected: isSelected }}
+            source={{
+              uri: photo.uri,
+            }}
+            resizeMode="contain"
+            style={styles.photo}
+          />
+
+          {isSelected ? (
+            <View pointerEvents="none" style={styles.selectionBorder} />
+          ) : null}
+        </Animated.View>
+      </GestureDetector>
+
+      {isSelected ? (
+        <>
+          <Animated.View
+            pointerEvents="none"
+            style={[styles.rotationConnector, rotationConnectorStyle]}
+          />
+
+          <GestureDetector gesture={deleteGesture}>
+            <Animated.View
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel="사진 삭제"
+              accessibilityHint="선택한 사진을 삭제합니다"
+              onAccessibilityTap={() => onDeletePhoto(photo.id)}
+              style={[styles.handleTouchArea, deleteHandleStyle]}
+            >
+              <View style={[styles.handleButton, styles.deleteButton]}>
+                <X size={14} color="#D92D20" strokeWidth={2.1} />
+              </View>
+            </Animated.View>
+          </GestureDetector>
+
+          <GestureDetector gesture={rotationHandleGesture}>
+            <Animated.View
+              accessible
+              accessibilityRole="adjustable"
+              accessibilityLabel="사진 회전"
+              accessibilityHint="드래그하여 사진을 회전합니다"
+              style={[styles.handleTouchArea, rotationHandleStyle]}
+            >
+              <View style={styles.handleButton}>
+                <RotateCw
+                  size={14}
+                  color={colors.primary}
+                  strokeWidth={2.1}
+                />
+              </View>
+            </Animated.View>
+          </GestureDetector>
+
+          <GestureDetector gesture={resizeGesture}>
+            <Animated.View
+              accessible
+              accessibilityRole="adjustable"
+              accessibilityLabel="사진 크기 조절"
+              accessibilityHint="드래그하여 사진 크기를 변경합니다"
+              style={[styles.handleTouchArea, resizeHandleStyle]}
+            >
+              <View style={[styles.handleButton, styles.resizeButton]}>
+                <MoveDiagonal2
+                  size={14}
+                  color={colors.onPrimary}
+                  strokeWidth={2.1}
+                />
+              </View>
+            </Animated.View>
+          </GestureDetector>
+        </>
+      ) : null}
+    </>
   );
 }
 
@@ -511,6 +470,7 @@ function DiaryPhotos({
   selectedPhotoId,
   onSelectPhoto,
   onChangePhoto,
+  onDeletePhoto,
 }: DiaryPhotosProps) {
   return (
     <>
@@ -523,6 +483,7 @@ function DiaryPhotos({
           isSelected={photo.id === selectedPhotoId}
           onSelectPhoto={onSelectPhoto}
           onChangePhoto={onChangePhoto}
+          onDeletePhoto={onDeletePhoto}
         />
       ))}
     </>
@@ -532,9 +493,60 @@ function DiaryPhotos({
 export default DiaryPhotos;
 
 const styles = StyleSheet.create({
-  photo: {
+  photoContainer: {
     position: 'absolute',
     top: 0,
     left: 0,
+  },
+  photo: {
+    width: '100%',
+    height: '100%',
+  },
+  selectionBorder: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    borderWidth: 1.25,
+    borderColor: colors.primary,
+  },
+  rotationConnector: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: 1,
+    height: ROTATION_HANDLE_OFFSET,
+    backgroundColor: colors.primary,
+    opacity: 0.6,
+  },
+  handleTouchArea: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: PHOTO_HANDLE_TOUCH_SIZE,
+    height: PHOTO_HANDLE_TOUCH_SIZE,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  handleButton: {
+    width: PHOTO_HANDLE_SIZE,
+    height: PHOTO_HANDLE_SIZE,
+    borderRadius: 8,
+    borderCurve: 'continuous',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    boxShadow: '0 3px 10px rgba(24, 27, 32, 0.16)',
+  },
+  deleteButton: {
+    borderColor: '#F2C8C4',
+    backgroundColor: '#FFF7F6',
+  },
+  resizeButton: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primary,
   },
 });

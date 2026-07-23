@@ -98,6 +98,19 @@ function TicketDiaryPage() {
     });
   };
 
+  const handleDeletePhoto = (photoId: string) => {
+    setPhotos(currentPhotos =>
+      currentPhotos.filter(photo => photo.id !== photoId),
+    );
+    setSelectedPhotoId(currentPhotoId =>
+      currentPhotoId === photoId ? null : currentPhotoId,
+    );
+  };
+
+  const handleDeselectPhoto = () => {
+    setSelectedPhotoId(null);
+  };
+
   // 사진 선택 후 결과를 받는 함수
   const handlePressSelectPhoto = async () => {
     const selectedPhoto = await selectDiaryPhoto(editorSize);
@@ -122,7 +135,13 @@ function TicketDiaryPage() {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <View style={styles.editorArea} onLayout={handleEditorLayout}>
-        {paperType === 'grid' ? <GridPaper /> : null}
+        <Pressable
+          accessible={false}
+          style={styles.editorBackground}
+          onPress={handleDeselectPhoto}
+        >
+          {paperType === 'grid' ? <GridPaper /> : null}
+        </Pressable>
 
         <DiaryPhotos
           photos={photos}
@@ -130,6 +149,7 @@ function TicketDiaryPage() {
           selectedPhotoId={selectedPhotoId}
           onSelectPhoto={handleSelectPhoto}
           onChangePhoto={handleChangePhoto}
+          onDeletePhoto={handleDeletePhoto}
         />
 
         {selectedTool === 'paper' ? (
@@ -264,6 +284,14 @@ const styles = StyleSheet.create({
     position: 'relative',
     overflow: 'hidden',
     backgroundColor: colors.surface,
+  },
+
+  editorBackground: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
   },
 
   paperSelector: {
