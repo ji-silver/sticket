@@ -7,6 +7,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
+import { X } from 'lucide-react-native';
 import { colors } from '../../../../styles/colors.ts';
 import {
   DIARY_STICKER_PACKS,
@@ -16,10 +17,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface DiaryStickerPickerProps {
   onSelectSticker: (sticker: DiaryStickerDefinition) => void;
+  onClose: () => void;
 }
 
 function DiaryStickerPicker({
   onSelectSticker,
+  onClose,
 }: DiaryStickerPickerProps) {
   const { bottom } = useSafeAreaInsets();
   const [selectedPackId, setSelectedPackId] = useState(
@@ -36,47 +39,61 @@ function DiaryStickerPicker({
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.packScroll}
-        contentContainerStyle={styles.packList}
-      >
-        {DIARY_STICKER_PACKS.map((pack, index) => {
-          const representativeSticker =
-            pack.stickers.find(
-              sticker => sticker.id === pack.representativeStickerId,
-            ) ?? pack.stickers[0];
+      <View style={styles.packRow}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.packScroll}
+          contentContainerStyle={styles.packList}
+        >
+          {DIARY_STICKER_PACKS.map((pack, index) => {
+            const representativeSticker =
+              pack.stickers.find(
+                sticker => sticker.id === pack.representativeStickerId,
+              ) ?? pack.stickers[0];
 
-          if (representativeSticker === undefined) {
-            return null;
-          }
+            if (representativeSticker === undefined) {
+              return null;
+            }
 
-          const isSelected = pack.id === selectedPack.id;
+            const isSelected = pack.id === selectedPack.id;
 
-          return (
-            <Pressable
-              key={pack.id}
-              accessibilityRole="tab"
-              accessibilityLabel={`스티커팩 ${index + 1}`}
-              accessibilityState={{ selected: isSelected }}
-              onPress={() => setSelectedPackId(pack.id)}
-              style={({ pressed }) => [
-                styles.packButton,
-                isSelected && styles.selectedPackButton,
-                pressed && styles.pressedButton,
-              ]}
-            >
-              <Image
-                accessible={false}
-                source={representativeSticker.source}
-                resizeMode="contain"
-                style={styles.packImage}
-              />
-            </Pressable>
-          );
-        })}
-      </ScrollView>
+            return (
+              <Pressable
+                key={pack.id}
+                accessibilityRole="tab"
+                accessibilityLabel={`스티커팩 ${index + 1}`}
+                accessibilityState={{ selected: isSelected }}
+                onPress={() => setSelectedPackId(pack.id)}
+                style={({ pressed }) => [
+                  styles.packButton,
+                  isSelected && styles.selectedPackButton,
+                  pressed && styles.pressedButton,
+                ]}
+              >
+                <Image
+                  accessible={false}
+                  source={representativeSticker.source}
+                  resizeMode="contain"
+                  style={styles.packImage}
+                />
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="스티커 선택 닫기"
+          onPress={onClose}
+          style={({ pressed }) => [
+            styles.closeButton,
+            pressed && styles.pressedButton,
+          ]}
+        >
+          <X size={20} strokeWidth={2} color={colors.textSecondary} />
+        </Pressable>
+      </View>
 
       <FlatList
         key={selectedPack.id}
@@ -125,25 +142,30 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     height: '48%',
-    paddingTop: 10,
+    paddingTop: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
     backgroundColor: colors.surface,
   },
 
+  packRow: {
+    flexDirection: 'row',
+    paddingBottom: 8,
+  },
+
   packList: {
-    paddingHorizontal: 16,
-    paddingBottom: 10,
+    paddingLeft: 16,
+    paddingRight: 8,
     gap: 8,
   },
 
   packScroll: {
-    flexGrow: 0,
+    flex: 1,
   },
 
   packButton: {
-    width: 52,
-    height: 52,
+    width: 48,
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -159,9 +181,20 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primarySoft,
   },
 
+  closeButton: {
+    width: 48,
+    height: 48,
+    marginRight: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    borderLeftColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+
   packImage: {
-    width: 42,
-    height: 42,
+    width: 38,
+    height: 38,
   },
 
   stickerGrid: {

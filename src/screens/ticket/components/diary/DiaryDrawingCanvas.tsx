@@ -1,9 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { useEffect, useRef } from 'react';
-import {
-  PencilKitView,
-  type PencilKitRef,
-} from 'react-native-pencil-kit';
+import { type PencilKitRef, PencilKitView } from 'react-native-pencil-kit';
 
 interface DiaryDrawingCanvasProps {
   isDrawingMode: boolean;
@@ -25,7 +22,7 @@ function DiaryDrawingCanvas({ isDrawingMode }: DiaryDrawingCanvasProps) {
       ref={drawingCanvasRef}
       pointerEvents={isDrawingMode ? 'auto' : 'none'}
       drawingPolicy="anyinput"
-      backgroundColor="transparent"
+      backgroundColor="rgba(255, 255, 255, 0.01)"
       isOpaque={false}
       alwaysBounceHorizontal={false}
       alwaysBounceVertical={false}

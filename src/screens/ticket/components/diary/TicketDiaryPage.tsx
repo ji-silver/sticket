@@ -62,6 +62,15 @@ const DIARY_TOOLS = [
 
 type DiaryToolId = (typeof DIARY_TOOLS)[number]['id'];
 type PaperType = 'plain' | 'grid';
+type DiaryItem =
+  | {
+      type: 'photo';
+      data: DiaryPhoto;
+    }
+  | {
+      type: 'sticker';
+      data: DiarySticker;
+    };
 type SelectedDiaryItem =
   | {
       type: 'photo';
@@ -73,6 +82,31 @@ type SelectedDiaryItem =
     }
   | null;
 
+function moveDiaryItemToTop(
+  currentItems: DiaryItem[],
+  selectedItem: Exclude<SelectedDiaryItem, null>,
+) {
+  const selectedItemIndex = currentItems.findIndex(
+    item =>
+      item.type === selectedItem.type && item.data.id === selectedItem.id,
+  );
+
+  if (
+    selectedItemIndex === -1 ||
+    selectedItemIndex === currentItems.length - 1
+  ) {
+    return currentItems;
+  }
+
+  const itemToMove = currentItems[selectedItemIndex];
+
+  return [
+    ...currentItems.slice(0, selectedItemIndex),
+    ...currentItems.slice(selectedItemIndex + 1),
+    itemToMove,
+  ];
+}
+
 function TicketDiaryPage() {
   const [selectedTool, setSelectedTool] = useState<DiaryToolId | null>(null);
   const [paperType, setPaperType] = useState<PaperType>('plain');
@@ -83,8 +117,9 @@ function TicketDiaryPage() {
     height: 0,
   });
 
-  const [photos, setPhotos] = useState<DiaryPhoto[]>([]); // 현재 다이어리에 들어있는 모든 사진
-  const [stickers, setStickers] = useState<DiarySticker[]>([]);
+  // 사진과 스티커를 하나의 배열로 관리합니다.
+  // 배열의 마지막 항목이 화면에서 가장 위에 표시됩니다.
+  const [items, setItems] = useState<DiaryItem[]>([]);
   const [selectedItem, setSelectedItem] = useState<SelectedDiaryItem>(null);
 
 
@@ -102,47 +137,38 @@ function TicketDiaryPage() {
     setSelectedTool(null);
   };
 
-  // 이동·회전·크기 조절이 끝난 사진을 photos 상태 반영
+  // 이동·회전·크기 조절이 끝난 사진을 items 상태에 반영합니다.
   const handleChangePhoto = (changedPhoto: DiaryPhoto) => {
-    setPhotos(currentPhotos =>
-      currentPhotos.map(photo =>
-        photo.id === changedPhoto.id ? changedPhoto : photo,
+    setItems(currentItems =>
+      currentItems.map(item =>
+        item.type === 'photo' && item.data.id === changedPhoto.id
+          ? {
+              type: 'photo',
+              data: changedPhoto,
+            }
+          : item,
       ),
     );
   };
 
-  // 사진을 선택할 때 다른 사진보다 위에 표시되도록
+  // 선택한 사진을 사진·스티커 중 가장 위로 올립니다.
   const handleSelectPhoto = (photoId: string) => {
-    setSelectedItem({
+    const nextSelectedItem: Exclude<SelectedDiaryItem, null> = {
       type: 'photo',
       id: photoId,
-    });
+    };
 
-    setPhotos(currentPhotos => {
-      const selectedPhotoIndex = currentPhotos.findIndex(
-        photo => photo.id === photoId,
-      );
-
-      if (
-        selectedPhotoIndex === -1 ||
-        selectedPhotoIndex === currentPhotos.length - 1
-      ) {
-        return currentPhotos;
-      }
-
-      const selectedPhoto = currentPhotos[selectedPhotoIndex];
-
-      return [
-        ...currentPhotos.slice(0, selectedPhotoIndex),
-        ...currentPhotos.slice(selectedPhotoIndex + 1),
-        selectedPhoto,
-      ];
-    });
+    setSelectedItem(nextSelectedItem);
+    setItems(currentItems =>
+      moveDiaryItemToTop(currentItems, nextSelectedItem),
+    );
   };
 
   const handleDeletePhoto = (photoId: string) => {
-    setPhotos(currentPhotos =>
-      currentPhotos.filter(photo => photo.id !== photoId),
+    setItems(currentItems =>
+      currentItems.filter(
+        item => item.type !== 'photo' || item.data.id !== photoId,
+      ),
     );
 
     setSelectedItem(currentItem => {
@@ -155,46 +181,35 @@ function TicketDiaryPage() {
   };
 
   const handleChangeSticker = (changedSticker: DiarySticker) => {
-    setStickers(currentStickers =>
-      currentStickers.map(sticker =>
-        sticker.id === changedSticker.id ? changedSticker : sticker,
+    setItems(currentItems =>
+      currentItems.map(item =>
+        item.type === 'sticker' && item.data.id === changedSticker.id
+          ? {
+              type: 'sticker',
+              data: changedSticker,
+            }
+          : item,
       ),
     );
   };
 
-
   const handleSelectSticker = (stickerId: string) => {
-    setSelectedItem({
+    const nextSelectedItem: Exclude<SelectedDiaryItem, null> = {
       type: 'sticker',
       id: stickerId,
-    });
+    };
 
-    setStickers(currentStickers => {
-      const selectedStickerIndex = currentStickers.findIndex(
-        sticker => sticker.id === stickerId,
-      );
-
-      if (
-        selectedStickerIndex === -1 ||
-        selectedStickerIndex === currentStickers.length - 1
-      ) {
-        return currentStickers;
-      }
-
-      const selectedSticker = currentStickers[selectedStickerIndex];
-
-      return [
-        ...currentStickers.slice(0, selectedStickerIndex),
-        ...currentStickers.slice(selectedStickerIndex + 1),
-        selectedSticker,
-      ];
-    });
+    setSelectedItem(nextSelectedItem);
+    setItems(currentItems =>
+      moveDiaryItemToTop(currentItems, nextSelectedItem),
+    );
   };
 
-
   const handleDeleteSticker = (stickerId: string) => {
-    setStickers(currentStickers =>
-      currentStickers.filter(sticker => sticker.id !== stickerId),
+    setItems(currentItems =>
+      currentItems.filter(
+        item => item.type !== 'sticker' || item.data.id !== stickerId,
+      ),
     );
 
     setSelectedItem(currentItem => {
@@ -213,7 +228,13 @@ function TicketDiaryPage() {
       return;
     }
 
-    setStickers(currentStickers => [...currentStickers, newSticker]);
+    setItems(currentItems => [
+      ...currentItems,
+      {
+        type: 'sticker',
+        data: newSticker,
+      },
+    ]);
     setSelectedItem({
       type: 'sticker',
       id: newSticker.id,
@@ -233,7 +254,9 @@ function TicketDiaryPage() {
 
 
   const handlePressSelectPhoto = async () => {
-    if (photos.length >= MAXIMUM_DIARY_PHOTO_COUNT) {
+    const photoCount = items.filter(item => item.type === 'photo').length;
+
+    if (photoCount >= MAXIMUM_DIARY_PHOTO_COUNT) {
       Alert.alert(
         '사진을 추가할 수 없습니다',
         '사진은 최대 2장까지 추가할 수 있습니다.',
@@ -248,7 +271,13 @@ function TicketDiaryPage() {
       return;
     }
 
-    setPhotos(currentPhotos => [...currentPhotos, selectedPhoto]);
+    setItems(currentItems => [
+      ...currentItems,
+      {
+        type: 'photo',
+        data: selectedPhoto,
+      },
+    ]);
 
     setSelectedItem({
       type: 'photo',
@@ -288,27 +317,33 @@ function TicketDiaryPage() {
           {paperType === 'grid' ? <GridPaper /> : null}
         </Pressable>
 
-        <DiaryPhotos
-          photos={photos}
-          editorSize={editorSize}
-          selectedPhotoId={
-            selectedItem?.type === 'photo' ? selectedItem.id : null
-          }
-          onSelectPhoto={handleSelectPhoto}
-          onChangePhoto={handleChangePhoto}
-          onDeletePhoto={handleDeletePhoto}
-        />
-
-        <DiaryStickers
-          stickers={stickers}
-          editorSize={editorSize}
-          selectedStickerId={
-            selectedItem?.type === 'sticker' ? selectedItem.id : null
-          }
-          onSelectSticker={handleSelectSticker}
-          onChangeSticker={handleChangeSticker}
-          onDeleteSticker={handleDeleteSticker}
-        />
+        {items.map(item =>
+          item.type === 'photo' ? (
+            <DiaryPhotos
+              key={`photo-${item.data.id}`}
+              photos={[item.data]}
+              editorSize={editorSize}
+              selectedPhotoId={
+                selectedItem?.type === 'photo' ? selectedItem.id : null
+              }
+              onSelectPhoto={handleSelectPhoto}
+              onChangePhoto={handleChangePhoto}
+              onDeletePhoto={handleDeletePhoto}
+            />
+          ) : (
+            <DiaryStickers
+              key={`sticker-${item.data.id}`}
+              stickers={[item.data]}
+              editorSize={editorSize}
+              selectedStickerId={
+                selectedItem?.type === 'sticker' ? selectedItem.id : null
+              }
+              onSelectSticker={handleSelectSticker}
+              onChangeSticker={handleChangeSticker}
+              onDeleteSticker={handleDeleteSticker}
+            />
+          ),
+        )}
 
         <DiaryDrawingCanvas isDrawingMode={selectedTool === 'drawing'} />
 
@@ -330,7 +365,10 @@ function TicketDiaryPage() {
         ) : null}
 
         {selectedTool === 'sticker' ? (
-          <DiaryStickerPicker onSelectSticker={handleAddSticker} />
+          <DiaryStickerPicker
+            onSelectSticker={handleAddSticker}
+            onClose={() => setSelectedTool(null)}
+          />
         ) : null}
 
         {selectedTool === 'paper' ? (
