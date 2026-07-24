@@ -5,16 +5,30 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import { ImagePlus, Notebook, Pencil, Sticker, Type, } from 'lucide-react-native';
+import {
+  ImagePlus,
+  Notebook,
+  Pencil,
+  Sticker,
+  Type,
+} from 'lucide-react-native';
 import { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../../../../styles/colors.ts';
 import AppText from '../../../../components/common/AppText.tsx';
 import GridPaper from './GridPaper.tsx';
-import DiaryPhotos, { type DiaryPhoto, type EditorSize, selectDiaryPhoto, } from './DiaryPhotos.tsx';
+import DiaryPhotos, {
+  type DiaryPhoto,
+  type EditorSize,
+  selectDiaryPhoto,
+} from './DiaryPhotos.tsx';
 import DiaryStickerPicker from './DiaryStickerPicker.tsx';
-import DiaryStickers, { createDiarySticker, type DiarySticker, } from './DiaryStickers.tsx';
+import DiaryStickers, {
+  createDiarySticker,
+  type DiarySticker,
+} from './DiaryStickers.tsx';
 import { type DiaryStickerDefinition } from './diaryStickerPacks.ts';
+import DiaryDrawingCanvas from './DiaryDrawingCanvas.tsx';
 
 const MAXIMUM_DIARY_PHOTO_COUNT = 2;
 
@@ -246,9 +260,18 @@ function TicketDiaryPage() {
   const handlePressTool = (toolId: DiaryToolId) => {
     setSelectedTool(toolId);
 
+    if (toolId === 'drawing') {
+      setSelectedItem(null);
+    }
+
     if (toolId === 'photo') {
       handlePressSelectPhoto();
     }
+  };
+
+  // 드로잉을 끝내고 사진·스티커를 다시 편집할 수 있는 상태로 돌아갑니다.
+  const handleFinishDrawing = () => {
+    setSelectedTool(null);
   };
 
   return (
@@ -286,6 +309,25 @@ function TicketDiaryPage() {
           onChangeSticker={handleChangeSticker}
           onDeleteSticker={handleDeleteSticker}
         />
+
+        <DiaryDrawingCanvas isDrawingMode={selectedTool === 'drawing'} />
+
+        {selectedTool === 'drawing' ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="드로잉 완료"
+            hitSlop={8}
+            onPress={handleFinishDrawing}
+            style={({ pressed }) => [
+              styles.drawingDoneButton,
+              pressed && styles.pressedDrawingDoneButton,
+            ]}
+          >
+            <AppText size={14} weight="semiBold" color={colors.primary}>
+              완료
+            </AppText>
+          </Pressable>
+        ) : null}
 
         {selectedTool === 'sticker' ? (
           <DiaryStickerPicker onSelectSticker={handleAddSticker} />
@@ -366,7 +408,7 @@ function TicketDiaryPage() {
         ) : null}
       </View>
 
-      {selectedTool !== 'sticker' ? (
+      {selectedTool !== 'sticker' && selectedTool !== 'drawing' ? (
         <View style={styles.toolbar}>
           {DIARY_TOOLS.map(tool => {
             const Icon = tool.icon;
@@ -433,6 +475,27 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     left: 0,
+  },
+
+  drawingDoneButton: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    zIndex: 1,
+    minWidth: 60,
+    height: 40,
+    paddingHorizontal: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    borderRadius: 10,
+    borderCurve: 'continuous',
+    backgroundColor: colors.surface,
+  },
+
+  pressedDrawingDoneButton: {
+    backgroundColor: colors.primarySoft,
   },
 
   paperSelector: {
