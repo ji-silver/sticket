@@ -1,6 +1,9 @@
 import {
   Alert,
+  Keyboard,
+  KeyboardAvoidingView,
   type LayoutChangeEvent,
+  Platform,
   Pressable,
   StyleSheet,
   View,
@@ -29,6 +32,14 @@ import DiaryStickers, {
 } from './DiaryStickers.tsx';
 import { type DiaryStickerDefinition } from './diaryStickerPacks.ts';
 import DiaryDrawingCanvas from './DiaryDrawingCanvas.tsx';
+import DiaryTextItem from './DiaryTextItem.tsx';
+import DiaryTextToolbar from './DiaryTextToolbar.tsx';
+import {
+  createDiaryText,
+  type DiaryText,
+  type DiaryTextFrame,
+  type DiaryTextStyle,
+} from './diaryText.ts';
 
 const MAXIMUM_DIARY_PHOTO_COUNT = 2;
 
@@ -70,7 +81,12 @@ type DiaryItem =
   | {
       type: 'sticker';
       data: DiarySticker;
+    }
+  | {
+      type: 'text';
+      data: DiaryText;
     };
+
 type SelectedDiaryItem =
   | {
       type: 'photo';
@@ -80,6 +96,10 @@ type SelectedDiaryItem =
       type: 'sticker';
       id: string;
     }
+  | {
+      type: 'text';
+      id: string;
+    }
   | null;
 
 function moveDiaryItemToTop(
@@ -87,8 +107,7 @@ function moveDiaryItemToTop(
   selectedItem: Exclude<SelectedDiaryItem, null>,
 ) {
   const selectedItemIndex = currentItems.findIndex(
-    item =>
-      item.type === selectedItem.type && item.data.id === selectedItem.id,
+    item => item.type === selectedItem.type && item.data.id === selectedItem.id,
   );
 
   if (
@@ -117,11 +136,18 @@ function TicketDiaryPage() {
     height: 0,
   });
 
-  // 사진과 스티커를 하나의 배열로 관리합니다.
+  // 사진, 스티커, 텍스트를 하나의 배열로 관리합니다.
   // 배열의 마지막 항목이 화면에서 가장 위에 표시됩니다.
   const [items, setItems] = useState<DiaryItem[]>([]);
   const [selectedItem, setSelectedItem] = useState<SelectedDiaryItem>(null);
+  const [editingTextId, setEditingTextId] = useState<string | null>(null);
 
+  const selectedText =
+    selectedItem?.type === 'text'
+      ? items.find(
+          item => item.type === 'text' && item.data.id === selectedItem.id,
+        )
+      : null;
 
   const handleEditorLayout = ({ nativeEvent }: LayoutChangeEvent) => {
     const { width, height } = nativeEvent.layout;
@@ -137,7 +163,34 @@ function TicketDiaryPage() {
     setSelectedTool(null);
   };
 
-  // 이동·회전·크기 조절이 끝난 사진을 items 상태에 반영합니다.
+  const finishCurrentTextEditing = () => {
+    const currentEditingTextId = editingTextId;
+
+    if (currentEditingTextId === null) {
+      return;
+    }
+
+    Keyboard.dismiss();
+    setEditingTextId(null);
+
+    setItems(currentItems => {
+      const editingText = currentItems.find(
+        item => item.type === 'text' && item.data.id === currentEditingTextId,
+      );
+
+      if (
+        editingText?.type !== 'text' ||
+        editingText.data.text.trim().length > 0
+      ) {
+        return currentItems;
+      }
+
+      return currentItems.filter(
+        item => item.type !== 'text' || item.data.id !== currentEditingTextId,
+      );
+    });
+  };
+
   const handleChangePhoto = (changedPhoto: DiaryPhoto) => {
     setItems(currentItems =>
       currentItems.map(item =>
@@ -151,14 +204,16 @@ function TicketDiaryPage() {
     );
   };
 
-  // 선택한 사진을 사진·스티커 중 가장 위로 올립니다.
   const handleSelectPhoto = (photoId: string) => {
+    finishCurrentTextEditing();
+
     const nextSelectedItem: Exclude<SelectedDiaryItem, null> = {
       type: 'photo',
       id: photoId,
     };
 
     setSelectedItem(nextSelectedItem);
+
     setItems(currentItems =>
       moveDiaryItemToTop(currentItems, nextSelectedItem),
     );
@@ -194,6 +249,8 @@ function TicketDiaryPage() {
   };
 
   const handleSelectSticker = (stickerId: string) => {
+    finishCurrentTextEditing();
+
     const nextSelectedItem: Exclude<SelectedDiaryItem, null> = {
       type: 'sticker',
       id: stickerId,
@@ -221,7 +278,159 @@ function TicketDiaryPage() {
     });
   };
 
+  const handleAddText = () => {
+    finishCurrentTextEditing();
+
+    const newText = createDiaryText(editorSize);
+
+    if (newText === null) {
+      Alert.alert(
+        '텍스트를 추가할 수 없습니다',
+        '다이어리 화면을 다시 열어주세요.',
+      );
+
+      return;
+    }
+
+    setItems(currentItems => [
+      ...currentItems,
+      {
+        type: 'text',
+        data: newText,
+      },
+    ]);
+
+    setSelectedItem({
+      type: 'text',
+      id: newText.id,
+    });
+
+    setEditingTextId(newText.id);
+    setSelectedTool(null);
+  };
+
+  const handleSelectText = (textId: string) => {
+    finishCurrentTextEditing();
+
+    const nextSelectedItem: Exclude<SelectedDiaryItem, null> = {
+      type: 'text',
+      id: textId,
+    };
+
+    setSelectedItem(nextSelectedItem);
+
+    setItems(currentItems =>
+      moveDiaryItemToTop(currentItems, nextSelectedItem),
+    );
+  };
+
+  const handleStartTextEditing = (textId: string) => {
+    setSelectedItem({
+      type: 'text',
+      id: textId,
+    });
+
+    setEditingTextId(textId);
+  };
+
+  const handleChangeTextContent = (textId: string, value: string) => {
+    setItems(currentItems =>
+      currentItems.map(item =>
+        item.type === 'text' && item.data.id === textId
+          ? {
+              type: 'text',
+              data: {
+                ...item.data,
+                text: value,
+              },
+            }
+          : item,
+      ),
+    );
+  };
+
+  const handleChangeTextFrame = (textId: string, frame: DiaryTextFrame) => {
+    setItems(currentItems =>
+      currentItems.map(item =>
+        item.type === 'text' && item.data.id === textId
+          ? {
+              type: 'text',
+              data: {
+                ...item.data,
+                ...frame,
+              },
+            }
+          : item,
+      ),
+    );
+  };
+
+  const handleChangeTextHeight = (textId: string, height: number) => {
+    setItems(currentItems =>
+      currentItems.map(item =>
+        item.type === 'text' && item.data.id === textId
+          ? {
+              type: 'text',
+              data: {
+                ...item.data,
+                height,
+              },
+            }
+          : item,
+      ),
+    );
+  };
+
+  const handleFinishTextEditing = (textId: string) => {
+    setEditingTextId(currentId => (currentId === textId ? null : currentId));
+  };
+
+  const handleDeleteText = (textId: string) => {
+    setItems(currentItems =>
+      currentItems.filter(
+        item => item.type !== 'text' || item.data.id !== textId,
+      ),
+    );
+
+    setSelectedItem(currentItem =>
+      currentItem?.type === 'text' && currentItem.id === textId
+        ? null
+        : currentItem,
+    );
+
+    setEditingTextId(currentId => (currentId === textId ? null : currentId));
+
+    Keyboard.dismiss();
+  };
+
+  const handleChangeSelectedTextStyle = (patch: Partial<DiaryTextStyle>) => {
+    if (selectedItem?.type !== 'text') {
+      return;
+    }
+
+    const selectedTextId = selectedItem.id;
+
+    setItems(currentItems =>
+      currentItems.map(item =>
+        item.type === 'text' && item.data.id === selectedTextId
+          ? {
+              type: 'text',
+              data: {
+                ...item.data,
+                style: {
+                  ...item.data.style,
+                  ...patch,
+                },
+              },
+            }
+          : item,
+      ),
+    );
+  };
+
   const handleAddSticker = (stickerDefinition: DiaryStickerDefinition) => {
+    finishCurrentTextEditing();
+
     const newSticker = createDiarySticker(stickerDefinition, editorSize);
 
     if (newSticker === null) {
@@ -242,9 +451,9 @@ function TicketDiaryPage() {
     setSelectedTool(null);
   };
 
-  // 배경을 누르면 선택된 사진·스티커를 해제하고
-  // 스티커 선택창이 열려 있다면 선택창도 닫습니다.
   const handleDeselectDiaryItem = () => {
+    finishCurrentTextEditing();
+
     setSelectedItem(null);
 
     if (selectedTool === 'sticker') {
@@ -252,8 +461,9 @@ function TicketDiaryPage() {
     }
   };
 
-
   const handlePressSelectPhoto = async () => {
+    finishCurrentTextEditing();
+
     const photoCount = items.filter(item => item.type === 'photo').length;
 
     if (photoCount >= MAXIMUM_DIARY_PHOTO_COUNT) {
@@ -285,20 +495,23 @@ function TicketDiaryPage() {
     });
   };
 
-
   const handlePressTool = (toolId: DiaryToolId) => {
     setSelectedTool(toolId);
 
     if (toolId === 'drawing') {
+      finishCurrentTextEditing();
       setSelectedItem(null);
     }
 
     if (toolId === 'photo') {
       handlePressSelectPhoto();
     }
+
+    if (toolId === 'text') {
+      handleAddText();
+    }
   };
 
-  // 드로잉을 끝내고 사진·스티커를 다시 편집할 수 있는 상태로 돌아갑니다.
   const handleFinishDrawing = () => {
     setSelectedTool(null);
   };
@@ -308,186 +521,232 @@ function TicketDiaryPage() {
       style={styles.container}
       edges={selectedTool === 'sticker' ? [] : ['bottom']}
     >
-      <View style={styles.editorArea} onLayout={handleEditorLayout}>
-        <Pressable
-          accessible={false}
-          style={styles.editorBackground}
-          onPress={handleDeselectDiaryItem}
-        >
-          {paperType === 'grid' ? <GridPaper /> : null}
-        </Pressable>
-
-        {items.map(item =>
-          item.type === 'photo' ? (
-            <DiaryPhotos
-              key={`photo-${item.data.id}`}
-              photos={[item.data]}
-              editorSize={editorSize}
-              selectedPhotoId={
-                selectedItem?.type === 'photo' ? selectedItem.id : null
-              }
-              onSelectPhoto={handleSelectPhoto}
-              onChangePhoto={handleChangePhoto}
-              onDeletePhoto={handleDeletePhoto}
-            />
-          ) : (
-            <DiaryStickers
-              key={`sticker-${item.data.id}`}
-              stickers={[item.data]}
-              editorSize={editorSize}
-              selectedStickerId={
-                selectedItem?.type === 'sticker' ? selectedItem.id : null
-              }
-              onSelectSticker={handleSelectSticker}
-              onChangeSticker={handleChangeSticker}
-              onDeleteSticker={handleDeleteSticker}
-            />
-          ),
-        )}
-
-        <DiaryDrawingCanvas isDrawingMode={selectedTool === 'drawing'} />
-
-        {selectedTool === 'drawing' ? (
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.keyboardAvoidingContainer}
+      >
+        <View style={styles.editorArea} onLayout={handleEditorLayout}>
           <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="드로잉 완료"
-            hitSlop={8}
-            onPress={handleFinishDrawing}
-            style={({ pressed }) => [
-              styles.drawingDoneButton,
-              pressed && styles.pressedDrawingDoneButton,
-            ]}
+            accessible={false}
+            style={styles.editorBackground}
+            onPress={handleDeselectDiaryItem}
           >
-            <AppText size={14} weight="semiBold" color={colors.primary}>
-              완료
-            </AppText>
+            {paperType === 'grid' ? <GridPaper /> : null}
           </Pressable>
-        ) : null}
 
-        {selectedTool === 'sticker' ? (
-          <DiaryStickerPicker
-            onSelectSticker={handleAddSticker}
-            onClose={() => setSelectedTool(null)}
-          />
-        ) : null}
-
-        {selectedTool === 'paper' ? (
-          <View style={styles.paperSelector}>
-            <AppText size={13} weight="semiBold" color={colors.text}>
-              속지 선택
-            </AppText>
-
-            <View style={styles.paperOptions}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="무지 속지"
-                accessibilityState={{
-                  selected: paperType === 'plain',
-                }}
-                onPress={() => handlePaperSelect('plain')}
-                style={({ pressed }) => [
-                  styles.paperOption,
-                  pressed && styles.pressedPaperOption,
-                ]}
-              >
-                <View
-                  style={[
-                    styles.paperPreview,
-                    paperType === 'plain' && styles.selectedPaperPreview,
-                  ]}
+          {items.map(item => {
+            if (item.type === 'photo') {
+              return (
+                <DiaryPhotos
+                  key={`photo-${item.data.id}`}
+                  photos={[item.data]}
+                  editorSize={editorSize}
+                  selectedPhotoId={
+                    selectedItem?.type === 'photo' ? selectedItem.id : null
+                  }
+                  onSelectPhoto={handleSelectPhoto}
+                  onChangePhoto={handleChangePhoto}
+                  onDeletePhoto={handleDeletePhoto}
                 />
+              );
+            }
 
-                <AppText
-                  size={12}
-                  weight={paperType === 'plain' ? 'semiBold' : 'regular'}
-                  color={
-                    paperType === 'plain'
-                      ? colors.primary
-                      : colors.textSecondary
+            if (item.type === 'sticker') {
+              return (
+                <DiaryStickers
+                  key={`sticker-${item.data.id}`}
+                  stickers={[item.data]}
+                  editorSize={editorSize}
+                  selectedStickerId={
+                    selectedItem?.type === 'sticker' ? selectedItem.id : null
                   }
-                >
-                  무지
-                </AppText>
-              </Pressable>
+                  onSelectSticker={handleSelectSticker}
+                  onChangeSticker={handleChangeSticker}
+                  onDeleteSticker={handleDeleteSticker}
+                />
+              );
+            }
 
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="모눈 속지"
-                accessibilityState={{
-                  selected: paperType === 'grid',
-                }}
-                onPress={() => handlePaperSelect('grid')}
-                style={({ pressed }) => [
-                  styles.paperOption,
-                  pressed && styles.pressedPaperOption,
-                ]}
-              >
-                <View
-                  style={[
-                    styles.paperPreview,
-                    paperType === 'grid' && styles.selectedPaperPreview,
-                  ]}
-                >
-                  <GridPaper />
-                </View>
-
-                <AppText
-                  size={12}
-                  weight={paperType === 'grid' ? 'semiBold' : 'regular'}
-                  color={
-                    paperType === 'grid' ? colors.primary : colors.textSecondary
-                  }
-                >
-                  모눈
-                </AppText>
-              </Pressable>
-            </View>
-          </View>
-        ) : null}
-      </View>
-
-      {selectedTool !== 'sticker' && selectedTool !== 'drawing' ? (
-        <View style={styles.toolbar}>
-          {DIARY_TOOLS.map(tool => {
-            const Icon = tool.icon;
-            const isSelected = selectedTool === tool.id;
+            const textItem = item.data;
 
             return (
-              <Pressable
-                key={tool.id}
-                accessibilityRole={'button'}
-                accessibilityLabel={`${tool.label} 도구`}
-                onPress={() => handlePressTool(tool.id)}
-                style={({ pressed }) => [
-                  styles.toolButton,
-                  pressed && styles.pressedToolButton,
-                ]}
-              >
-                <View
-                  style={[
-                    styles.iconContainer,
-                    isSelected && styles.selectedIconContainer,
-                  ]}
-                >
-                  <Icon
-                    size={22}
-                    strokeWidth={2}
-                    color={isSelected ? colors.primary : colors.textSecondary}
-                  />
-                </View>
-
-                <AppText
-                  size={12}
-                  weight={isSelected ? 'semiBold' : 'regular'}
-                  color={isSelected ? colors.primary : colors.textSecondary}
-                >
-                  {tool.label}
-                </AppText>
-              </Pressable>
+              <DiaryTextItem
+                key={`text-${textItem.id}`}
+                textItem={textItem}
+                editorSize={editorSize}
+                isSelected={
+                  selectedItem?.type === 'text' &&
+                  selectedItem.id === textItem.id
+                }
+                isEditing={editingTextId === textItem.id}
+                onSelect={() => handleSelectText(textItem.id)}
+                onStartEditing={() => handleStartTextEditing(textItem.id)}
+                onChangeText={value =>
+                  handleChangeTextContent(textItem.id, value)
+                }
+                onChangeFrame={frame =>
+                  handleChangeTextFrame(textItem.id, frame)
+                }
+                onChangeHeight={height =>
+                  handleChangeTextHeight(textItem.id, height)
+                }
+                onFinishEditing={() => handleFinishTextEditing(textItem.id)}
+                onDelete={() => handleDeleteText(textItem.id)}
+              />
             );
           })}
+
+          <DiaryDrawingCanvas isDrawingMode={selectedTool === 'drawing'} />
+
+          {selectedTool === 'drawing' ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="드로잉 완료"
+              hitSlop={8}
+              onPress={handleFinishDrawing}
+              style={({ pressed }) => [
+                styles.drawingDoneButton,
+                pressed && styles.pressedDrawingDoneButton,
+              ]}
+            >
+              <AppText size={14} weight="semiBold" color={colors.primary}>
+                완료
+              </AppText>
+            </Pressable>
+          ) : null}
+
+          {selectedTool === 'sticker' ? (
+            <DiaryStickerPicker
+              onSelectSticker={handleAddSticker}
+              onClose={() => setSelectedTool(null)}
+            />
+          ) : null}
+
+          {selectedTool === 'paper' ? (
+            <View style={styles.paperSelector}>
+              <AppText size={13} weight="semiBold" color={colors.text}>
+                속지 선택
+              </AppText>
+
+              <View style={styles.paperOptions}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="무지 속지"
+                  accessibilityState={{
+                    selected: paperType === 'plain',
+                  }}
+                  onPress={() => handlePaperSelect('plain')}
+                  style={({ pressed }) => [
+                    styles.paperOption,
+                    pressed && styles.pressedPaperOption,
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.paperPreview,
+                      paperType === 'plain' && styles.selectedPaperPreview,
+                    ]}
+                  />
+
+                  <AppText
+                    size={12}
+                    weight={paperType === 'plain' ? 'semiBold' : 'regular'}
+                    color={
+                      paperType === 'plain'
+                        ? colors.primary
+                        : colors.textSecondary
+                    }
+                  >
+                    무지
+                  </AppText>
+                </Pressable>
+
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="모눈 속지"
+                  accessibilityState={{
+                    selected: paperType === 'grid',
+                  }}
+                  onPress={() => handlePaperSelect('grid')}
+                  style={({ pressed }) => [
+                    styles.paperOption,
+                    pressed && styles.pressedPaperOption,
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.paperPreview,
+                      paperType === 'grid' && styles.selectedPaperPreview,
+                    ]}
+                  >
+                    <GridPaper />
+                  </View>
+
+                  <AppText
+                    size={12}
+                    weight={paperType === 'grid' ? 'semiBold' : 'regular'}
+                    color={
+                      paperType === 'grid'
+                        ? colors.primary
+                        : colors.textSecondary
+                    }
+                  >
+                    모눈
+                  </AppText>
+                </Pressable>
+              </View>
+            </View>
+          ) : null}
         </View>
-      ) : null}
+
+        {selectedText?.type === 'text' ? (
+          <DiaryTextToolbar
+            textItem={selectedText.data}
+            onChangeStyle={handleChangeSelectedTextStyle}
+          />
+        ) : selectedTool !== 'sticker' && selectedTool !== 'drawing' ? (
+          <View style={styles.toolbar}>
+            {DIARY_TOOLS.map(tool => {
+              const Icon = tool.icon;
+              const isSelected = selectedTool === tool.id;
+
+              return (
+                <Pressable
+                  key={tool.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${tool.label} 도구`}
+                  onPress={() => handlePressTool(tool.id)}
+                  style={({ pressed }) => [
+                    styles.toolButton,
+                    pressed && styles.pressedToolButton,
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.iconContainer,
+                      isSelected && styles.selectedIconContainer,
+                    ]}
+                  >
+                    <Icon
+                      size={22}
+                      strokeWidth={2}
+                      color={isSelected ? colors.primary : colors.textSecondary}
+                    />
+                  </View>
+
+                  <AppText
+                    size={12}
+                    weight={isSelected ? 'semiBold' : 'regular'}
+                    color={isSelected ? colors.primary : colors.textSecondary}
+                  >
+                    {tool.label}
+                  </AppText>
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : null}
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -498,6 +757,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.surface,
+  },
+
+  keyboardAvoidingContainer: {
+    flex: 1,
   },
 
   editorArea: {

@@ -180,8 +180,7 @@ function DiaryImageItem({
         0.0001,
       );
       const savedRotation = Math.atan2(matrix.value[1], matrix.value[0]);
-      const handleDistance =
-        (height / 2) * savedScale + ROTATION_HANDLE_OFFSET;
+      const handleDistance = (height / 2) * savedScale + ROTATION_HANDLE_OFFSET;
       const handleAngle = savedRotation - Math.PI / 2;
 
       rotationStartVector.value = {
@@ -211,11 +210,7 @@ function DiaryImageItem({
     onDeactivate: commitCurrentTransform,
   });
 
-  const handleGestures = [
-    deleteGesture,
-    resizeGesture,
-    rotationHandleGesture,
-  ];
+  const handleGestures = [deleteGesture, resizeGesture, rotationHandleGesture];
 
   const selectGesture = useTapGesture({
     requireToFail: handleGestures,
@@ -286,18 +281,15 @@ function DiaryImageItem({
   });
 
   const deleteHandleStyle = useAnimatedStyle(() => {
-    const point = getTransformedPhotoPoint(
-      displayMatrix.value,
-      width,
-      height,
-      0,
-      0,
-    );
+    const matrixValue = displayMatrix.value;
+    const rotationValue = Math.atan2(matrixValue[1], matrixValue[0]);
+    const point = getTransformedPhotoPoint(matrixValue, width, height, 0, 0);
 
     return {
       transform: [
         { translateX: point.x - ITEM_HANDLE_TOUCH_SIZE / 2 },
         { translateY: point.y - ITEM_HANDLE_TOUCH_SIZE / 2 },
+        { rotateZ: `${rotationValue}rad` },
       ],
     };
   });
@@ -321,6 +313,7 @@ function DiaryImageItem({
       transform: [
         { translateX: point.x - ITEM_HANDLE_TOUCH_SIZE / 2 },
         { translateY: point.y - ITEM_HANDLE_TOUCH_SIZE / 2 },
+        { rotateZ: `${rotationValue}rad` },
       ],
     };
   });
@@ -336,11 +329,9 @@ function DiaryImageItem({
       0,
     );
     const middleX =
-      topCenter.x +
-      (Math.sin(rotationValue) * ROTATION_HANDLE_OFFSET) / 2;
+      topCenter.x + (Math.sin(rotationValue) * ROTATION_HANDLE_OFFSET) / 2;
     const middleY =
-      topCenter.y -
-      (Math.cos(rotationValue) * ROTATION_HANDLE_OFFSET) / 2;
+      topCenter.y - (Math.cos(rotationValue) * ROTATION_HANDLE_OFFSET) / 2;
 
     return {
       transform: [
@@ -352,8 +343,10 @@ function DiaryImageItem({
   });
 
   const resizeHandleStyle = useAnimatedStyle(() => {
+    const matrixValue = displayMatrix.value;
+    const rotationValue = Math.atan2(matrixValue[1], matrixValue[0]);
     const point = getTransformedPhotoPoint(
-      displayMatrix.value,
+      matrixValue,
       width,
       height,
       width,
@@ -364,6 +357,7 @@ function DiaryImageItem({
       transform: [
         { translateX: point.x - ITEM_HANDLE_TOUCH_SIZE / 2 },
         { translateY: point.y - ITEM_HANDLE_TOUCH_SIZE / 2 },
+        { rotateZ: `${rotationValue}rad` },
       ],
     };
   });
@@ -428,11 +422,7 @@ function DiaryImageItem({
               style={[styles.handleTouchArea, rotationHandleStyle]}
             >
               <View style={styles.handleButton}>
-                <RotateCw
-                  size={14}
-                  color={colors.primary}
-                  strokeWidth={2.1}
-                />
+                <RotateCw size={14} color={colors.primary} strokeWidth={2.1} />
               </View>
             </Animated.View>
           </GestureDetector>

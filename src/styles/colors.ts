@@ -6,6 +6,7 @@ export const colors = {
 
   text: '#181B20',
   textSecondary: '#747A82',
+  textPlaceholder: '#A3A8AE',
 
   background: '#F7F8F9',
   surface: '#FFFFFF',
