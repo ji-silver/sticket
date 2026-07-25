@@ -31,9 +31,8 @@ import {
   MINIMUM_TEXT_HEIGHT,
   MINIMUM_TEXT_WIDTH,
 } from './diaryText.ts';
-import { type EditorSize } from './photoTransform.ts';
+import { type EditorSize, snapRotationToZero } from './photoTransform.ts';
 
-// 터치 영역은 유지하고, 텍스트 박스에 맞게 보이는 핸들만 작게 표시합니다.
 const HANDLE_TOUCH_SIZE = 44;
 const ACTION_HANDLE_SIZE = 24;
 const RESIZE_HANDLE_WIDTH = 18;
@@ -272,7 +271,9 @@ function DiaryTextItem({
         angleDifference += Math.PI * 2;
       }
 
-      rotation.value = rotationStartValue.value + angleDifference;
+      rotation.value = snapRotationToZero(
+        rotationStartValue.value + angleDifference,
+      );
     },
 
     onDeactivate: commitCurrentFrame,
@@ -299,10 +300,8 @@ function DiaryTextItem({
   });
 
   const moveGesture = usePanGesture({
-    // 새 텍스트가 비어 있을 때는 입력 포커스를 유지한 채 위치를 옮길 수 있습니다.
     enabled: !isEditing || textItem.text.length === 0,
     averageTouches: true,
-    // 텍스트를 누른 채 조금만 움직여도 탭이 아닌 이동으로 인식합니다.
     minDistance: 2,
     requireToFail: handleGestures,
 
@@ -321,7 +320,6 @@ function DiaryTextItem({
     onDeactivate: commitCurrentFrame,
   });
 
-  // 드래그를 우선 판정해 이동하려는 동작이 재편집 탭으로 처리되지 않게 합니다.
   const itemGesture = useExclusiveGestures(moveGesture, tapGesture);
 
   const displayFrame = useDerivedValue(() =>
@@ -504,9 +502,6 @@ function DiaryTextItem({
     fontFamily,
   } as const;
 
-  /**
-   * 실제 입력 내용과 텍스트 박스 높이를 같은 값으로 맞춥니다.
-   */
   const updateTextBoxHeight = (contentHeight: number) => {
     const nextHeight = Math.max(MINIMUM_TEXT_HEIGHT, contentHeight);
 
@@ -518,10 +513,6 @@ function DiaryTextItem({
     onChangeHeight(nextHeight);
   };
 
-  /**
-   * TextInput이 알려주는 실제 콘텐츠 높이를 사용합니다.
-   * 마지막 문자가 줄바꿈이면 숨은 측정 Text가 빈 줄까지 계산합니다.
-   */
   const handleTextInputContentSizeChange = ({
     nativeEvent,
   }: TextInputContentSizeChangeEvent) => {
@@ -532,9 +523,6 @@ function DiaryTextItem({
     updateTextBoxHeight(nativeEvent.contentSize.height);
   };
 
-  /**
-   * TextInput이 놓치는 마지막 빈 줄의 높이를 보완합니다.
-   */
   const handleTextMeasureLayout = ({ nativeEvent }: LayoutChangeEvent) => {
     if (!textItem.text.endsWith('\n')) {
       return;
@@ -543,18 +531,12 @@ function DiaryTextItem({
     updateTextBoxHeight(nativeEvent.layout.height);
   };
 
-  /**
-   * 스타일 변경으로 입력창이 다시 만들어져도 커서와 선택 범위를 유지합니다.
-   */
   const handleTextSelectionChange = ({
     nativeEvent,
   }: TextInputSelectionChangeEvent) => {
     textSelection.current = nativeEvent.selection;
   };
 
-  /**
-   * 스타일 변경으로 교체된 이전 입력창의 blur는 편집 완료로 처리하지 않습니다.
-   */
   const handleTextInputBlur = () => {
     if (textInputStyleKey !== latestTextInputStyleKey.current) {
       return;

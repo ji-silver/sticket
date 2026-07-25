@@ -1,5 +1,6 @@
 export const MINIMUM_PHOTO_SCALE = 0.25;
 export const MAXIMUM_PHOTO_SCALE = 4;
+const ROTATION_SNAP_THRESHOLD = (4 * Math.PI) / 180;
 
 export interface EditorSize {
   width: number;
@@ -35,6 +36,15 @@ export function clamp(value: number, minimum: number, maximum: number) {
   'worklet';
 
   return Math.min(maximum, Math.max(minimum, value));
+}
+
+// 0도에서 4도 안으로 들어온 회전값을 0도로 맞추기
+export function snapRotationToZero(rotation: number) {
+  'worklet';
+
+  const normalizedRotation = Math.atan2(Math.sin(rotation), Math.cos(rotation));
+
+  return Math.abs(normalizedRotation) <= ROTATION_SNAP_THRESHOLD ? 0 : rotation;
 }
 
 function identity3(): Matrix3 {
@@ -208,15 +218,7 @@ export function getTransformedPhotoPoint(
   const offsetY = (y - photoHeight / 2) * scale;
 
   return {
-    x:
-      matrix[6] +
-      photoWidth / 2 +
-      cosine * offsetX -
-      sine * offsetY,
-    y:
-      matrix[7] +
-      photoHeight / 2 +
-      sine * offsetX +
-      cosine * offsetY,
+    x: matrix[6] + photoWidth / 2 + cosine * offsetX - sine * offsetY,
+    y: matrix[7] + photoHeight / 2 + sine * offsetX + cosine * offsetY,
   };
 }

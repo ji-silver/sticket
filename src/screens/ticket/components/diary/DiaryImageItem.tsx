@@ -22,12 +22,13 @@ import {
   applyTransformations,
   clamp,
   constrainPhotoPosition,
+  type EditorSize,
   getMaximumPhotoScale,
   getTransformedPhotoPoint,
-  MINIMUM_PHOTO_SCALE,
-  type EditorSize,
   type Matrix3,
+  MINIMUM_PHOTO_SCALE,
   type Point,
+  snapRotationToZero,
 } from './photoTransform.ts';
 
 const ITEM_HANDLE_TOUCH_SIZE = 44;
@@ -204,7 +205,10 @@ function DiaryImageItem({
         angleDelta += Math.PI * 2;
       }
 
-      rotation.value = angleDelta;
+      const savedRotation = Math.atan2(matrix.value[1], matrix.value[0]);
+      const nextRotation = snapRotationToZero(savedRotation + angleDelta);
+
+      rotation.value = nextRotation - savedRotation;
     },
 
     onDeactivate: commitCurrentTransform,
