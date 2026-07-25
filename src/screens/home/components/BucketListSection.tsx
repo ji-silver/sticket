@@ -68,6 +68,14 @@ function BucketListSection({
     updateBuckets(prev => prev.filter(bucket => bucket.id !== id));
   };
 
+  const handleRestoreBucket = (bucket: Bucket, index: number) => {
+    updateBuckets(prev => {
+      const nextBuckets = [...prev];
+      nextBuckets.splice(index, 0, bucket);
+      return nextBuckets;
+    });
+  };
+
   return (
     <View style={styles.bucketSection}>
       <View style={styles.bucketHeader}>
@@ -131,6 +139,7 @@ function BucketListSection({
         onAddBucket={handleAddBucket}
         onUpdateBucket={handleUpdateBucket}
         onDeleteBucket={handleDeleteBucket}
+        onRestoreBucket={handleRestoreBucket}
       />
     </View>
   );
