@@ -1,14 +1,6 @@
 import DiaryImageItem from './DiaryImageItem.tsx';
-import {
-  type EditorSize,
-  type Matrix3,
-  translate3,
-} from './photoTransform.ts';
-import {
-  Alert,
-  Image,
-  type ImageRequireSource,
-} from 'react-native';
+import { type EditorSize, type Matrix3, translate3 } from './photoTransform.ts';
+import { Alert, Image, type ImageRequireSource } from 'react-native';
 import { type DiaryStickerDefinition } from './diaryStickerPacks.ts';
 
 const MINIMUM_INITIAL_STICKER_SIZE = 112;
@@ -24,13 +16,13 @@ export interface DiarySticker {
   matrix: Matrix3; // 스티커 현재 위치, 회전, 확대 및 축소 상태
 }
 
-interface DiaryStickersProps {
-  stickers: DiarySticker[];
+interface DiaryStickerItemProps {
+  sticker: DiarySticker;
   editorSize: EditorSize;
-  selectedStickerId: string | null;
-  onSelectSticker: (stickerId: string) => void;
-  onChangeSticker: (sticker: DiarySticker) => void;
-  onDeleteSticker: (stickerId: string) => void;
+  isSelected: boolean;
+  onSelect: () => void;
+  onChange: (sticker: DiarySticker) => void;
+  onDelete: () => void;
 }
 
 export function createDiarySticker(
@@ -88,34 +80,29 @@ export function createDiarySticker(
   };
 }
 
-function DiaryStickers({
-  stickers,
+function DiaryStickerItem({
+  sticker,
   editorSize,
-  selectedStickerId,
-  onSelectSticker,
-  onChangeSticker,
-  onDeleteSticker,
-}: DiaryStickersProps) {
+  isSelected,
+  onSelect,
+  onChange,
+  onDelete,
+}: DiaryStickerItemProps) {
   return (
-    <>
-      {stickers.map((sticker, index) => (
-        <DiaryImageItem
-          key={sticker.id}
-          source={sticker.source}
-          width={sticker.width}
-          height={sticker.height}
-          initialMatrix={sticker.matrix}
-          editorSize={editorSize}
-          isSelected={sticker.id === selectedStickerId}
-          itemLabel="스티커"
-          accessibilityLabel={`다이어리 스티커 ${index + 1}`}
-          onSelect={() => onSelectSticker(sticker.id)}
-          onChangeMatrix={matrix => onChangeSticker({ ...sticker, matrix })}
-          onDelete={() => onDeleteSticker(sticker.id)}
-        />
-      ))}
-    </>
+    <DiaryImageItem
+      source={sticker.source}
+      width={sticker.width}
+      height={sticker.height}
+      initialMatrix={sticker.matrix}
+      editorSize={editorSize}
+      isSelected={isSelected}
+      itemLabel="스티커"
+      accessibilityLabel="다이어리 스티커"
+      onSelect={onSelect}
+      onChangeMatrix={matrix => onChange({ ...sticker, matrix })}
+      onDelete={onDelete}
+    />
   );
 }
 
-export default DiaryStickers;
+export default DiaryStickerItem;
