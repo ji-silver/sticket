@@ -3,7 +3,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  type TextInputContentSizeChangeEvent,
   type TextInputSelectionChangeEvent,
   View,
 } from 'react-native';
@@ -67,6 +66,8 @@ function DiaryTextItem({
   onFinishEditing,
   onDelete,
 }: DiaryTextItemProps) {
+  const textInputRef = useRef<TextInput>(null);
+
   const textSelection = useRef({
     start: textItem.text.length,
     end: textItem.text.length,
@@ -493,6 +494,17 @@ function DiaryTextItem({
   const latestTextInputStyleKey = useRef(textInputStyleKey);
   latestTextInputStyleKey.current = textInputStyleKey;
 
+  useEffect(() => {
+    if (!isEditing) return;
+
+    const frameId = requestAnimationFrame(() => {
+      const { start, end } = textSelection.current;
+      textInputRef.current?.setSelection(start, end);
+    });
+
+    return () => cancelAnimationFrame(frameId);
+  }, [isEditing, textInputStyleKey]);
+
   const commonTextStyle = {
     color: textItem.style.color,
     fontSize: textItem.style.fontSize,
@@ -513,21 +525,7 @@ function DiaryTextItem({
     onChangeHeight(nextHeight);
   };
 
-  const handleTextInputContentSizeChange = ({
-    nativeEvent,
-  }: TextInputContentSizeChangeEvent) => {
-    if (textItem.text.endsWith('\n')) {
-      return;
-    }
-
-    updateTextBoxHeight(nativeEvent.contentSize.height);
-  };
-
   const handleTextMeasureLayout = ({ nativeEvent }: LayoutChangeEvent) => {
-    if (!textItem.text.endsWith('\n')) {
-      return;
-    }
-
     updateTextBoxHeight(nativeEvent.layout.height);
   };
 
@@ -560,18 +558,17 @@ function DiaryTextItem({
 
           <TextInput
             key={textInputStyleKey}
+            ref={textInputRef}
             autoFocus
             multiline
             scrollEnabled={false}
             defaultValue={textItem.text}
-            selection={textSelection.current}
             textAlign={textItem.style.align}
             placeholder="텍스트 입력"
             placeholderTextColor={colors.textPlaceholder}
             selectionColor={colors.primary}
             cursorColor={colors.primary}
             onChangeText={onChangeText}
-            onContentSizeChange={handleTextInputContentSizeChange}
             onSelectionChange={handleTextSelectionChange}
             onBlur={handleTextInputBlur}
             style={[styles.text, styles.textInput, commonTextStyle]}
