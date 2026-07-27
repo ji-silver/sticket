@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -122,10 +121,7 @@ function TicketRecordPage({ ticket }: TicketRecordPageProps) {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <KeyboardAvoidingView style={styles.container} behavior="padding">
       <ScrollView
         style={styles.content}
         contentContainerStyle={styles.contentContainer}
@@ -341,9 +337,7 @@ function TicketRecordPage({ ticket }: TicketRecordPageProps) {
                   ))}
                 </View>
               ) : (
-                <AppText
-                  style={[styles.placeholderText, styles.foodEmptyText]}
-                >
+                <AppText style={[styles.placeholderText, styles.foodEmptyText]}>
                   아직 기록한 야구장 푸드가 없어요
                 </AppText>
               )}

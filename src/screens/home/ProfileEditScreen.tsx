@@ -2,7 +2,6 @@ import { useNavigation } from '@react-navigation/native';
 import { ChevronRight } from 'lucide-react-native';
 import {
   KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -34,10 +33,7 @@ function ProfileEditScreen() {
         onPressBack={() => navigation.goBack()}
       />
 
-      <KeyboardAvoidingView
-        style={styles.keyboardArea}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingView style={styles.keyboardArea} behavior="padding">
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.contentContainer}

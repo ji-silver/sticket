@@ -3,7 +3,6 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   type LayoutChangeEvent,
-  Platform,
   Pressable,
   StyleSheet,
   View,
@@ -485,7 +484,7 @@ function TicketDiaryPage() {
       edges={selectedTool === 'sticker' ? [] : ['bottom']}
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior="padding"
         style={styles.keyboardAvoidingContainer}
       >
         <View style={styles.editorArea} onLayout={handleEditorLayout}>
