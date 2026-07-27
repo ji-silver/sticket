@@ -6,12 +6,15 @@ import AddTicketScreen from '../screens/ticket/AddTicketScreen.tsx';
 import ProfileEditScreen from '../screens/home/ProfileEditScreen.tsx';
 import AuthScreen from '../screens/auth/AuthScreen.tsx';
 import LoadingScreen from '../screens/auth/LoadingScreen.tsx';
+import ProfileSetupScreen from '../screens/auth/ProfileSetupScreen.tsx';
 import TicketDetailScreen from '../screens/ticket/TicketDetailScreen.tsx';
 import { Ticket } from '../screens/ticket/types.ts';
+import { colors } from '../styles/colors.ts';
 
 export type RootStackParamList = {
   Loading: undefined;
   Auth: undefined;
+  ProfileSetup: undefined;
   MainTab: undefined;
   AddDiary: undefined;
   TicketList:
@@ -37,6 +40,20 @@ function RootStackNavigator() {
     >
       <Stack.Screen name={'Loading'} component={LoadingScreen} />
       <Stack.Screen name={'Auth'} component={AuthScreen} />
+      <Stack.Screen
+        name={'ProfileSetup'}
+        component={ProfileSetupScreen}
+        options={{
+          headerShown: true,
+          title: '',
+          headerBackButtonDisplayMode: 'minimal',
+          headerShadowVisible: false,
+          headerTintColor: colors.text,
+          headerStyle: {
+            backgroundColor: colors.surface,
+          },
+        }}
+      />
       <Stack.Screen name={'MainTab'} component={BottomTabNavigator} />
       <Stack.Screen name={'AddDiary'} component={AddDiaryScreen} />
       <Stack.Screen name={'TicketList'} component={TicketListScreen} />

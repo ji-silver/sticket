@@ -20,6 +20,7 @@ const KBO_TEAMS = [
 
 interface TeamSelectSheetProps {
   visible: boolean;
+  title?: string;
   selectedTeam: string;
   onSelect: (team: string) => void;
   onClose: () => void;
@@ -27,6 +28,7 @@ interface TeamSelectSheetProps {
 
 function TeamSelectSheet({
   visible,
+  title = '응원 구단 변경',
   selectedTeam,
   onSelect,
   onClose,
@@ -34,7 +36,7 @@ function TeamSelectSheet({
   return (
     <AppBottomSheet
       visible={visible}
-      title="응원 구단 변경"
+      title={title}
       onClose={onClose}
       closeAccessibilityLabel="응원 구단 선택 닫기"
     >

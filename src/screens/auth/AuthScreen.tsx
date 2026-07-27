@@ -15,10 +15,12 @@ function AuthScreen() {
 
   const handlePressApple = () => {
     // TODO: Apple 로그인 연동
+    navigation.navigate('ProfileSetup');
   };
 
   const handlePressGoogle = () => {
     // TODO: Google 로그인 연동
+    navigation.navigate('ProfileSetup');
   };
 
   const handlePressPreview = () => {
