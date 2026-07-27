@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import AppText from '../../../components/common/AppText.tsx';
+import { colors } from '../../../styles/colors.ts';
 import { fonts } from '../../../styles/fonts.ts';
 import type { Ticket } from '../types.ts';
 
@@ -38,7 +39,7 @@ function TicketCard({ ticket, onPress }: TicketCardProps) {
       onPress={onPress}
       style={({ pressed }) => [styles.ticket, pressed && styles.ticketPressed]}
       accessibilityRole="button"
-      accessibilityLabel={`${month}월 ${day}일 ${ticket.awayTeamName} ${ticket.awayScore} 대 ${ticket.homeTeamName} ${ticket.homeScore}, 직관 기록 보기`}
+      accessibilityLabel={`${month}월 ${day}일 ${ticket.awayTeamName} 대 ${ticket.homeTeamName}, 직관 기록 보기`}
       accessibilityHint="직관 기록 상세 화면으로 이동합니다"
     >
       <View style={styles.contentArea}>
@@ -52,7 +53,7 @@ function TicketCard({ ticket, onPress }: TicketCardProps) {
           </AppText>
         </View>
 
-        <View style={styles.scoreBoard}>
+        <View style={styles.matchup}>
           <View style={styles.teamSide}>
             <AppText
               style={[
@@ -70,15 +71,7 @@ function TicketCard({ ticket, onPress }: TicketCardProps) {
             </AppText>
           </View>
 
-          <View style={styles.scoreCenter}>
-            <View style={styles.scoreRow}>
-              <AppText style={styles.scoreText}>{ticket.awayScore}</AppText>
-
-              <AppText style={styles.scoreDivider}>:</AppText>
-
-              <AppText style={styles.scoreText}>{ticket.homeScore}</AppText>
-            </View>
-
+          <View style={styles.matchupCenter}>
             <AppText style={styles.vsText}>VS</AppText>
           </View>
 
@@ -126,9 +119,10 @@ function TicketCard({ ticket, onPress }: TicketCardProps) {
               key={`barcode-${index}`}
               style={[
                 styles.barcodeBar,
+                styles.barcodeBarSpacing,
+                index === barcodeModules.length - 1 && styles.barcodeBarLast,
                 {
                   width,
-                  marginRight: index === barcodeModules.length - 1 ? 0 : 1,
                 },
               ]}
             />
@@ -189,7 +183,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
 
-  scoreBoard: {
+  matchup: {
     minHeight: 54,
     marginTop: 12,
     flexDirection: 'row',
@@ -216,35 +210,15 @@ const styles = StyleSheet.create({
     color: '#AAAAAA',
   },
 
-  scoreCenter: {
+  matchupCenter: {
     width: 84,
     alignItems: 'center',
   },
 
-  scoreRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  scoreText: {
-    fontSize: 25,
-    lineHeight: 29,
-    fontFamily: fonts.black,
-    color: '#111111',
-  },
-
-  scoreDivider: {
-    marginHorizontal: 6,
-    fontSize: 20,
-    fontFamily: fonts.bold,
-    color: '#B8B8B8',
-  },
-
   vsText: {
-    marginTop: 2,
-    fontSize: 9,
+    fontSize: 14,
     fontFamily: fonts.bold,
-    color: '#B8B8B8',
+    color: '#777777',
   },
 
   perforationWrap: {
@@ -275,7 +249,7 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderCurve: 'continuous',
-    backgroundColor: '#F7F7F7',
+    backgroundColor: colors.background,
   },
 
   rightCutout: {
@@ -287,7 +261,7 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderCurve: 'continuous',
-    backgroundColor: '#F7F7F7',
+    backgroundColor: colors.background,
   },
 
   stubArea: {
@@ -326,5 +300,13 @@ const styles = StyleSheet.create({
   barcodeBar: {
     height: 28,
     backgroundColor: '#111111',
+  },
+
+  barcodeBarSpacing: {
+    marginRight: 1,
+  },
+
+  barcodeBarLast: {
+    marginRight: 0,
   },
 });

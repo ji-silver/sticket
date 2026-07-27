@@ -10,73 +10,67 @@ import { Plus } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/core';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
-import CalendarTicketCard, {
-  CalendarTicketRecord,
-} from './components/CalendarTicketCard.tsx';
 import EmptyCard from '../../components/common/EmptyCard.tsx';
+import TicketCard from '../ticket/components/TicketCard.tsx';
+import type { Ticket } from '../ticket/types.ts';
 
 type CalendarNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-const mockAttendanceRecords: CalendarTicketRecord[] = [
+const mockAttendanceRecords: Ticket[] = [
   {
     id: 1,
-    date: '2026-07-03',
+    matchDate: '2026-07-03',
     homeTeamName: '키움',
     awayTeamName: '두산',
     homeScore: 5,
     awayScore: 3,
     stadiumName: '고척스카이돔',
     seatName: '1루 102구역 8열 12번',
-    time: '18:30',
-    result: 'win',
+    matchTime: '18:30',
   },
   {
     id: 2,
-    date: '2026-07-14',
+    matchDate: '2026-07-14',
     homeTeamName: 'LG',
     awayTeamName: '롯데',
     homeScore: 2,
     awayScore: 3,
     stadiumName: '잠실야구장',
     seatName: '1루 블루석 107구역',
-    time: '18:30',
-    result: 'lose',
+    matchTime: '18:30',
   },
   {
     id: 3,
-    date: '2026-07-21',
+    matchDate: '2026-07-21',
     homeTeamName: '한화',
     awayTeamName: 'KIA',
     homeScore: 7,
     awayScore: 4,
     stadiumName: '대전한화생명볼파크',
     seatName: '내야 지정석 115구역',
-    time: '18:30',
-    result: 'win',
+    matchTime: '18:30',
   },
   {
     id: 4,
-    date: '2026-07-28',
+    matchDate: '2026-07-28',
     homeTeamName: 'SSG',
     awayTeamName: 'NC',
     homeScore: 6,
     awayScore: 2,
     stadiumName: 'SSG 랜더스필드',
     seatName: '1루 응원지정석 23블록',
-    time: '17:00',
-    result: 'win',
+    matchTime: '17:00',
   },
   {
     id: 5,
-    date: '2026-06-08',
+    matchDate: '2026-06-08',
     homeTeamName: 'KT',
     awayTeamName: '삼성',
     homeScore: 4,
     awayScore: 4,
     stadiumName: 'KT 위즈파크',
     seatName: '중앙 지정석 206구역',
-    time: '18:30',
-    result: 'draw',
+    matchTime: '18:30',
   },
 ];
 
@@ -104,7 +98,7 @@ function CalendarScreen() {
   const markedDates: Record<string, object> = {};
 
   mockAttendanceRecords.forEach(record => {
-    markedDates[record.date] = {
+    markedDates[record.matchDate] = {
       marked: true,
       dotColor: colors.primary,
     };
@@ -119,7 +113,7 @@ function CalendarScreen() {
   };
 
   const selectedRecords = mockAttendanceRecords.filter(
-    record => record.date === selectedDate,
+    record => record.matchDate === selectedDate,
   );
 
   const handlePressDay = (day: DateData) => {
@@ -153,10 +147,12 @@ function CalendarScreen() {
           {selectedRecords.length > 0 ? (
             <View style={styles.recordList}>
               {selectedRecords.map(record => (
-                <CalendarTicketCard
+                <TicketCard
                   key={String(record.id)}
-                  record={record}
-                  onPress={() => navigation.navigate('TicketList')}
+                  ticket={record}
+                  onPress={() =>
+                    navigation.navigate('TicketDetail', { ticket: record })
+                  }
                 />
               ))}
             </View>
@@ -191,10 +187,11 @@ export default CalendarScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.background,
   },
   content: {
     flex: 1,
+    backgroundColor: colors.background,
   },
   contentContainer: {
     paddingHorizontal: 24,
