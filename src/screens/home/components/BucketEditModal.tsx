@@ -1,7 +1,4 @@
 import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,6 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Bucket } from '../types.ts';
 import { useEffect, useRef, useState } from 'react';
 import { fonts } from '../../../styles/fonts.ts';
+import AppBottomSheet from '../../../components/common/AppBottomSheet.tsx';
 import AppText from '../../../components/common/AppText.tsx';
 import InlineActionButton from '../../../components/common/InlineActionButton.tsx';
 import { colors } from '../../../styles/colors.ts';
@@ -70,10 +68,9 @@ function BucketEditModal({
     setNewBucketTitle('');
   };
 
-  const handleClose = () => {
+  const handleClosed = () => {
     setNewBucketTitle('');
     setLastDeletedBucket(null);
-    onClose();
   };
 
   const handleDeleteBucket = (bucket: Bucket, index: number) => {
@@ -89,224 +86,152 @@ function BucketEditModal({
   };
 
   return (
-    <Modal
+    <AppBottomSheet
       visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={handleClose}
+      title={title}
+      description="목표를 추가하거나 내용을 바로 수정할 수 있어요"
+      headerRight={
+        <InlineActionButton label="닫기" tone="primary" onPress={onClose} />
+      }
+      large
+      keyboardAvoiding
+      onClose={onClose}
+      onClosed={handleClosed}
+      closeAccessibilityLabel="버킷리스트 편집 닫기"
     >
-      <KeyboardAvoidingView
-        style={styles.modalRoot}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <Pressable
-          style={styles.modalBackdrop}
-          onPress={handleClose}
-          accessibilityRole="button"
-          accessibilityLabel="버킷리스트 편집 닫기"
+      <View style={styles.addInputRow}>
+        <TextInput
+          style={styles.addInput}
+          value={newBucketTitle}
+          onChangeText={setNewBucketTitle}
+          placeholder="직관 목표 입력"
+          placeholderTextColor={colors.textPlaceholder}
+          returnKeyType="done"
+          onSubmitEditing={handleSubmitBucket}
+          accessibilityLabel="새 버킷리스트 목표"
         />
 
-        <View
-          style={[
-            styles.editSheet,
-            { paddingBottom: Math.max(bottomInset, 12) },
+        <Pressable
+          style={({ pressed }) => [
+            styles.addSubmitButton,
+            !canAddBucket && styles.addSubmitButtonDisabled,
+            pressed && canAddBucket && styles.buttonPressed,
           ]}
-          accessibilityViewIsModal
+          onPress={handleSubmitBucket}
+          disabled={!canAddBucket}
+          accessibilityRole="button"
+          accessibilityLabel="버킷리스트 추가"
+          accessibilityState={{ disabled: !canAddBucket }}
         >
-          <View style={styles.sheetHeader}>
-            <View style={styles.sheetHeaderCopy}>
-              <AppText style={styles.sheetTitle}>{title}</AppText>
-              <AppText style={styles.sheetSubtitle}>
-                목표를 추가하거나 내용을 바로 수정할 수 있어요
-              </AppText>
-            </View>
+          <Plus
+            size={20}
+            color={canAddBucket ? colors.onPrimary : colors.textPlaceholder}
+            strokeWidth={2.7}
+          />
+        </Pressable>
+      </View>
 
-            <InlineActionButton
-              label="닫기"
-              tone="primary"
-              onPress={handleClose}
-            />
-          </View>
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.bucketScroll}
+        contentContainerStyle={styles.bucketScrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        onContentSizeChange={() => {
+          if (!shouldScrollToEndRef.current) return;
 
-          <View style={styles.addInputRow}>
+          shouldScrollToEndRef.current = false;
+          scrollViewRef.current?.scrollToEnd({ animated: true });
+        }}
+      >
+        {buckets.map((bucket, index) => (
+          <View
+            key={String(bucket.id)}
+            style={[
+              styles.editRow,
+              index === buckets.length - 1 && styles.editRowLast,
+            ]}
+          >
+            <Pressable
+              style={({ pressed }) => [
+                styles.checkButton,
+                pressed && styles.buttonPressed,
+              ]}
+              onPress={() => onToggleBucket(bucket.id)}
+              accessibilityRole="checkbox"
+              accessibilityLabel={`${bucket.title} 완료`}
+              accessibilityState={{ checked: bucket.isCompleted }}
+            >
+              <View
+                style={[
+                  styles.editCheckBox,
+                  bucket.isCompleted && styles.checkBoxCompleted,
+                ]}
+              >
+                {bucket.isCompleted && (
+                  <Check size={16} color={colors.onPrimary} strokeWidth={3} />
+                )}
+              </View>
+            </Pressable>
+
             <TextInput
-              style={styles.addInput}
-              value={newBucketTitle}
-              onChangeText={setNewBucketTitle}
-              placeholder="직관 목표 입력"
+              value={bucket.title}
+              onChangeText={text => onUpdateBucket(bucket.id, text)}
+              placeholder="버킷리스트 입력"
               placeholderTextColor={colors.textPlaceholder}
-              returnKeyType="done"
-              onSubmitEditing={handleSubmitBucket}
-              accessibilityLabel="새 버킷리스트 목표"
+              style={styles.editInput}
+              accessibilityLabel="버킷리스트 내용"
             />
 
             <Pressable
               style={({ pressed }) => [
-                styles.addSubmitButton,
-                !canAddBucket && styles.addSubmitButtonDisabled,
-                pressed && canAddBucket && styles.buttonPressed,
+                styles.deleteButton,
+                pressed && styles.buttonPressed,
               ]}
-              onPress={handleSubmitBucket}
-              disabled={!canAddBucket}
+              onPress={() => handleDeleteBucket(bucket, index)}
               accessibilityRole="button"
-              accessibilityLabel="버킷리스트 추가"
-              accessibilityState={{ disabled: !canAddBucket }}
+              accessibilityLabel={`${bucket.title} 삭제`}
             >
-              <Plus
-                size={20}
-                color={canAddBucket ? colors.onPrimary : colors.textPlaceholder}
-                strokeWidth={2.7}
+              <Trash2
+                size={17}
+                color={colors.textPlaceholder}
+                strokeWidth={2.2}
               />
             </Pressable>
           </View>
+        ))}
+      </ScrollView>
 
-          <ScrollView
-            ref={scrollViewRef}
-            style={styles.bucketScroll}
-            contentContainerStyle={styles.bucketScrollContent}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode={
-              Platform.OS === 'ios' ? 'interactive' : 'on-drag'
-            }
-            onContentSizeChange={() => {
-              if (!shouldScrollToEndRef.current) return;
+      {lastDeletedBucket !== null && (
+        <View
+          style={[styles.undoBar, { bottom: Math.max(bottomInset, 12) }]}
+          accessibilityRole="alert"
+        >
+          <AppText style={styles.undoMessage} numberOfLines={1}>
+            버킷리스트를 삭제했어요
+          </AppText>
 
-              shouldScrollToEndRef.current = false;
-              scrollViewRef.current?.scrollToEnd({ animated: true });
-            }}
+          <Pressable
+            style={({ pressed }) => [
+              styles.undoButton,
+              pressed && styles.buttonPressed,
+            ]}
+            onPress={handleUndoDelete}
+            accessibilityRole="button"
+            accessibilityLabel="버킷리스트 삭제 실행 취소"
           >
-            {buckets.map((bucket, index) => (
-              <View
-                key={String(bucket.id)}
-                style={[
-                  styles.editRow,
-                  index === buckets.length - 1 && styles.editRowLast,
-                ]}
-              >
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.checkButton,
-                    pressed && styles.buttonPressed,
-                  ]}
-                  onPress={() => onToggleBucket(bucket.id)}
-                  accessibilityRole="checkbox"
-                  accessibilityLabel={`${bucket.title} 완료`}
-                  accessibilityState={{ checked: bucket.isCompleted }}
-                >
-                  <View
-                    style={[
-                      styles.editCheckBox,
-                      bucket.isCompleted && styles.checkBoxCompleted,
-                    ]}
-                  >
-                    {bucket.isCompleted && (
-                      <Check
-                        size={16}
-                        color={colors.onPrimary}
-                        strokeWidth={3}
-                      />
-                    )}
-                  </View>
-                </Pressable>
-
-                <TextInput
-                  value={bucket.title}
-                  onChangeText={text => onUpdateBucket(bucket.id, text)}
-                  placeholder="버킷리스트 입력"
-                  placeholderTextColor={colors.textPlaceholder}
-                  style={styles.editInput}
-                  accessibilityLabel="버킷리스트 내용"
-                />
-
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.deleteButton,
-                    pressed && styles.buttonPressed,
-                  ]}
-                  onPress={() => handleDeleteBucket(bucket, index)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${bucket.title} 삭제`}
-                >
-                  <Trash2
-                    size={17}
-                    color={colors.textPlaceholder}
-                    strokeWidth={2.2}
-                  />
-                </Pressable>
-              </View>
-            ))}
-          </ScrollView>
-
-          {lastDeletedBucket !== null && (
-            <View
-              style={[styles.undoBar, { bottom: Math.max(bottomInset, 12) }]}
-              accessibilityRole="alert"
-            >
-              <AppText style={styles.undoMessage} numberOfLines={1}>
-                버킷리스트를 삭제했어요
-              </AppText>
-
-              <Pressable
-                style={({ pressed }) => [
-                  styles.undoButton,
-                  pressed && styles.buttonPressed,
-                ]}
-                onPress={handleUndoDelete}
-                accessibilityRole="button"
-                accessibilityLabel="버킷리스트 삭제 실행 취소"
-              >
-                <AppText style={styles.undoButtonText}>실행 취소</AppText>
-              </Pressable>
-            </View>
-          )}
+            <AppText style={styles.undoButtonText}>실행 취소</AppText>
+          </Pressable>
         </View>
-      </KeyboardAvoidingView>
-    </Modal>
+      )}
+    </AppBottomSheet>
   );
 }
 
 export default BucketEditModal;
 
 const styles = StyleSheet.create({
-  modalRoot: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  modalBackdrop: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0, 0, 0, 0.28)',
-  },
-  editSheet: {
-    height: '78%',
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    borderCurve: 'continuous',
-    backgroundColor: colors.surface,
-  },
-  sheetHeader: {
-    marginBottom: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  sheetHeaderCopy: {
-    flex: 1,
-    paddingRight: 8,
-  },
-  sheetTitle: {
-    fontSize: 21,
-    fontFamily: fonts.bold,
-    color: colors.text,
-  },
-  sheetSubtitle: {
-    marginTop: 6,
-    fontSize: 13,
-    fontFamily: fonts.regular,
-    color: colors.textSecondary,
-  },
   addInputRow: {
     height: 48,
     marginBottom: 18,
@@ -401,8 +326,8 @@ const styles = StyleSheet.create({
   },
   undoBar: {
     position: 'absolute',
-    right: 24,
-    left: 24,
+    right: 0,
+    left: 0,
     minHeight: 48,
     paddingLeft: 16,
     paddingRight: 6,

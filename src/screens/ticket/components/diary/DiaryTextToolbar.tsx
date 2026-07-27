@@ -1,6 +1,5 @@
 import {
   Keyboard,
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -17,12 +16,12 @@ import {
   Underline,
 } from 'lucide-react-native';
 import { type ReactNode, useState } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import ColorPicker, {
   HueSlider,
   Panel1,
   Preview,
 } from 'reanimated-color-picker';
+import AppBottomSheet from '../../../../components/common/AppBottomSheet.tsx';
 import AppText from '../../../../components/common/AppText.tsx';
 import { colors } from '../../../../styles/colors.ts';
 import { type DiaryText, type DiaryTextStyle } from './diaryText.ts';
@@ -269,83 +268,67 @@ function DiaryTextToolbar({ textItem, onChangeStyle }: DiaryTextToolbarProps) {
         </ScrollView>
       </View>
 
-      <Modal
-        transparent
-        statusBarTranslucent
-        animationType="slide"
+      <AppBottomSheet
         visible={isColorPickerVisible}
-        onRequestClose={cancelColorPicker}
+        title="텍스트 색상"
+        onClose={cancelColorPicker}
+        closeAccessibilityLabel="텍스트 색상 선택 닫기"
+        headerRight={
+          <View style={styles.sheetHeaderActions}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="색상 선택 취소"
+              onPress={cancelColorPicker}
+              style={({ pressed }) => [
+                styles.headerTextButton,
+                pressed && styles.pressedControl,
+              ]}
+            >
+              <AppText size={14} color={colors.textSecondary}>
+                취소
+              </AppText>
+            </Pressable>
+
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="색상 적용"
+              onPress={() => setColorPickerVisible(false)}
+              style={({ pressed }) => [
+                styles.doneButton,
+                pressed && styles.pressedDoneButton,
+              ]}
+            >
+              <AppText size={13} weight="semiBold" color={colors.onPrimary}>
+                완료
+              </AppText>
+            </Pressable>
+          </View>
+        }
       >
-        <View style={styles.modalOverlay}>
-          <Pressable
-            accessible={false}
-            style={styles.modalBackdrop}
-            onPress={cancelColorPicker}
+        <ColorPicker
+          key={colorBeforePicker}
+          value={colorBeforePicker}
+          boundedThumb
+          thumbSize={28}
+          onCompleteJS={result => {
+            // 손을 뗄 때 선택된 텍스트에도 미리 반영합니다.
+            onChangeStyle({
+              color: result.hex,
+            });
+          }}
+          style={styles.colorPicker}
+        >
+          <Preview
+            hideInitialColor
+            colorFormat="hex"
+            style={styles.colorPreview}
           />
 
-          <SafeAreaView edges={['bottom']} style={styles.colorSheet}>
-            <View style={styles.sheetHandle} />
+          <Panel1 style={styles.colorPanel} />
 
-            <View style={styles.sheetHeader}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="색상 선택 취소"
-                onPress={cancelColorPicker}
-                style={({ pressed }) => [
-                  styles.headerTextButton,
-                  pressed && styles.pressedControl,
-                ]}
-              >
-                <AppText size={14} color={colors.textSecondary}>
-                  취소
-                </AppText>
-              </Pressable>
-
-              <AppText size={16} weight="semiBold">
-                텍스트 색상
-              </AppText>
-
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="색상 적용"
-                onPress={() => setColorPickerVisible(false)}
-                style={({ pressed }) => [
-                  styles.doneButton,
-                  pressed && styles.pressedDoneButton,
-                ]}
-              >
-                <AppText size={13} weight="semiBold" color={colors.onPrimary}>
-                  완료
-                </AppText>
-              </Pressable>
-            </View>
-
-            <ColorPicker
-              key={colorBeforePicker}
-              value={colorBeforePicker}
-              boundedThumb
-              thumbSize={28}
-              onCompleteJS={result => {
-                // 손을 뗄 때 선택된 텍스트에도 미리 반영합니다.
-                onChangeStyle({
-                  color: result.hex,
-                });
-              }}
-              style={styles.colorPicker}
-            >
-              <Preview
-                hideInitialColor
-                colorFormat="hex"
-                style={styles.colorPreview}
-              />
-
-              <Panel1 style={styles.colorPanel} />
-
-              <HueSlider style={styles.hueSlider} />
-            </ColorPicker>
-          </SafeAreaView>
-        </View>
-      </Modal>
+          <HueSlider style={styles.hueSlider} />
+        </ColorPicker>
+      </AppBottomSheet>
     </>
   );
 }
@@ -468,42 +451,10 @@ const styles = StyleSheet.create({
     opacity: 0.55,
   },
 
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-
-  modalBackdrop: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: colors.shadow,
-    opacity: 0.32,
-  },
-
-  colorSheet: {
-    paddingTop: 8,
-    paddingHorizontal: 20,
-    paddingBottom: 8,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    borderCurve: 'continuous',
-    backgroundColor: colors.surface,
-  },
-
-  sheetHandle: {
-    alignSelf: 'center',
-    width: 36,
-    height: 4,
-    marginBottom: 8,
-    borderRadius: 2,
-    backgroundColor: colors.disabled,
-  },
-
-  sheetHeader: {
-    height: 52,
+  sheetHeaderActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
+    gap: 4,
   },
 
   headerTextButton: {

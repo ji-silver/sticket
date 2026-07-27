@@ -1,6 +1,9 @@
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { useRef } from 'react';
 import { Diary } from '../types.ts';
 import { fonts } from '../../../styles/fonts.ts';
+import { colors } from '../../../styles/colors.ts';
+import AppBottomSheet from '../../../components/common/AppBottomSheet.tsx';
 import AppText from '../../../components/common/AppText.tsx';
 
 interface DiaryActionSheetProps {
@@ -18,156 +21,128 @@ function DiaryActionSheet({
   onEditDiary,
   onDeleteDiary,
 }: DiaryActionSheetProps) {
-  if (!diary) return null;
+  const displayedDiaryRef = useRef<Diary | null>(diary);
 
-  const cannotDelete = diary.recordCount > 0;
+  if (diary !== null) {
+    displayedDiaryRef.current = diary;
+  }
+
+  const displayedDiary = diary ?? displayedDiaryRef.current;
+
+  if (displayedDiary === null) {
+    return null;
+  }
+
+  const cannotDelete = displayedDiary.recordCount > 0;
 
   const handlePressEdit = () => {
-    onEditDiary(diary);
+    onEditDiary(displayedDiary);
   };
 
   const handlePressDelete = () => {
     if (cannotDelete) return;
 
-    onDeleteDiary(diary.id);
+    onDeleteDiary(displayedDiary.id);
   };
 
   return (
-    <Modal
+    <AppBottomSheet
       visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
+      title={`${displayedDiary.title} 티켓북`}
+      description={
+        cannotDelete
+          ? '기록이 있는 티켓북은 삭제할 수 없어요.'
+          : '티켓북을 수정하거나 삭제할 수 있어요.'
+      }
+      showCloseButton={false}
+      onClose={onClose}
+      closeAccessibilityLabel="티켓북 메뉴 닫기"
     >
-      <View style={styles.modalRoot}>
-        <Pressable style={styles.backdrop} onPress={onClose} />
+      <View style={styles.actionList}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.actionRow,
+            pressed && styles.actionRowPressed,
+          ]}
+          onPress={handlePressEdit}
+          accessibilityRole="button"
+        >
+          <AppText style={styles.actionText}>수정하기</AppText>
+        </Pressable>
 
-        <View style={styles.sheet}>
-          <View style={styles.handle} />
+        <View style={styles.divider} />
 
-          <AppText style={styles.title}>{diary.title} 티켓북</AppText>
-
-          <AppText style={styles.description}>
-            {cannotDelete
-              ? '기록이 있는 티켓북은 삭제할 수 없어요.'
-              : '티켓북을 수정하거나 삭제할 수 있어요.'}
+        <Pressable
+          style={({ pressed }) => [
+            styles.actionRow,
+            pressed && !cannotDelete && styles.actionRowPressed,
+          ]}
+          onPress={handlePressDelete}
+          disabled={cannotDelete}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: cannotDelete }}
+        >
+          <AppText
+            style={[
+              styles.actionText,
+              styles.deleteText,
+              cannotDelete && styles.disabledText,
+            ]}
+          >
+            삭제하기
           </AppText>
+        </Pressable>
 
-          <View style={styles.actionList}>
-            <Pressable style={styles.actionRow} onPress={handlePressEdit}>
-              <AppText style={styles.actionText}>수정하기</AppText>
-            </Pressable>
+        <View style={styles.divider} />
 
-            <View style={styles.divider} />
-
-            <Pressable
-              style={styles.actionRow}
-              onPress={handlePressDelete}
-              disabled={cannotDelete}
-            >
-              <AppText
-                style={[
-                  styles.actionText,
-                  styles.deleteText,
-                  cannotDelete && styles.disabledText,
-                ]}
-              >
-                삭제하기
-              </AppText>
-            </Pressable>
-
-            <View style={styles.divider} />
-
-            <Pressable style={styles.actionRow} onPress={onClose}>
-              <AppText style={styles.cancelText}>취소</AppText>
-            </Pressable>
-          </View>
-        </View>
+        <Pressable
+          style={({ pressed }) => [
+            styles.actionRow,
+            pressed && styles.actionRowPressed,
+          ]}
+          onPress={onClose}
+          accessibilityRole="button"
+        >
+          <AppText style={styles.cancelText}>취소</AppText>
+        </Pressable>
       </View>
-    </Modal>
+    </AppBottomSheet>
   );
 }
 
 export default DiaryActionSheet;
 
 const styles = StyleSheet.create({
-  modalRoot: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0, 0, 0, 0.28)',
-  },
-  sheet: {
-    paddingHorizontal: 24,
-    paddingTop: 12,
-    paddingBottom: 34,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    backgroundColor: '#FFFFFF',
-  },
-
-  handle: {
-    alignSelf: 'center',
-    width: 48,
-    height: 5,
-    marginBottom: 28,
-    borderRadius: 3,
-    backgroundColor: '#DADADA',
-  },
-
-  title: {
-    fontSize: 22,
-    fontFamily: fonts.bold,
-    fontWeight: '700',
-    color: '#111111',
-  },
-
-  description: {
-    marginTop: 8,
-    marginBottom: 24,
-    fontSize: 14,
-    fontFamily: fonts.semiBold,
-    fontWeight: '600',
-    lineHeight: 20,
-    color: '#8A8A8A',
-  },
-
   actionList: {
-    borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
   },
-
   actionRow: {
     height: 58,
+    paddingHorizontal: 4,
     justifyContent: 'center',
   },
-
+  actionRowPressed: {
+    backgroundColor: colors.background,
+  },
   actionText: {
     fontSize: 16,
     fontFamily: fonts.bold,
-    fontWeight: '700',
-    color: '#111111',
+    color: colors.text,
   },
-
   deleteText: {
     color: '#D92D20',
   },
-
   disabledText: {
-    color: '#C9C9C9',
+    color: colors.disabled,
   },
-
   cancelText: {
     fontSize: 16,
     fontFamily: fonts.bold,
-    fontWeight: '700',
-    color: '#6F6F6F',
+    color: colors.textSecondary,
   },
-
   divider: {
-    height: 1,
-    backgroundColor: '#F0F0F0',
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
   },
 });
