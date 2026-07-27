@@ -1,6 +1,5 @@
 import {
   KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -18,6 +17,7 @@ import { colors } from '../../styles/colors.ts';
 import EmptyCard from '../../components/common/EmptyCard.tsx';
 import InlineActionButton from '../../components/common/InlineActionButton.tsx';
 import ScreenHeader from '../../components/common/ScreenHeader.tsx';
+import OriginalTicketImageField from './components/OriginalTicketImageField.tsx';
 
 interface KboGame {
   id: number;
@@ -78,6 +78,9 @@ function AddTicketScreen() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(true);
   const [selectedGameId, setSelectedGameId] = useState<number | null>(null);
   const [seatName, setSeatName] = useState('');
+  const [originalTicketImageUri, setOriginalTicketImageUri] = useState<
+    string | null
+  >(null);
 
   const canSaveTicket = selectedDate.length > 0 && selectedGameId !== null;
 
@@ -121,15 +124,9 @@ function AddTicketScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <ScreenHeader
-        title="티켓 추가"
-        onPressBack={() => navigation.goBack()}
-      />
+      <ScreenHeader title="티켓 추가" onPressBack={() => navigation.goBack()} />
 
-      <KeyboardAvoidingView
-        style={styles.keyboardArea}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingView style={styles.keyboardArea} behavior="padding">
         <ScrollView
           style={styles.content}
           contentContainerStyle={styles.contentContainer}
@@ -137,6 +134,11 @@ function AddTicketScreen() {
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
         >
+          <OriginalTicketImageField
+            value={originalTicketImageUri}
+            onChange={setOriginalTicketImageUri}
+          />
+
           <View style={styles.sectionHeader}>
             <AppText style={styles.sectionTitle}>직관 날짜</AppText>
           </View>
@@ -243,6 +245,7 @@ function AddTicketScreen() {
             <View style={styles.seatSection}>
               <View style={styles.seatSectionHeader}>
                 <AppText style={styles.sectionTitle}>좌석 정보</AppText>
+                <AppText style={styles.optionalLabel}>선택</AppText>
               </View>
 
               <View style={styles.seatInputCard}>
@@ -450,6 +453,14 @@ const styles = StyleSheet.create({
   },
   seatSectionHeader: {
     marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  optionalLabel: {
+    fontSize: 13,
+    fontFamily: fonts.regular,
+    color: colors.textSecondary,
   },
   seatInputCard: {
     minHeight: 58,
