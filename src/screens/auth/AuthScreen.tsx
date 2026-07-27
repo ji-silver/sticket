@@ -1,4 +1,4 @@
-import { Image, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Image, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -7,20 +7,42 @@ import AppText from '../../components/common/AppText.tsx';
 import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
 import type { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
+import { useState } from 'react';
+import { signInWithGoogle } from '../../features/auth/auth.service.ts';
 
 type AuthNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 function AuthScreen() {
   const navigation = useNavigation<AuthNavigationProp>();
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const handlePressApple = () => {
     // TODO: Apple 로그인 연동
     navigation.navigate('ProfileSetup');
   };
 
-  const handlePressGoogle = () => {
-    // TODO: Google 로그인 연동
-    navigation.navigate('ProfileSetup');
+  const handlePressGoogle = async () => {
+    if (isGoogleLoading) {
+      return;
+    }
+
+    setIsGoogleLoading(true);
+
+    try {
+      const result = await signInWithGoogle();
+
+      if (!result) {
+        return;
+      }
+
+      navigation.replace('ProfileSetup');
+    } catch (error) {
+      console.error('Google 로그인에 실패했습니다.', error);
+
+      Alert.alert('Google 로그인에 실패했어요', '잠시 후 다시 시도해 주세요.');
+    } finally {
+      setIsGoogleLoading(false);
+    }
   };
 
   const handlePressPreview = () => {
@@ -60,16 +82,19 @@ function AuthScreen() {
           style={({ pressed }) => [
             styles.loginButton,
             styles.googleButton,
-            pressed && styles.buttonPressed,
+            pressed && !isGoogleLoading && styles.buttonPressed,
           ]}
           onPress={handlePressGoogle}
+          disabled={isGoogleLoading}
           accessibilityRole="button"
           accessibilityLabel="Google로 계속하기"
+          accessibilityState={{ disabled: isGoogleLoading }}
         >
           <Image
             source={require('../../assets/auth/google-g.png')}
             style={styles.googleLogo}
           />
+
           <AppText style={styles.googleButtonText}>Google로 계속하기</AppText>
         </Pressable>
 
