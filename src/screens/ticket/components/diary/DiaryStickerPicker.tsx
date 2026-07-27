@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   FlatList,
   Image,
@@ -16,18 +15,19 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface DiaryStickerPickerProps {
+  selectedPackId: string;
+  onSelectPack: (packId: string) => void;
   onSelectSticker: (sticker: DiaryStickerDefinition) => void;
   onClose: () => void;
 }
 
 function DiaryStickerPicker({
+  selectedPackId,
+  onSelectPack,
   onSelectSticker,
   onClose,
 }: DiaryStickerPickerProps) {
   const { bottom } = useSafeAreaInsets();
-  const [selectedPackId, setSelectedPackId] = useState(
-    DIARY_STICKER_PACKS[0]?.id ?? '',
-  );
 
   const selectedPack =
     DIARY_STICKER_PACKS.find(pack => pack.id === selectedPackId) ??
@@ -64,7 +64,7 @@ function DiaryStickerPicker({
                 accessibilityRole="tab"
                 accessibilityLabel={`스티커팩 ${index + 1}`}
                 accessibilityState={{ selected: isSelected }}
-                onPress={() => setSelectedPackId(pack.id)}
+                onPress={() => onSelectPack(pack.id)}
                 style={({ pressed }) => [
                   styles.packButton,
                   isSelected && styles.selectedPackButton,

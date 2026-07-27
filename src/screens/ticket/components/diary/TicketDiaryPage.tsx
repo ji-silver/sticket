@@ -20,7 +20,10 @@ import DiaryStickerItem, {
   createDiarySticker,
   type DiarySticker,
 } from './DiaryStickerItem.tsx';
-import { type DiaryStickerDefinition } from './diaryStickerPacks.ts';
+import {
+  DIARY_STICKER_PACKS,
+  type DiaryStickerDefinition,
+} from './diaryStickerPacks.ts';
 import DiaryDrawingCanvas from './DiaryDrawingCanvas.tsx';
 import DiaryBottomToolbar, { type DiaryToolId } from './DiaryBottomToolbar.tsx';
 import DiaryPaperSelector, { type PaperType } from './DiaryPaperSelector.tsx';
@@ -91,6 +94,9 @@ function moveDiaryItemToTop(
 function TicketDiaryPage() {
   const [selectedTool, setSelectedTool] = useState<DiaryToolId | null>(null);
   const [paperType, setPaperType] = useState<PaperType>('plain');
+  const [selectedStickerPackId, setSelectedStickerPackId] = useState(
+    DIARY_STICKER_PACKS[0]?.id ?? '',
+  );
 
   // 다이어리 영역 (사진 배치 시 넘어가지 않게)
   const [editorSize, setEditorSize] = useState<EditorSize>({
@@ -585,6 +591,8 @@ function TicketDiaryPage() {
 
           {selectedTool === 'sticker' ? (
             <DiaryStickerPicker
+              selectedPackId={selectedStickerPackId}
+              onSelectPack={setSelectedStickerPackId}
               onSelectSticker={handleAddSticker}
               onClose={() => setSelectedTool(null)}
             />
