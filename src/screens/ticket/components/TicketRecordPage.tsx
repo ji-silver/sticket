@@ -1,13 +1,17 @@
 import { useRef, useState } from 'react';
 import {
+  Image,
   KeyboardAvoidingView,
+  Modal,
   Pressable,
   ScrollView,
+  StatusBar,
   StyleSheet,
   TextInput,
   View,
 } from 'react-native';
-import { Plus, X } from 'lucide-react-native';
+import { ChevronRight, Plus, X } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppText from '../../../components/common/AppText.tsx';
 import InlineActionButton from '../../../components/common/InlineActionButton.tsx';
 import { colors } from '../../../styles/colors.ts';
@@ -47,6 +51,7 @@ const teamColors: Record<string, string> = {
 };
 
 function TicketRecordPage({ ticket }: TicketRecordPageProps) {
+  const { top, bottom } = useSafeAreaInsets();
   const matchDateText = formatMatchDate(ticket.matchDate);
   const matchResult = getFavoriteTeamMatchResult(ticket, mockFavoriteTeamName);
   const matchResultText = matchResult ? matchResultLabels[matchResult] : null;
@@ -72,6 +77,7 @@ function TicketRecordPage({ ticket }: TicketRecordPageProps) {
   const [foods, setFoods] = useState(initialFoods);
   const [foodDraft, setFoodDraft] = useState('');
   const [isEditingFoods, setIsEditingFoods] = useState(false);
+  const [isOriginalTicketVisible, setIsOriginalTicketVisible] = useState(false);
 
   const trimmedFoodDraft = foodDraft.trim();
   const canAddFood =
@@ -201,6 +207,29 @@ function TicketRecordPage({ ticket }: TicketRecordPageProps) {
             </View>
           ) : null}
         </View>
+
+        {ticket.originalTicketImageUri ? (
+          <Pressable
+            style={({ pressed }) => [
+              styles.originalTicketButton,
+              pressed && styles.originalTicketButtonPressed,
+            ]}
+            onPress={() => setIsOriginalTicketVisible(true)}
+            accessibilityRole="button"
+            accessibilityLabel="원본 티켓 전체 보기"
+          >
+            <AppText style={styles.originalTicketTitle}>원본 티켓</AppText>
+
+            <View style={styles.originalTicketAction}>
+              <AppText style={styles.originalTicketActionText}>보기</AppText>
+              <ChevronRight
+                size={18}
+                color={colors.textSecondary}
+                strokeWidth={2.2}
+              />
+            </View>
+          </Pressable>
+        ) : null}
 
         <View style={styles.recordArea}>
           <View style={styles.recordCard}>
@@ -386,6 +415,49 @@ function TicketRecordPage({ ticket }: TicketRecordPageProps) {
           <TicketLineupSection />
         </View>
       </ScrollView>
+
+      {ticket.originalTicketImageUri ? (
+        <Modal
+          visible={isOriginalTicketVisible}
+          animationType="fade"
+          presentationStyle="fullScreen"
+          onRequestClose={() => setIsOriginalTicketVisible(false)}
+        >
+          <View
+            style={[
+              styles.originalTicketViewer,
+              { paddingTop: top, paddingBottom: bottom },
+            ]}
+          >
+            <StatusBar barStyle="dark-content" />
+
+            <View style={styles.originalTicketViewerHeader}>
+              <AppText style={styles.originalTicketViewerTitle}>
+                원본 티켓
+              </AppText>
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.originalTicketCloseButton,
+                  pressed && styles.originalTicketCloseButtonPressed,
+                ]}
+                onPress={() => setIsOriginalTicketVisible(false)}
+                accessibilityRole="button"
+                accessibilityLabel="원본 티켓 닫기"
+              >
+                <X size={24} color={colors.text} strokeWidth={2.2} />
+              </Pressable>
+            </View>
+
+            <Image
+              source={{ uri: ticket.originalTicketImageUri }}
+              style={styles.originalTicketImage}
+              resizeMode="contain"
+              accessibilityLabel="원본 티켓 이미지"
+            />
+          </View>
+        </Modal>
+      ) : null}
     </KeyboardAvoidingView>
   );
 }
@@ -515,6 +587,69 @@ const styles = StyleSheet.create({
   },
   matchResultTextDraw: {
     color: colors.textSecondary,
+  },
+  originalTicketButton: {
+    height: 58,
+    marginHorizontal: 24,
+    marginTop: 8,
+    paddingHorizontal: 18,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 16,
+    borderCurve: 'continuous',
+    backgroundColor: colors.surface,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  originalTicketButtonPressed: {
+    backgroundColor: colors.primarySoft,
+  },
+  originalTicketTitle: {
+    fontSize: 16,
+    fontFamily: fonts.bold,
+    color: colors.text,
+  },
+  originalTicketAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  originalTicketActionText: {
+    fontSize: 14,
+    fontFamily: fonts.semiBold,
+    color: colors.textSecondary,
+  },
+  originalTicketViewer: {
+    flex: 1,
+    backgroundColor: colors.surface,
+  },
+  originalTicketViewerHeader: {
+    height: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  originalTicketViewerTitle: {
+    fontSize: 17,
+    fontFamily: fonts.bold,
+    color: colors.text,
+  },
+  originalTicketCloseButton: {
+    position: 'absolute',
+    right: 14,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  originalTicketCloseButtonPressed: {
+    backgroundColor: colors.background,
+  },
+  originalTicketImage: {
+    flex: 1,
+    width: '100%',
+    marginVertical: 16,
   },
   recordArea: {
     paddingHorizontal: 24,

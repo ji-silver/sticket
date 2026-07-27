@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Plus } from 'lucide-react-native';
 import { useNavigation, useRoute } from '@react-navigation/core';
@@ -24,6 +24,10 @@ interface TicketListResponse {
   tickets: Ticket[];
 }
 
+const sampleOriginalTicketImageUri = Image.resolveAssetSource(
+  require('../../assets/diary/stickers/bread/original_5.png'),
+).uri;
+
 const mockTicketListResponse: TicketListResponse = {
   diary: {
     id: 1,
@@ -41,8 +45,8 @@ const mockTicketListResponse: TicketListResponse = {
       homeScore: 5,
       awayScore: 3,
       matchTime: '14:00',
-
       barcodeValue: 'STICKET-20260412-0001',
+      originalTicketImageUri: sampleOriginalTicketImageUri,
     },
     {
       id: 2,
@@ -109,6 +113,16 @@ function TicketListScreen() {
   const [selectedSeason, setSelectedSeason] = useState<number | null>(
     seasons[0] ?? null,
   );
+
+  useEffect(() => {
+    const createdTicket = route.params?.createdTicket;
+
+    if (createdTicket === undefined) return;
+
+    setTickets(currentTickets => [createdTicket, ...currentTickets]);
+    setSelectedSeason(new Date(createdTicket.matchDate).getFullYear());
+    navigation.setParams({ createdTicket: undefined });
+  }, [navigation, route.params?.createdTicket]);
 
   useEffect(() => {
     const deletedTicketId = route.params?.deletedTicketId;

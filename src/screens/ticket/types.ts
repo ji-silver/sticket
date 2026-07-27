@@ -11,4 +11,5 @@ export interface Ticket {
   homeScore: number;
   awayScore: number;
   barcodeValue?: string;
+  originalTicketImageUri?: string;
 }

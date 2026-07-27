@@ -11,13 +11,16 @@ import AppText from '../../components/common/AppText.tsx';
 import { fonts } from '../../styles/fonts.ts';
 import { useNavigation } from '@react-navigation/core';
 import { useState } from 'react';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AppCalendar from '../../components/common/AppCalendar.tsx';
 import { DateData } from 'react-native-calendars';
 import { colors } from '../../styles/colors.ts';
 import EmptyCard from '../../components/common/EmptyCard.tsx';
 import InlineActionButton from '../../components/common/InlineActionButton.tsx';
 import ScreenHeader from '../../components/common/ScreenHeader.tsx';
+import type { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
 import OriginalTicketImageField from './components/OriginalTicketImageField.tsx';
+import type { Ticket } from './types.ts';
 
 interface KboGame {
   id: number;
@@ -72,7 +75,8 @@ const mockKboGames: KboGame[] = [
 ];
 
 function AddTicketScreen() {
-  const navigation = useNavigation();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const [selectedDate, setSelectedDate] = useState('');
   const [isCalendarOpen, setIsCalendarOpen] = useState(true);
@@ -116,6 +120,27 @@ function AddTicketScreen() {
     }
 
     setSelectedGameId(gameId);
+  };
+
+  const handleAddTicket = () => {
+    const selectedGame = mockKboGames.find(game => game.id === selectedGameId);
+
+    if (!selectedGame) return;
+
+    const ticket: Ticket = {
+      id: Date.now(),
+      matchDate: selectedGame.date,
+      matchTime: selectedGame.time,
+      stadiumName: selectedGame.stadiumName,
+      seatName: seatName.trim(),
+      homeTeamName: selectedGame.homeTeamName,
+      awayTeamName: selectedGame.awayTeamName,
+      homeScore: 0,
+      awayScore: 0,
+      originalTicketImageUri: originalTicketImageUri ?? undefined,
+    };
+
+    navigation.popTo('TicketList', { createdTicket: ticket });
   };
 
   const gamesForSelectedDate = selectedDate
@@ -267,6 +292,7 @@ function AddTicketScreen() {
         <View style={styles.footer}>
           <Pressable
             disabled={!canSaveTicket}
+            onPress={handleAddTicket}
             style={({ pressed }) => [
               styles.saveButton,
               !canSaveTicket && styles.saveButtonDisabled,

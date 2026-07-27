@@ -16,6 +16,7 @@ export type RootStackParamList = {
   AddDiary: undefined;
   TicketList:
     | {
+        createdTicket?: Ticket;
         deletedTicketId?: number;
       }
     | undefined;
