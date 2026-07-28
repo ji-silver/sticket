@@ -1,24 +1,14 @@
-import { useEffect } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import AppText from '../../components/common/AppText.tsx';
-import type { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
 import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
-
-type LoadingNavigationProp = NativeStackNavigationProp<RootStackParamList>;
+import { useAuth } from '../../features/auth/AuthProvider.tsx';
 
 function LoadingScreen() {
-  const navigation = useNavigation<LoadingNavigationProp>();
-
-  useEffect(() => {
-    const timer = setTimeout(() => navigation.replace('Auth'), 1500);
-
-    return () => clearTimeout(timer);
-  }, [navigation]);
+  const { status, errorMessage, retry } = useAuth();
+  const hasError = status === 'error';
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -30,11 +20,30 @@ function LoadingScreen() {
       </View>
 
       <View style={styles.loadingArea}>
-        <ActivityIndicator
-          size="small"
-          color={colors.primary}
-          accessibilityLabel="앱을 불러오는 중"
-        />
+        {hasError ? (
+          <View style={styles.errorArea}>
+            <AppText style={styles.errorText}>
+              {errorMessage || '로그인 정보를 확인하지 못했어요.'}
+            </AppText>
+            <Pressable
+              style={({ pressed }) => [
+                styles.retryButton,
+                pressed && styles.retryButtonPressed,
+              ]}
+              onPress={retry}
+              accessibilityRole="button"
+              accessibilityLabel="로그인 정보 다시 불러오기"
+            >
+              <AppText style={styles.retryButtonText}>다시 시도</AppText>
+            </Pressable>
+          </View>
+        ) : (
+          <ActivityIndicator
+            size="small"
+            color={colors.primary}
+            accessibilityLabel="앱을 불러오는 중"
+          />
+        )}
       </View>
     </SafeAreaView>
   );
@@ -64,8 +73,35 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   loadingArea: {
-    height: 64,
+    minHeight: 96,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  errorArea: {
+    alignItems: 'center',
+    gap: 10,
+  },
+  errorText: {
+    paddingHorizontal: 24,
+    fontSize: 13,
+    fontFamily: fonts.regular,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
+  retryButton: {
+    minHeight: 40,
+    paddingHorizontal: 18,
+    borderRadius: 14,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  retryButtonPressed: {
+    backgroundColor: colors.primaryPressed,
+  },
+  retryButtonText: {
+    fontSize: 13,
+    fontFamily: fonts.bold,
+    color: colors.onPrimary,
   },
 });

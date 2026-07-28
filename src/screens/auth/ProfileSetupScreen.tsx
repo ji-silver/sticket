@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  Alert,
   KeyboardAvoidingView,
   Pressable,
   ScrollView,
@@ -8,27 +9,23 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ChevronRight } from 'lucide-react-native';
 
 import AppText from '../../components/common/AppText.tsx';
-import type { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
 import TeamSelectSheet from '../home/components/TeamSelectSheet.tsx';
 import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
-
-type ProfileSetupNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  'ProfileSetup'
->;
+import { saveProfile } from '../../features/profile/profile.service.ts';
+import { useAuth } from '../../features/auth/AuthProvider.tsx';
 
 function ProfileSetupScreen() {
-  const navigation = useNavigation<ProfileSetupNavigationProp>();
+  const { completeProfile } = useAuth();
   const [nickname, setNickname] = useState('');
   const [hasBlurredNickname, setHasBlurredNickname] = useState(false);
   const [favoriteTeam, setFavoriteTeam] = useState('');
   const [isTeamSheetOpen, setIsTeamSheetOpen] = useState(false);
+
+  const [isSaving, setIsSaving] = useState(false);
 
   const trimmedNickname = nickname.trim();
   const isNicknameValid =
@@ -40,14 +37,28 @@ function ProfileSetupScreen() {
     setIsTeamSheetOpen(false);
   };
 
-  const handlePressStart = () => {
-    if (!isNicknameValid) {
+  const handlePressStart = async () => {
+    if (!isNicknameValid || isSaving) {
       setHasBlurredNickname(true);
       return;
     }
 
-    // TODO: 닉네임과 응원 구단 저장 API 연동
-    navigation.replace('MainTab');
+    setIsSaving(true);
+
+    try {
+      const profile = await saveProfile({
+        nickname: trimmedNickname,
+        favoriteTeamName: favoriteTeam || null,
+      });
+
+      completeProfile(profile);
+    } catch (error) {
+      console.error('프로필 저장에 실패했습니다.', error);
+
+      Alert.alert('프로필을 저장하지 못했어요', '잠시 후 다시 시도해 주세요.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -160,22 +171,28 @@ function ProfileSetupScreen() {
           <Pressable
             style={({ pressed }) => [
               styles.startButton,
-              !isNicknameValid && styles.startButtonDisabled,
-              pressed && isNicknameValid && styles.startButtonPressed,
+              (!isNicknameValid || isSaving) && styles.startButtonDisabled,
+              pressed &&
+                isNicknameValid &&
+                !isSaving &&
+                styles.startButtonPressed,
             ]}
             onPress={handlePressStart}
-            disabled={!isNicknameValid}
+            disabled={!isNicknameValid || isSaving}
             accessibilityRole="button"
             accessibilityLabel="프로필 설정 완료하고 시작하기"
-            accessibilityState={{ disabled: !isNicknameValid }}
+            accessibilityState={{
+              disabled: !isNicknameValid || isSaving,
+            }}
           >
             <AppText
               style={[
                 styles.startButtonText,
-                !isNicknameValid && styles.startButtonTextDisabled,
+                (!isNicknameValid || isSaving) &&
+                  styles.startButtonTextDisabled,
               ]}
             >
-              시작하기
+              {isSaving ? '저장 중...' : '시작하기'}
             </AppText>
           </Pressable>
         </View>

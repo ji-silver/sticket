@@ -1,24 +1,20 @@
 import { Alert, Image, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useState } from 'react';
 
 import AppText from '../../components/common/AppText.tsx';
 import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
-import type { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
-import { useState } from 'react';
 import { signInWithGoogle } from '../../features/auth/auth.service.ts';
 
-type AuthNavigationProp = NativeStackNavigationProp<RootStackParamList>;
-
 function AuthScreen() {
-  const navigation = useNavigation<AuthNavigationProp>();
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const handlePressApple = () => {
-    // TODO: Apple 로그인 연동
-    navigation.navigate('ProfileSetup');
+    Alert.alert(
+      'Apple 로그인 준비 중',
+      'Apple 로그인 연동 후 이용할 수 있어요.',
+    );
   };
 
   const handlePressGoogle = async () => {
@@ -34,8 +30,6 @@ function AuthScreen() {
       if (!result) {
         return;
       }
-
-      navigation.replace('ProfileSetup');
     } catch (error) {
       console.error('Google 로그인에 실패했습니다.', error);
 
@@ -43,10 +37,6 @@ function AuthScreen() {
     } finally {
       setIsGoogleLoading(false);
     }
-  };
-
-  const handlePressPreview = () => {
-    navigation.replace('MainTab');
   };
 
   return (
@@ -95,19 +85,9 @@ function AuthScreen() {
             style={styles.googleLogo}
           />
 
-          <AppText style={styles.googleButtonText}>Google로 계속하기</AppText>
-        </Pressable>
-
-        <Pressable
-          style={({ pressed }) => [
-            styles.previewButton,
-            pressed && styles.previewButtonPressed,
-          ]}
-          onPress={handlePressPreview}
-          accessibilityRole="button"
-          accessibilityLabel="앱 둘러보기"
-        >
-          <AppText style={styles.previewButtonText}>지금은 둘러보기</AppText>
+          <AppText style={styles.googleButtonText}>
+            {isGoogleLoading ? '로그인 중...' : 'Google로 계속하기'}
+          </AppText>
         </Pressable>
       </View>
     </SafeAreaView>
@@ -186,18 +166,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: fonts.medium,
     color: '#1F1F1F',
-  },
-  previewButton: {
-    height: 42,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  previewButtonPressed: {
-    opacity: 0.55,
-  },
-  previewButtonText: {
-    fontSize: 13,
-    fontFamily: fonts.bold,
-    color: colors.textSecondary,
   },
 });
