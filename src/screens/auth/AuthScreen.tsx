@@ -5,37 +5,50 @@ import { useState } from 'react';
 import AppText from '../../components/common/AppText.tsx';
 import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
-import { signInWithGoogle } from '../../features/auth/auth.service.ts';
+import {
+  signInWithApple,
+  signInWithGoogle,
+} from '../../features/auth/auth.service.ts';
 
 function AuthScreen() {
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [loadingProvider, setLoadingProvider] = useState<
+    'apple' | 'google' | null
+  >(null);
+  const isLoading = loadingProvider !== null;
 
-  const handlePressApple = () => {
-    Alert.alert(
-      'Apple 로그인 준비 중',
-      'Apple 로그인 연동 후 이용할 수 있어요.',
-    );
-  };
-
-  const handlePressGoogle = async () => {
-    if (isGoogleLoading) {
+  const handlePressApple = async () => {
+    if (isLoading) {
       return;
     }
 
-    setIsGoogleLoading(true);
+    setLoadingProvider('apple');
 
     try {
-      const result = await signInWithGoogle();
+      await signInWithApple();
+    } catch (error) {
+      console.error('Apple 로그인에 실패했습니다.', error);
 
-      if (!result) {
-        return;
-      }
+      Alert.alert('Apple 로그인에 실패했어요', '잠시 후 다시 시도해 주세요.');
+    } finally {
+      setLoadingProvider(null);
+    }
+  };
+
+  const handlePressGoogle = async () => {
+    if (isLoading) {
+      return;
+    }
+
+    setLoadingProvider('google');
+
+    try {
+      await signInWithGoogle();
     } catch (error) {
       console.error('Google 로그인에 실패했습니다.', error);
 
       Alert.alert('Google 로그인에 실패했어요', '잠시 후 다시 시도해 주세요.');
     } finally {
-      setIsGoogleLoading(false);
+      setLoadingProvider(null);
     }
   };
 
@@ -55,30 +68,38 @@ function AuthScreen() {
           style={({ pressed }) => [
             styles.loginButton,
             styles.appleButton,
-            pressed && styles.buttonPressed,
+            pressed && !isLoading && styles.buttonPressed,
+            isLoading && styles.buttonDisabled,
           ]}
           onPress={handlePressApple}
+          disabled={isLoading}
           accessibilityRole="button"
           accessibilityLabel="Apple로 계속하기"
+          accessibilityState={{ disabled: isLoading }}
         >
           <Image
             source={require('../../assets/auth/apple-logo.png')}
             style={styles.appleLogo}
           />
-          <AppText style={styles.appleButtonText}>Apple로 계속하기</AppText>
+          <AppText style={styles.appleButtonText}>
+            {loadingProvider === 'apple'
+              ? '로그인 중...'
+              : 'Apple로 계속하기'}
+          </AppText>
         </Pressable>
 
         <Pressable
           style={({ pressed }) => [
             styles.loginButton,
             styles.googleButton,
-            pressed && !isGoogleLoading && styles.buttonPressed,
+            pressed && !isLoading && styles.buttonPressed,
+            isLoading && styles.buttonDisabled,
           ]}
           onPress={handlePressGoogle}
-          disabled={isGoogleLoading}
+          disabled={isLoading}
           accessibilityRole="button"
           accessibilityLabel="Google로 계속하기"
-          accessibilityState={{ disabled: isGoogleLoading }}
+          accessibilityState={{ disabled: isLoading }}
         >
           <Image
             source={require('../../assets/auth/google-g.png')}
@@ -86,7 +107,9 @@ function AuthScreen() {
           />
 
           <AppText style={styles.googleButtonText}>
-            {isGoogleLoading ? '로그인 중...' : 'Google로 계속하기'}
+            {loadingProvider === 'google'
+              ? '로그인 중...'
+              : 'Google로 계속하기'}
           </AppText>
         </Pressable>
       </View>
@@ -146,6 +169,9 @@ const styles = StyleSheet.create({
   },
   buttonPressed: {
     opacity: 0.72,
+  },
+  buttonDisabled: {
+    opacity: 0.55,
   },
   appleLogo: {
     width: 54,
