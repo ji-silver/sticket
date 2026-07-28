@@ -23,6 +23,14 @@ import {
   deleteTicketBook,
   getTicketBooks,
 } from '../../features/ticket-book/ticketBook.service.ts';
+import {
+  createBucketItem,
+  deleteBucketItem,
+  getBucketItems,
+  restoreBucketItem,
+  updateBucketItemCompleted,
+  updateBucketItemTitle,
+} from '../../features/bucket-list/bucketList.service.ts';
 
 type HomeNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -48,8 +56,13 @@ function HomeScreen() {
 
       setIsLoadingTicketBooks(true);
 
-      getTicketBooks()
-        .then(ticketBooks => {
+      const loadHomeData = async () => {
+        try {
+          const ticketBooks = await getTicketBooks();
+          const bucketItems = await getBucketItems(
+            ticketBooks.map(ticketBook => ticketBook.id),
+          );
+
           if (!isActive) {
             return;
           }
@@ -64,28 +77,37 @@ function HomeScreen() {
             coverPhotoPath: ticketBook.coverPhotoPath,
             photoUri: ticketBook.coverPhotoUrl ?? undefined,
           }));
+          const nextBucketsByDiaryId = Object.fromEntries(
+            ticketBooks.map(ticketBook => [ticketBook.id, [] as Bucket[]]),
+          );
+
+          bucketItems.forEach(bucketItem => {
+            nextBucketsByDiaryId[bucketItem.ticketBookId]?.push(bucketItem);
+          });
 
           setDiaryList(diaries);
+          setBucketsByDiaryId(nextBucketsByDiaryId);
           setSelectedDiaryIndex(currentIndex =>
             Math.min(currentIndex, Math.max(diaries.length - 1, 0)),
           );
-        })
-        .catch(error => {
+        } catch (error) {
           if (!isActive) {
             return;
           }
 
-          console.error('티켓북 목록을 불러오지 못했습니다.', error);
+          console.error('홈 데이터를 불러오지 못했습니다.', error);
           Alert.alert(
-            '티켓북을 불러오지 못했어요',
+            '홈 정보를 불러오지 못했어요',
             '잠시 후 다시 시도해 주세요.',
           );
-        })
-        .finally(() => {
+        } finally {
           if (isActive) {
             setIsLoadingTicketBooks(false);
           }
-        });
+        }
+      };
+
+      loadHomeData();
 
       return () => {
         isActive = false;
@@ -101,13 +123,134 @@ function HomeScreen() {
     navigation.navigate('TicketList');
   };
 
-  const handleChangeSelectedBuckets = (nextBuckets: Bucket[]) => {
-    if (!selectedDiary) return;
+  const handleAddBucket = async (ticketBookId: string, title: string) => {
+    try {
+      const createdBucket = await createBucketItem(ticketBookId, title);
 
-    setBucketsByDiaryId(prev => ({
-      ...prev,
-      [selectedDiary.id]: nextBuckets,
+      setBucketsByDiaryId(currentBuckets => ({
+        ...currentBuckets,
+        [ticketBookId]: [
+          ...(currentBuckets[ticketBookId] ?? []),
+          createdBucket,
+        ],
+      }));
+
+      return true;
+    } catch (error) {
+      console.error('버킷리스트를 추가하지 못했습니다.', error);
+      Alert.alert(
+        '버킷리스트를 추가하지 못했어요',
+        '잠시 후 다시 시도해 주세요.',
+      );
+      return false;
+    }
+  };
+
+  const handleToggleBucket = async (bucket: Bucket) => {
+    const nextIsCompleted = !bucket.isCompleted;
+
+    setBucketsByDiaryId(currentBuckets => ({
+      ...currentBuckets,
+      [bucket.ticketBookId]: (currentBuckets[bucket.ticketBookId] ?? []).map(
+        currentBucket =>
+          currentBucket.id === bucket.id
+            ? { ...currentBucket, isCompleted: nextIsCompleted }
+            : currentBucket,
+      ),
     }));
+
+    try {
+      await updateBucketItemCompleted(bucket.id, nextIsCompleted);
+      return true;
+    } catch (error) {
+      setBucketsByDiaryId(currentBuckets => ({
+        ...currentBuckets,
+        [bucket.ticketBookId]: (currentBuckets[bucket.ticketBookId] ?? []).map(
+          currentBucket =>
+            currentBucket.id === bucket.id
+              ? { ...currentBucket, isCompleted: bucket.isCompleted }
+              : currentBucket,
+        ),
+      }));
+
+      console.error('버킷리스트 완료 상태를 변경하지 못했습니다.', error);
+      Alert.alert('완료 상태를 변경하지 못했어요', '잠시 후 다시 시도해 주세요.');
+      return false;
+    }
+  };
+
+  const handleUpdateBucketTitle = async (bucket: Bucket, title: string) => {
+    try {
+      const updatedBucket = await updateBucketItemTitle(bucket.id, title);
+
+      setBucketsByDiaryId(currentBuckets => ({
+        ...currentBuckets,
+        [bucket.ticketBookId]: (currentBuckets[bucket.ticketBookId] ?? []).map(
+          currentBucket =>
+            currentBucket.id === bucket.id
+              ? { ...currentBucket, title: updatedBucket.title }
+              : currentBucket,
+        ),
+      }));
+
+      return true;
+    } catch (error) {
+      console.error('버킷리스트 내용을 수정하지 못했습니다.', error);
+      Alert.alert(
+        '버킷리스트를 수정하지 못했어요',
+        '잠시 후 다시 시도해 주세요.',
+      );
+      return false;
+    }
+  };
+
+  const handleDeleteBucket = async (bucket: Bucket) => {
+    try {
+      await deleteBucketItem(bucket.id);
+
+      setBucketsByDiaryId(currentBuckets => ({
+        ...currentBuckets,
+        [bucket.ticketBookId]: (
+          currentBuckets[bucket.ticketBookId] ?? []
+        ).filter(currentBucket => currentBucket.id !== bucket.id),
+      }));
+
+      return true;
+    } catch (error) {
+      console.error('버킷리스트를 삭제하지 못했습니다.', error);
+      Alert.alert(
+        '버킷리스트를 삭제하지 못했어요',
+        '잠시 후 다시 시도해 주세요.',
+      );
+      return false;
+    }
+  };
+
+  const handleRestoreBucket = async (bucket: Bucket, index: number) => {
+    try {
+      const restoredBucket = await restoreBucketItem(bucket);
+
+      setBucketsByDiaryId(currentBuckets => {
+        const nextBuckets = [
+          ...(currentBuckets[bucket.ticketBookId] ?? []),
+        ];
+        nextBuckets.splice(index, 0, restoredBucket);
+
+        return {
+          ...currentBuckets,
+          [bucket.ticketBookId]: nextBuckets,
+        };
+      });
+
+      return true;
+    } catch (error) {
+      console.error('삭제한 버킷리스트를 복원하지 못했습니다.', error);
+      Alert.alert(
+        '버킷리스트를 복원하지 못했어요',
+        '잠시 후 다시 시도해 주세요.',
+      );
+      return false;
+    }
   };
 
   // 티켓북, 버킷리스트 같이 삭제
@@ -172,7 +315,11 @@ function HomeScreen() {
             diaryId={selectedDiary.id}
             diaryTitle={selectedDiary.title}
             buckets={selectedBuckets}
-            onChangeBuckets={handleChangeSelectedBuckets}
+            onAddBucket={handleAddBucket}
+            onToggleBucket={handleToggleBucket}
+            onUpdateBucketTitle={handleUpdateBucketTitle}
+            onDeleteBucket={handleDeleteBucket}
+            onRestoreBucket={handleRestoreBucket}
           />
         )}
       </ScrollView>

@@ -1,5 +1,6 @@
 import type { SportId } from '../ticket/types.ts';
 import type { TicketBookCoverPattern } from '../../features/ticket-book/ticketBook.service.ts';
+import type { BucketItem } from '../../features/bucket-list/bucketList.service.ts';
 
 export interface Diary {
   id: string;
@@ -12,8 +13,4 @@ export interface Diary {
   photoUri?: string;
 }
 
-export interface Bucket {
-  id: number;
-  title: string;
-  isCompleted: boolean;
-}
+export type Bucket = BucketItem;

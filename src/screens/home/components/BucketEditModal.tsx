@@ -1,4 +1,6 @@
 import {
+  ActivityIndicator,
+  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -20,11 +22,12 @@ interface BucketEditModalProps {
   buckets: Bucket[];
   title: string;
   onClose: () => void;
-  onToggleBucket: (id: number) => void;
-  onAddBucket: (title: string) => void;
-  onUpdateBucket: (id: number, title: string) => void;
-  onDeleteBucket: (id: number) => void;
-  onRestoreBucket: (bucket: Bucket, index: number) => void;
+  onToggleBucket: (id: string) => Promise<boolean>;
+  onAddBucket: (title: string) => Promise<boolean>;
+  onUpdateBucket: (id: string, title: string) => Promise<boolean>;
+  onDeleteBucket: (id: string) => Promise<boolean>;
+  onRestoreBucket: (bucket: Bucket, index: number) => Promise<boolean>;
+  pendingBucketIds: Set<string>;
 }
 
 function BucketEditModal({
@@ -37,11 +40,16 @@ function BucketEditModal({
   onUpdateBucket,
   onDeleteBucket,
   onRestoreBucket,
+  pendingBucketIds,
 }: BucketEditModalProps) {
   const { bottom: bottomInset } = useSafeAreaInsets();
   const scrollViewRef = useRef<ScrollView>(null);
   const shouldScrollToEndRef = useRef(false);
+  const committingTitleIdsRef = useRef(new Set<string>());
   const [newBucketTitle, setNewBucketTitle] = useState('');
+  const [draftTitles, setDraftTitles] = useState<Record<string, string>>({});
+  const [isAdding, setIsAdding] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
   const [lastDeletedBucket, setLastDeletedBucket] = useState<{
     bucket: Bucket;
     index: number;
@@ -51,38 +59,117 @@ function BucketEditModal({
   const canAddBucket = trimTitle.length > 0;
 
   useEffect(() => {
-    if (lastDeletedBucket === null) return;
+    if (!visible) {
+      return;
+    }
+
+    setDraftTitles(currentTitles => {
+      const nextTitles: Record<string, string> = {};
+
+      buckets.forEach(bucket => {
+        nextTitles[bucket.id] = currentTitles[bucket.id] ?? bucket.title;
+      });
+
+      return nextTitles;
+    });
+  }, [buckets, visible]);
+
+  useEffect(() => {
+    if (lastDeletedBucket === null || isRestoring) return;
 
     const timeoutId = setTimeout(() => {
       setLastDeletedBucket(null);
     }, 3000);
 
     return () => clearTimeout(timeoutId);
-  }, [lastDeletedBucket]);
+  }, [isRestoring, lastDeletedBucket]);
 
-  const handleSubmitBucket = () => {
-    if (!canAddBucket) return;
+  const handleSubmitBucket = async () => {
+    if (!canAddBucket || isAdding) return;
 
-    shouldScrollToEndRef.current = true;
-    onAddBucket(trimTitle);
-    setNewBucketTitle('');
+    setIsAdding(true);
+
+    try {
+      const didAdd = await onAddBucket(trimTitle);
+
+      if (didAdd) {
+        shouldScrollToEndRef.current = true;
+        setNewBucketTitle('');
+      }
+    } finally {
+      setIsAdding(false);
+    }
   };
 
   const handleClosed = () => {
     setNewBucketTitle('');
+    setDraftTitles({});
     setLastDeletedBucket(null);
   };
 
-  const handleDeleteBucket = (bucket: Bucket, index: number) => {
-    onDeleteBucket(bucket.id);
-    setLastDeletedBucket({ bucket, index });
+  const handleCommitBucketTitle = async (bucket: Bucket) => {
+    if (committingTitleIdsRef.current.has(bucket.id)) {
+      return;
+    }
+
+    const nextTitle = (draftTitles[bucket.id] ?? bucket.title).trim();
+
+    if (nextTitle.length === 0) {
+      setDraftTitles(currentTitles => ({
+        ...currentTitles,
+        [bucket.id]: bucket.title,
+      }));
+      Alert.alert('내용을 입력해 주세요');
+      return;
+    }
+
+    if (nextTitle === bucket.title) {
+      setDraftTitles(currentTitles => ({
+        ...currentTitles,
+        [bucket.id]: nextTitle,
+      }));
+      return;
+    }
+
+    committingTitleIdsRef.current.add(bucket.id);
+
+    try {
+      const didUpdate = await onUpdateBucket(bucket.id, nextTitle);
+
+      setDraftTitles(currentTitles => ({
+        ...currentTitles,
+        [bucket.id]: didUpdate ? nextTitle : bucket.title,
+      }));
+    } finally {
+      committingTitleIdsRef.current.delete(bucket.id);
+    }
   };
 
-  const handleUndoDelete = () => {
+  const handleDeleteBucket = async (bucket: Bucket, index: number) => {
+    const didDelete = await onDeleteBucket(bucket.id);
+
+    if (didDelete) {
+      setLastDeletedBucket({ bucket, index });
+    }
+  };
+
+  const handleUndoDelete = async () => {
     if (lastDeletedBucket === null) return;
 
-    onRestoreBucket(lastDeletedBucket.bucket, lastDeletedBucket.index);
-    setLastDeletedBucket(null);
+    setIsRestoring(true);
+
+    try {
+      const didRestore = await onRestoreBucket(
+        lastDeletedBucket.bucket,
+        lastDeletedBucket.index,
+      );
+
+      if (didRestore) {
+        setLastDeletedBucket(null);
+      }
+    } finally {
+      setIsRestoring(false);
+    }
   };
 
   return (
@@ -107,27 +194,36 @@ function BucketEditModal({
           placeholder="직관 목표 입력"
           placeholderTextColor={colors.textPlaceholder}
           returnKeyType="done"
-          onSubmitEditing={handleSubmitBucket}
+          onSubmitEditing={() => {
+            handleSubmitBucket();
+          }}
+          maxLength={50}
           accessibilityLabel="새 버킷리스트 목표"
         />
 
         <Pressable
           style={({ pressed }) => [
             styles.addSubmitButton,
-            !canAddBucket && styles.addSubmitButtonDisabled,
-            pressed && canAddBucket && styles.buttonPressed,
+            (!canAddBucket || isAdding) && styles.addSubmitButtonDisabled,
+            pressed && canAddBucket && !isAdding && styles.buttonPressed,
           ]}
-          onPress={handleSubmitBucket}
-          disabled={!canAddBucket}
+          onPress={() => {
+            handleSubmitBucket();
+          }}
+          disabled={!canAddBucket || isAdding}
           accessibilityRole="button"
           accessibilityLabel="버킷리스트 추가"
-          accessibilityState={{ disabled: !canAddBucket }}
+          accessibilityState={{ disabled: !canAddBucket || isAdding }}
         >
-          <Plus
-            size={20}
-            color={canAddBucket ? colors.onPrimary : colors.textPlaceholder}
-            strokeWidth={2.7}
-          />
+          {isAdding ? (
+            <ActivityIndicator size="small" color={colors.onPrimary} />
+          ) : (
+            <Plus
+              size={20}
+              color={canAddBucket ? colors.onPrimary : colors.textPlaceholder}
+              strokeWidth={2.7}
+            />
+          )}
         </Pressable>
       </View>
 
@@ -146,60 +242,28 @@ function BucketEditModal({
         }}
       >
         {buckets.map((bucket, index) => (
-          <View
-            key={String(bucket.id)}
-            style={[
-              styles.editRow,
-              index === buckets.length - 1 && styles.editRowLast,
-            ]}
-          >
-            <Pressable
-              style={({ pressed }) => [
-                styles.checkButton,
-                pressed && styles.buttonPressed,
-              ]}
-              onPress={() => onToggleBucket(bucket.id)}
-              accessibilityRole="checkbox"
-              accessibilityLabel={`${bucket.title} 완료`}
-              accessibilityState={{ checked: bucket.isCompleted }}
-            >
-              <View
-                style={[
-                  styles.editCheckBox,
-                  bucket.isCompleted && styles.checkBoxCompleted,
-                ]}
-              >
-                {bucket.isCompleted && (
-                  <Check size={16} color={colors.onPrimary} strokeWidth={3} />
-                )}
-              </View>
-            </Pressable>
-
-            <TextInput
-              value={bucket.title}
-              onChangeText={text => onUpdateBucket(bucket.id, text)}
-              placeholder="버킷리스트 입력"
-              placeholderTextColor={colors.textPlaceholder}
-              style={styles.editInput}
-              accessibilityLabel="버킷리스트 내용"
-            />
-
-            <Pressable
-              style={({ pressed }) => [
-                styles.deleteButton,
-                pressed && styles.buttonPressed,
-              ]}
-              onPress={() => handleDeleteBucket(bucket, index)}
-              accessibilityRole="button"
-              accessibilityLabel={`${bucket.title} 삭제`}
-            >
-              <Trash2
-                size={17}
-                color={colors.textPlaceholder}
-                strokeWidth={2.2}
-              />
-            </Pressable>
-          </View>
+          <BucketEditRow
+            key={bucket.id}
+            bucket={bucket}
+            isLast={index === buckets.length - 1}
+            title={draftTitles[bucket.id] ?? bucket.title}
+            disabled={pendingBucketIds.has(bucket.id)}
+            onChangeTitle={text =>
+              setDraftTitles(currentTitles => ({
+                ...currentTitles,
+                [bucket.id]: text,
+              }))
+            }
+            onCommitTitle={() => {
+              handleCommitBucketTitle(bucket);
+            }}
+            onToggle={() => {
+              onToggleBucket(bucket.id);
+            }}
+            onDelete={() => {
+              handleDeleteBucket(bucket, index);
+            }}
+          />
         ))}
       </ScrollView>
 
@@ -217,15 +281,106 @@ function BucketEditModal({
               styles.undoButton,
               pressed && styles.buttonPressed,
             ]}
-            onPress={handleUndoDelete}
+            onPress={() => {
+              handleUndoDelete();
+            }}
+            disabled={isRestoring}
             accessibilityRole="button"
             accessibilityLabel="버킷리스트 삭제 실행 취소"
+            accessibilityState={{ disabled: isRestoring }}
           >
-            <AppText style={styles.undoButtonText}>실행 취소</AppText>
+            {isRestoring ? (
+              <ActivityIndicator size="small" color={colors.onPrimary} />
+            ) : (
+              <AppText style={styles.undoButtonText}>실행 취소</AppText>
+            )}
           </Pressable>
         </View>
       )}
     </AppBottomSheet>
+  );
+}
+
+interface BucketEditRowProps {
+  bucket: Bucket;
+  isLast: boolean;
+  title: string;
+  disabled: boolean;
+  onChangeTitle: (title: string) => void;
+  onCommitTitle: () => void;
+  onToggle: () => void;
+  onDelete: () => void;
+}
+
+function BucketEditRow({
+  bucket,
+  isLast,
+  title,
+  disabled,
+  onChangeTitle,
+  onCommitTitle,
+  onToggle,
+  onDelete,
+}: BucketEditRowProps) {
+  return (
+    <View style={[styles.editRow, isLast && styles.editRowLast]}>
+      <Pressable
+        style={({ pressed }) => [
+          styles.checkButton,
+          pressed && !disabled && styles.buttonPressed,
+        ]}
+        onPress={onToggle}
+        disabled={disabled}
+        accessibilityRole="checkbox"
+        accessibilityLabel={`${bucket.title} 완료`}
+        accessibilityState={{ checked: bucket.isCompleted, disabled }}
+      >
+        <View
+          style={[
+            styles.editCheckBox,
+            bucket.isCompleted && styles.checkBoxCompleted,
+            disabled && styles.controlDisabled,
+          ]}
+        >
+          {bucket.isCompleted && (
+            <Check size={16} color={colors.onPrimary} strokeWidth={3} />
+          )}
+        </View>
+      </Pressable>
+
+      <TextInput
+        value={title}
+        onChangeText={onChangeTitle}
+        onEndEditing={onCommitTitle}
+        onSubmitEditing={onCommitTitle}
+        editable={!disabled}
+        maxLength={50}
+        returnKeyType="done"
+        placeholder="버킷리스트 입력"
+        placeholderTextColor={colors.textPlaceholder}
+        style={[styles.editInput, disabled && styles.controlDisabled]}
+        accessibilityLabel="버킷리스트 내용"
+      />
+
+      <Pressable
+        style={({ pressed }) => [
+          styles.deleteButton,
+          pressed && !disabled && styles.buttonPressed,
+          disabled && styles.controlDisabled,
+        ]}
+        onPress={onDelete}
+        disabled={disabled}
+        accessibilityRole="button"
+        accessibilityLabel={`${bucket.title} 삭제`}
+        accessibilityState={{ disabled }}
+      >
+        <Trash2
+          size={17}
+          color={colors.textPlaceholder}
+          strokeWidth={2.2}
+        />
+      </Pressable>
+    </View>
   );
 }
 
@@ -323,6 +478,9 @@ const styles = StyleSheet.create({
   },
   buttonPressed: {
     opacity: 0.55,
+  },
+  controlDisabled: {
+    opacity: 0.5,
   },
   undoBar: {
     position: 'absolute',

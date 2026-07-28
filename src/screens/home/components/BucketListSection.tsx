@@ -12,17 +12,31 @@ interface BucketListSectionProps {
   diaryId: string;
   diaryTitle: string;
   buckets: Bucket[];
-  onChangeBuckets: (buckets: Bucket[]) => void;
+  onAddBucket: (ticketBookId: string, title: string) => Promise<boolean>;
+  onToggleBucket: (bucket: Bucket) => Promise<boolean>;
+  onUpdateBucketTitle: (
+    bucket: Bucket,
+    title: string,
+  ) => Promise<boolean>;
+  onDeleteBucket: (bucket: Bucket) => Promise<boolean>;
+  onRestoreBucket: (bucket: Bucket, index: number) => Promise<boolean>;
 }
 
 function BucketListSection({
   diaryId,
   diaryTitle,
   buckets,
-  onChangeBuckets,
+  onAddBucket,
+  onToggleBucket,
+  onUpdateBucketTitle,
+  onDeleteBucket,
+  onRestoreBucket,
 }: BucketListSectionProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditVisible, setIsEditVisible] = useState(false);
+  const [pendingBucketIds, setPendingBucketIds] = useState<Set<string>>(
+    new Set(),
+  );
 
   const visibleBuckets = isExpanded ? buckets : buckets.slice(0, 5);
   const canToggle = buckets.length > 5;
@@ -31,49 +45,71 @@ function BucketListSection({
   useEffect(() => {
     setIsExpanded(false);
     setIsEditVisible(false);
+    setPendingBucketIds(new Set());
   }, [diaryId]);
 
-  const updateBuckets = (updater: (buckets: Bucket[]) => Bucket[]) => {
-    onChangeBuckets(updater(buckets));
+  const runBucketMutation = async (
+    bucketId: string,
+    mutation: () => Promise<boolean>,
+  ) => {
+    if (pendingBucketIds.has(bucketId)) {
+      return false;
+    }
+
+    setPendingBucketIds(currentIds => new Set(currentIds).add(bucketId));
+
+    try {
+      return await mutation();
+    } finally {
+      setPendingBucketIds(currentIds => {
+        const nextIds = new Set(currentIds);
+        nextIds.delete(bucketId);
+        return nextIds;
+      });
+    }
   };
 
-  const handleToggleBucket = (id: number) => {
-    updateBuckets(prev =>
-      prev.map(bucket =>
-        bucket.id === id
-          ? { ...bucket, isCompleted: !bucket.isCompleted }
-          : bucket,
-      ),
-    );
+  const findBucket = (id: string) =>
+    buckets.find(bucket => bucket.id === id) ?? null;
+
+  const handleToggleBucket = async (id: string) => {
+    const bucket = findBucket(id);
+
+    if (!bucket) {
+      return false;
+    }
+
+    return runBucketMutation(id, () => onToggleBucket(bucket));
   };
 
   const handleAddBucket = (title: string) => {
-    updateBuckets(prev => [
-      ...prev, // 앞에 둠으로써 목록 뒤에 새 항목이 붙을 수 있음
-      {
-        id: Date.now(),
-        title,
-        isCompleted: false,
-      },
-    ]);
+    return onAddBucket(diaryId, title);
   };
 
-  const handleUpdateBucket = (id: number, title: string) => {
-    updateBuckets(prev =>
-      prev.map(bucket => (bucket.id === id ? { ...bucket, title } : bucket)),
+  const handleUpdateBucket = async (id: string, title: string) => {
+    const bucket = findBucket(id);
+
+    if (!bucket) {
+      return false;
+    }
+
+    return runBucketMutation(id, () =>
+      onUpdateBucketTitle(bucket, title),
     );
   };
 
-  const handleDeleteBucket = (id: number) => {
-    updateBuckets(prev => prev.filter(bucket => bucket.id !== id));
+  const handleDeleteBucket = async (id: string) => {
+    const bucket = findBucket(id);
+
+    if (!bucket) {
+      return false;
+    }
+
+    return runBucketMutation(id, () => onDeleteBucket(bucket));
   };
 
   const handleRestoreBucket = (bucket: Bucket, index: number) => {
-    updateBuckets(prev => {
-      const nextBuckets = [...prev];
-      nextBuckets.splice(index, 0, bucket);
-      return nextBuckets;
-    });
+    return runBucketMutation(bucket.id, () => onRestoreBucket(bucket, index));
   };
 
   return (
@@ -106,6 +142,7 @@ function BucketListSection({
                 bucket={bucket}
                 isLast={index === visibleBuckets.length - 1}
                 onToggleBucket={handleToggleBucket}
+                disabled={pendingBucketIds.has(bucket.id)}
               />
             ))}
           </>
@@ -140,6 +177,7 @@ function BucketListSection({
         onUpdateBucket={handleUpdateBucket}
         onDeleteBucket={handleDeleteBucket}
         onRestoreBucket={handleRestoreBucket}
+        pendingBucketIds={pendingBucketIds}
       />
     </View>
   );
@@ -149,24 +187,36 @@ function BucketListItem({
   bucket,
   isLast,
   onToggleBucket,
+  disabled,
 }: {
   bucket: Bucket;
   isLast: boolean;
-  onToggleBucket: (id: number) => void;
+  onToggleBucket: (id: string) => Promise<boolean>;
+  disabled: boolean;
 }) {
   return (
     <View style={[styles.bucketItem, isLast && styles.bucketItemLast]}>
       <Pressable
-        onPress={() => onToggleBucket(bucket.id)}
-        hitSlop={8}
-        style={[
-          styles.checkBox,
-          bucket.isCompleted && styles.checkBoxCompleted,
-        ]}
+        onPress={() => {
+          onToggleBucket(bucket.id);
+        }}
+        style={styles.checkButton}
+        disabled={disabled}
+        accessibilityRole="checkbox"
+        accessibilityLabel={`${bucket.title} 완료`}
+        accessibilityState={{ checked: bucket.isCompleted, disabled }}
       >
-        {bucket.isCompleted && (
-          <Check size={16} color={colors.onPrimary} strokeWidth={3} />
-        )}
+        <View
+          style={[
+            styles.checkBox,
+            bucket.isCompleted && styles.checkBoxCompleted,
+            disabled && styles.checkBoxDisabled,
+          ]}
+        >
+          {bucket.isCompleted && (
+            <Check size={16} color={colors.onPrimary} strokeWidth={3} />
+          )}
+        </View>
       </Pressable>
 
       <AppText
@@ -258,12 +308,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  checkButton: {
+    width: 44,
+    height: 44,
+    marginLeft: -12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   checkBoxCompleted: {
     borderColor: colors.primary,
     backgroundColor: colors.primary,
   },
+  checkBoxDisabled: {
+    opacity: 0.5,
+  },
   bucketItemText: {
-    marginLeft: 12,
     flex: 1,
     fontSize: 14,
     fontFamily: fonts.bold,

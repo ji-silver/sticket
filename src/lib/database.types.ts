@@ -39,6 +39,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      bucket_items: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          is_completed: boolean
+          ticket_book_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order: number
+          id?: string
+          is_completed?: boolean
+          ticket_book_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_completed?: boolean
+          ticket_book_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bucket_items_ticket_book_id_fkey"
+            columns: ["ticket_book_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
