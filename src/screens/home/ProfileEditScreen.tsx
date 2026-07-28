@@ -1,6 +1,8 @@
 import { useNavigation } from '@react-navigation/native';
 import { ChevronRight } from 'lucide-react-native';
+import { useState } from 'react';
 import {
+  Alert,
   KeyboardAvoidingView,
   Pressable,
   ScrollView,
@@ -9,21 +11,55 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState } from 'react';
+
 import AppText from '../../components/common/AppText.tsx';
+import ScreenHeader from '../../components/common/ScreenHeader.tsx';
+import { useAuth } from '../../features/auth/AuthProvider.tsx';
+import { saveProfile } from '../../features/profile/profile.service.ts';
 import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
 import TeamSelectSheet from './components/TeamSelectSheet.tsx';
-import ScreenHeader from '../../components/common/ScreenHeader.tsx';
 
 function ProfileEditScreen() {
   const navigation = useNavigation();
-  const [favoriteTeam, setFavoriteTeam] = useState('키움 히어로즈');
+  const { profile, completeProfile } = useAuth();
+  const [nickname, setNickname] = useState(profile?.nickname ?? '');
+  const [favoriteTeam, setFavoriteTeam] = useState(
+    profile?.favorite_team?.name ?? '',
+  );
   const [isTeamSheetOpen, setIsTeamSheetOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const trimmedNickname = nickname.trim();
+  const isNicknameValid =
+    trimmedNickname.length >= 2 && trimmedNickname.length <= 10;
 
   const handleSelectTeam = (team: string) => {
     setFavoriteTeam(team);
     setIsTeamSheetOpen(false);
+  };
+
+  const handleSave = async () => {
+    if (!isNicknameValid || isSaving) {
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      const nextProfile = await saveProfile({
+        nickname: trimmedNickname,
+        favoriteTeamName: favoriteTeam || null,
+      });
+
+      completeProfile(nextProfile);
+      navigation.goBack();
+    } catch (error) {
+      console.error('프로필 수정에 실패했습니다.', error);
+      Alert.alert('프로필을 수정하지 못했어요', '잠시 후 다시 시도해 주세요.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -45,11 +81,16 @@ function ProfileEditScreen() {
 
             <View style={styles.inputCard}>
               <TextInput
-                defaultValue="지은"
+                value={nickname}
+                onChangeText={setNickname}
                 style={styles.nicknameInput}
+                maxLength={10}
                 selectionColor={colors.primary}
                 clearButtonMode="while-editing"
+                autoCapitalize="none"
                 autoCorrect={false}
+                autoComplete="nickname"
+                textContentType="nickname"
                 returnKeyType="done"
                 accessibilityLabel="닉네임"
               />
@@ -67,10 +108,14 @@ function ProfileEditScreen() {
                 ]}
                 onPress={() => setIsTeamSheetOpen(true)}
                 accessibilityRole="button"
-                accessibilityLabel={`야구 응원 구단, ${favoriteTeam}, 변경`}
+                accessibilityLabel={`야구 응원 구단, ${
+                  favoriteTeam || '선택 안 함'
+                }, 변경`}
               >
                 <AppText style={styles.sportName}>야구</AppText>
-                <AppText style={styles.teamName}>{favoriteTeam}</AppText>
+                <AppText style={styles.teamName}>
+                  {favoriteTeam || '선택 안 함'}
+                </AppText>
                 <ChevronRight
                   size={19}
                   color={colors.textSecondary}
@@ -85,12 +130,27 @@ function ProfileEditScreen() {
           <Pressable
             style={({ pressed }) => [
               styles.saveButton,
-              pressed && styles.saveButtonPressed,
+              (!isNicknameValid || isSaving) && styles.saveButtonDisabled,
+              pressed &&
+                isNicknameValid &&
+                !isSaving &&
+                styles.saveButtonPressed,
             ]}
-            onPress={() => {}}
+            onPress={handleSave}
+            disabled={!isNicknameValid || isSaving}
             accessibilityRole="button"
+            accessibilityState={{
+              disabled: !isNicknameValid || isSaving,
+            }}
           >
-            <AppText style={styles.saveButtonText}>저장</AppText>
+            <AppText
+              style={[
+                styles.saveButtonText,
+                (!isNicknameValid || isSaving) && styles.saveButtonTextDisabled,
+              ]}
+            >
+              {isSaving ? '저장 중' : '저장'}
+            </AppText>
           </Pressable>
         </View>
       </KeyboardAvoidingView>
@@ -194,9 +254,15 @@ const styles = StyleSheet.create({
   saveButtonPressed: {
     backgroundColor: colors.primaryPressed,
   },
+  saveButtonDisabled: {
+    backgroundColor: colors.disabled,
+  },
   saveButtonText: {
     fontSize: 16,
     fontFamily: fonts.bold,
     color: colors.onPrimary,
+  },
+  saveButtonTextDisabled: {
+    color: colors.textPlaceholder,
   },
 });

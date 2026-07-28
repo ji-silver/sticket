@@ -35,7 +35,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function RootStackNavigator() {
   const { status } = useAuth();
-  const canUseApp = status === 'authenticated' || status === 'guest';
+  const canUseApp = status === 'authenticated';
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>

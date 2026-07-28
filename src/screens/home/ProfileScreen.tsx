@@ -17,27 +17,22 @@ type ProfileNavigationProp = NativeStackNavigationProp<
   'MainTab'
 >;
 
-const profile = {
-  nickname: '지은',
-  favoriteTeams: [
-    {
-      id: 1,
-      sport: '야구',
-      team: '키움 히어로즈',
-    },
-  ],
-};
-
 const attendanceRecord = { win: 2, lose: 1, draw: 0 };
 
 const appVersion = '0.0.1';
 
 function ProfileScreen() {
   const navigation = useNavigation<ProfileNavigationProp>();
-  const { signOut } = useAuth();
+  const { profile, signOut } = useAuth();
   const [isLogoutDialogVisible, setIsLogoutDialogVisible] = useState(false);
   const totalGames =
     attendanceRecord.win + attendanceRecord.lose + attendanceRecord.draw;
+
+  if (!profile) {
+    return null;
+  }
+
+  const favoriteTeamName = profile.favorite_team?.name ?? '선택 안 함';
 
   const handleConfirmLogout = async () => {
     setIsLogoutDialogVisible(false);
@@ -81,14 +76,10 @@ function ProfileScreen() {
             <AppText style={styles.label}>응원 구단</AppText>
 
             <View style={styles.favoriteTeamList}>
-              {profile.favoriteTeams.map(favoriteTeam => (
-                <View key={favoriteTeam.id} style={styles.favoriteTeamRow}>
-                  <AppText style={styles.sportName}>
-                    {favoriteTeam.sport}
-                  </AppText>
-                  <AppText style={styles.teamName}>{favoriteTeam.team}</AppText>
-                </View>
-              ))}
+              <View style={styles.favoriteTeamRow}>
+                <AppText style={styles.sportName}>야구</AppText>
+                <AppText style={styles.teamName}>{favoriteTeamName}</AppText>
+              </View>
             </View>
           </View>
         </View>

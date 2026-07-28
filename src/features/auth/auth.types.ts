@@ -7,10 +7,14 @@ export type AuthStatus =
   | 'signedOut'
   | 'profileRequired'
   | 'authenticated'
-  | 'guest'
   | 'error';
 
-export type UserProfile = Tables<'profiles'>;
+export type UserProfile = Tables<'profiles'> & {
+  favorite_team: Pick<
+    Tables<'teams'>,
+    'id' | 'name' | 'short_name' | 'sport'
+  > | null;
+};
 
 export interface AuthContextValue {
   session: Session | null;
@@ -18,7 +22,6 @@ export interface AuthContextValue {
   status: AuthStatus;
   errorMessage: string | null;
   completeProfile: (profile: UserProfile) => void;
-  continueAsGuest: () => void;
   retry: () => void;
   signOut: () => Promise<void>;
 }

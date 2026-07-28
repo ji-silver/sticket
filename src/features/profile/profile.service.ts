@@ -8,7 +8,21 @@ interface SaveProfileParams {
 export async function getProfile(userId: string) {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, nickname, favorite_team_id, created_at, updated_at')
+    .select(
+      `
+        id,
+        nickname,
+        favorite_team_id,
+        created_at,
+        updated_at,
+        favorite_team:teams (
+          id,
+          name,
+          short_name,
+          sport
+        )
+      `,
+    )
     .eq('id', userId)
     .maybeSingle();
 
@@ -75,7 +89,21 @@ export async function saveProfile({
         onConflict: 'id',
       },
     )
-    .select()
+    .select(
+      `
+        id,
+        nickname,
+        favorite_team_id,
+        created_at,
+        updated_at,
+        favorite_team:teams (
+          id,
+          name,
+          short_name,
+          sport
+        )
+      `,
+    )
     .single();
 
   if (profileError) {

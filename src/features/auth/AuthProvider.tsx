@@ -32,7 +32,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [profile, setProfile] = useState<UserProfile | null | undefined>(
     undefined,
   );
-  const [isGuest, setIsGuest] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [profileRequestVersion, setProfileRequestVersion] = useState(0);
   const sessionUserIdRef = useRef<string | undefined>(undefined);
@@ -66,7 +65,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
       const nextUserId = nextSession?.user.id;
 
       setErrorMessage(null);
-      setIsGuest(false);
       setSession(nextSession);
 
       if (sessionUserIdRef.current !== nextUserId) {
@@ -131,7 +129,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   } else if (session === undefined) {
     status = 'loading';
   } else if (!session) {
-    status = isGuest ? 'guest' : 'signedOut';
+    status = 'signedOut';
   } else if (profile === undefined) {
     status = 'loading';
   } else if (!profile) {
@@ -150,10 +148,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
         setProfile(nextProfile);
         setErrorMessage(null);
       },
-      continueAsGuest: () => {
-        setIsGuest(true);
-        setErrorMessage(null);
-      },
       retry: () => {
         setErrorMessage(null);
 
@@ -167,7 +161,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
       },
       signOut: async () => {
         if (!session) {
-          setIsGuest(false);
           return;
         }
 
@@ -179,7 +172,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
         setSession(null);
         setProfile(null);
-        setIsGuest(false);
         sessionUserIdRef.current = undefined;
       },
     }),
