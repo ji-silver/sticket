@@ -353,7 +353,7 @@ function AddDiaryScreen() {
                 styles.createButtonTextDisabled,
             ]}
           >
-            {isSaving ? '저장 중' : isEditing ? '수정 완료' : '티켓북 만들기'}
+            {isSaving ? '저장 중' : isEditing ? '수정하기' : '티켓북 만들기'}
           </AppText>
         </Pressable>
       </View>

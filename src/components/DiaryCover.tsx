@@ -82,7 +82,7 @@ function DiaryCover({
 
           {/* ── 포토 클리핑 ── */}
           <ClipPath id="photoClip">
-            <Rect x="81" y="148" width="62" height="92" rx="7" />
+            <Rect x="80" y="146" width="64" height="95" rx="4" />
           </ClipPath>
 
           {/* ── 포켓 그라디언트 ── */}
@@ -295,33 +295,47 @@ function DiaryCover({
         {/* ═══════════════════════════════════════════
             10) 포토카드 포켓
         ═══════════════════════════════════════════ */}
-        <Rect
-          x="81" y="148" width="62" height="92"
-          rx="7" fill="rgba(255,255,255,0.13)"
-        />
+        {/* 사진은 바깥 PVC 위, 포켓 막 아래에 두어 색감을 유지 */}
         {photoUri && (
-          <SvgImage
-            href={photoUri}
-            x="81" y="148" width="62" height="92"
-            clipPath="url(#photoClip)"
-            preserveAspectRatio="xMidYMid slice"
-          />
+          <>
+            <Rect
+              x="79"
+              y="145"
+              width="66"
+              height="97"
+              rx="5"
+              fill="rgba(45,55,65,0.14)"
+            />
+            <SvgImage
+              href={photoUri}
+              x="80"
+              y="146"
+              width="64"
+              height="95"
+              clipPath="url(#photoClip)"
+              preserveAspectRatio="xMidYMid slice"
+            />
+          </>
         )}
+        <Rect
+          x="78" y="143" width="68" height="101"
+          rx="8" fill="rgba(255,255,255,0.13)"
+        />
         <Path
           d={`
-            M 81 150
-            L 81 233
-            Q 81 240, 88 240
-            L 136 240
-            Q 143 240, 143 233
-            L 143 150
+            M 78 145
+            L 78 235
+            Q 78 244, 87 244
+            L 137 244
+            Q 146 244, 146 235
+            L 146 145
           `}
           fill="url(#pocketGrad)"
           stroke="rgba(232,238,241,0.52)"
           strokeWidth="1.2" strokeLinejoin="round"
         />
         <Path
-          d="M 85 150 H 139"
+          d="M 82 145 H 142"
           fill="none"
           stroke="rgba(255,255,255,0.34)"
           strokeWidth="1.2"
