@@ -192,7 +192,7 @@ function ProfileSetupScreen() {
                   styles.startButtonTextDisabled,
               ]}
             >
-              {isSaving ? '저장 중...' : '시작하기'}
+              {isSaving ? '저장 중' : '시작하기'}
             </AppText>
           </Pressable>
         </View>

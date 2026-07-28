@@ -11,7 +11,7 @@ interface DiaryActionSheetProps {
   diary: Diary | null;
   onClose: () => void;
   onEditDiary: (diary: Diary) => void;
-  onDeleteDiary: (diaryId: number) => void;
+  onDeleteDiary: (diaryId: string) => void;
 }
 
 function DiaryActionSheet({

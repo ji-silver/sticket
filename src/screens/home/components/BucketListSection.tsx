@@ -9,7 +9,7 @@ import InlineActionButton from '../../../components/common/InlineActionButton.ts
 import { colors } from '../../../styles/colors.ts';
 
 interface BucketListSectionProps {
-  diaryId: number;
+  diaryId: string;
   diaryTitle: string;
   buckets: Bucket[];
   onChangeBuckets: (buckets: Bucket[]) => void;

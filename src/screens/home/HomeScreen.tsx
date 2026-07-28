@@ -1,77 +1,97 @@
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Plus } from 'lucide-react-native';
 import DiarySection from './components/DiarySection.tsx';
 import { Bucket, Diary } from './types.ts';
 import BucketListSection from './components/BucketListSection.tsx';
 import { useNavigation } from '@react-navigation/core';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import DiaryActionSheet from './components/DiaryActionSheet.tsx';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
 import { fonts } from '../../styles/fonts.ts';
 import AppText from '../../components/common/AppText.tsx';
 import { colors } from '../../styles/colors.ts';
+import { useFocusEffect } from '@react-navigation/native';
+import {
+  deleteTicketBook,
+  getTicketBooks,
+} from '../../features/ticket-book/ticketBook.service.ts';
 
 type HomeNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-const initialDiaries: Diary[] = [
-  {
-    id: 1,
-    title: '야구',
-    recordCount: 12,
-    coverColor: '#e1e1e1',
-  },
-];
-const initialBucketsByDiaryId: Record<number, Bucket[]> = {
-  1: [
-    {
-      id: 1,
-      title: '야구장 원정 가기',
-      isCompleted: false,
-    },
-    {
-      id: 2,
-      title: '개막전 직관하기',
-      isCompleted: true,
-    },
-    {
-      id: 3,
-      title: '가을야구 직관하기',
-      isCompleted: false,
-    },
-    {
-      id: 4,
-      title: '유니폼 사기',
-      isCompleted: true,
-    },
-    {
-      id: 5,
-      title: '싸인 받기',
-      isCompleted: false,
-    },
-    {
-      id: 6,
-      title: '친구랑 야구장 가기',
-      isCompleted: false,
-    },
-  ],
-};
-
 function HomeScreen() {
   const navigation = useNavigation<HomeNavigationProp>();
-  const [diaryList, setDiaryList] = useState<Diary[]>(initialDiaries);
+  const [diaryList, setDiaryList] = useState<Diary[]>([]);
   const [selectedDiaryIndex, setSelectedDiaryIndex] = useState(0);
-  const [bucketsByDiaryId, setBucketsByDiaryId] = useState(
-    initialBucketsByDiaryId,
-  );
+  const [bucketsByDiaryId, setBucketsByDiaryId] = useState<
+    Record<string, Bucket[]>
+  >({});
   const [menuDiary, setMenuDiary] = useState<Diary | null>(null);
+  const [isLoadingTicketBooks, setIsLoadingTicketBooks] = useState(true);
   const hasDiaries = diaryList.length > 0;
 
   const selectedDiary = diaryList[selectedDiaryIndex];
   const selectedBuckets = selectedDiary
     ? bucketsByDiaryId[selectedDiary.id] ?? []
     : [];
+
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+
+      setIsLoadingTicketBooks(true);
+
+      getTicketBooks()
+        .then(ticketBooks => {
+          if (!isActive) {
+            return;
+          }
+
+          const diaries: Diary[] = ticketBooks.map(ticketBook => ({
+            id: ticketBook.id,
+            sport: ticketBook.sport,
+            title: '야구',
+            recordCount: 0,
+            coverColor: ticketBook.coverColor,
+            coverPattern: ticketBook.coverPattern,
+            coverPhotoPath: ticketBook.coverPhotoPath,
+            photoUri: ticketBook.coverPhotoUrl ?? undefined,
+          }));
+
+          setDiaryList(diaries);
+          setSelectedDiaryIndex(currentIndex =>
+            Math.min(currentIndex, Math.max(diaries.length - 1, 0)),
+          );
+        })
+        .catch(error => {
+          if (!isActive) {
+            return;
+          }
+
+          console.error('티켓북 목록을 불러오지 못했습니다.', error);
+          Alert.alert(
+            '티켓북을 불러오지 못했어요',
+            '잠시 후 다시 시도해 주세요.',
+          );
+        })
+        .finally(() => {
+          if (isActive) {
+            setIsLoadingTicketBooks(false);
+          }
+        });
+
+      return () => {
+        isActive = false;
+      };
+    }, []),
+  );
 
   const handlePressAddDiary = () => {
     navigation.navigate('AddDiary');
@@ -91,24 +111,25 @@ function HomeScreen() {
   };
 
   // 티켓북, 버킷리스트 같이 삭제
-  const handleDeleteDiary = (diaryId: number) => {
-    const nextDiaries = diaryList.filter(diary => diary.id !== diaryId); // 삭제할 티켓북빼고 새 목록 만들기
+  const handleDeleteDiary = async (diaryId: string) => {
+    try {
+      await deleteTicketBook(diaryId);
 
-    setDiaryList(nextDiaries);
-    setSelectedDiaryIndex(currentIndex => {
-      const lastIndex = nextDiaries.length - 1;
+      const nextDiaries = diaryList.filter(diary => diary.id !== diaryId);
 
-      if (currentIndex > lastIndex) {
-        return Math.max(lastIndex, 0); // 0일때 -1을 빼더라도 음수가 되지 않음
-      }
-
-      return currentIndex;
-    });
-    setBucketsByDiaryId(currentBucket => {
-      const nextBuckets = { ...currentBucket }; // 기존 버킷리스트 객체 복사
-      delete nextBuckets[diaryId]; // 삭제한 티켓북의 버킷리스트도 지우기
-      return nextBuckets;
-    });
+      setDiaryList(nextDiaries);
+      setSelectedDiaryIndex(currentIndex =>
+        Math.min(currentIndex, Math.max(nextDiaries.length - 1, 0)),
+      );
+      setBucketsByDiaryId(currentBuckets => {
+        const nextBuckets = { ...currentBuckets };
+        delete nextBuckets[diaryId];
+        return nextBuckets;
+      });
+    } catch (error) {
+      console.error('티켓북을 삭제하지 못했습니다.', error);
+      Alert.alert('티켓북을 삭제하지 못했어요', '잠시 후 다시 시도해 주세요.');
+    }
   };
 
   return (
@@ -138,6 +159,7 @@ function HomeScreen() {
 
         <DiarySection
           diaries={diaryList}
+          isLoading={isLoadingTicketBooks}
           selectedIndex={selectedDiaryIndex}
           onChangeIndex={setSelectedDiaryIndex}
           onPressAddDiary={handlePressAddDiary}
@@ -159,13 +181,13 @@ function HomeScreen() {
         visible={menuDiary !== null}
         diary={menuDiary}
         onClose={() => setMenuDiary(null)}
-        onEditDiary={() => {
+        onEditDiary={diary => {
           setMenuDiary(null);
-          navigation.navigate('AddDiary' as never);
+          navigation.navigate('AddDiary', { ticketBook: diary });
         }}
         onDeleteDiary={diaryId => {
-          handleDeleteDiary(diaryId);
           setMenuDiary(null);
+          handleDeleteDiary(diaryId);
         }}
       />
     </SafeAreaView>

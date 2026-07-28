@@ -1,6 +1,6 @@
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { useNavigation } from '@react-navigation/core';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/core';
 import DiaryCover from '../../components/DiaryCover.tsx';
 import { useState } from 'react';
 import ImagePicker from 'react-native-image-crop-picker';
@@ -9,6 +9,13 @@ import AppText from '../../components/common/AppText.tsx';
 import FilterChip from '../../components/common/FilterChip.tsx';
 import { colors } from '../../styles/colors.ts';
 import ScreenHeader from '../../components/common/ScreenHeader.tsx';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RouteProp } from '@react-navigation/native';
+import type { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
+import {
+  createTicketBook,
+  updateTicketBook,
+} from '../../features/ticket-book/ticketBook.service.ts';
 
 type SportId = 'baseball' | 'soccer' | 'basketball' | 'volleyball';
 
@@ -24,6 +31,11 @@ interface CoverColorOption {
   id: string;
   color: string;
   type: CoverColorType;
+}
+
+interface SelectedCoverPhoto {
+  uri: string;
+  base64?: string;
 }
 
 const SPORTS: SportOption[] = [
@@ -103,13 +115,26 @@ const COVER_COLORS: CoverColorOption[] = [
 ];
 
 function AddDiaryScreen() {
-  const navigation = useNavigation();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList, 'AddDiary'>>();
+  const route = useRoute<RouteProp<RootStackParamList, 'AddDiary'>>();
+  const ticketBook = route.params?.ticketBook;
+  const isEditing = ticketBook !== undefined;
 
-  const [selectedSportId, setSelectedSportId] = useState<SportId>('baseball');
-  const [selectedCoverColorId, setSelectedCoverColorId] = useState(
-    COVER_COLORS[0].id,
+  const [selectedSportId, setSelectedSportId] = useState<SportId>(
+    ticketBook?.sport ?? 'baseball',
   );
-  const [photoUri, setPhotoUri] = useState<string | undefined>();
+  const [selectedCoverColorId, setSelectedCoverColorId] = useState(
+    COVER_COLORS.find(
+      option =>
+        option.color === ticketBook?.coverColor &&
+        option.type === ticketBook.coverPattern,
+    )?.id ?? COVER_COLORS[0].id,
+  );
+  const [coverPhoto, setCoverPhoto] = useState<SelectedCoverPhoto | null>(
+    ticketBook?.photoUri ? { uri: ticketBook.photoUri } : null,
+  );
+  const [isSaving, setIsSaving] = useState(false);
 
   const selectSport = SPORTS.find(sport => sport.id === selectedSportId);
   const isSelectedSportReady = selectSport?.isReady ?? false;
@@ -125,12 +150,21 @@ function AddDiaryScreen() {
         width: 620,
         height: 920,
         compressImageQuality: 0.9,
+        includeBase64: true,
+        forceJpg: true,
         cropperToolbarTitle: '사진 편집',
         cropperCancelText: '취소',
         cropperChooseText: '선택',
       });
 
-      setPhotoUri(image.path);
+      if (!image.data) {
+        throw new Error('선택한 이미지 데이터를 읽지 못했습니다.');
+      }
+
+      setCoverPhoto({
+        uri: image.path,
+        base64: image.data,
+      });
     } catch (error) {
       const isCancelled =
         typeof error === 'object' &&
@@ -140,14 +174,67 @@ function AddDiaryScreen() {
 
       if (!isCancelled) {
         console.error('사진을 선택하지 못했습니다.', error);
+        Alert.alert('사진을 불러오지 못했어요', '잠시 후 다시 시도해 주세요.');
       }
+    }
+  };
+
+  const handleSaveTicketBook = async () => {
+    if (!isSelectedSportReady || selectedSportId !== 'baseball' || isSaving) {
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      if (ticketBook) {
+        await updateTicketBook({
+          ticketBookId: ticketBook.id,
+          coverColor: selectedCoverColor.color,
+          coverPattern: selectedCoverColor.type,
+          coverImageBase64: coverPhoto?.base64,
+        });
+      } else {
+        await createTicketBook({
+          sport: selectedSportId,
+          coverColor: selectedCoverColor.color,
+          coverPattern: selectedCoverColor.type,
+          coverImageBase64: coverPhoto?.base64,
+        });
+      }
+
+      navigation.goBack();
+    } catch (error) {
+      console.error(
+        `티켓북을 ${isEditing ? '수정' : '생성'}하지 못했습니다.`,
+        error,
+      );
+
+      const errorCode =
+        typeof error === 'object' && error !== null && 'code' in error
+          ? error.code
+          : null;
+
+      if (errorCode === '23505') {
+        Alert.alert(
+          '이미 야구 티켓북이 있어요',
+          '기존 티켓북을 이용해 주세요.',
+        );
+      } else {
+        Alert.alert(
+          `티켓북을 ${isEditing ? '수정' : '만들지'} 못했어요`,
+          '잠시 후 다시 시도해 주세요.',
+        );
+      }
+    } finally {
+      setIsSaving(false);
     }
   };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <ScreenHeader
-        title="새 티켓북"
+        title={isEditing ? '티켓북 수정' : '새 티켓북'}
         onPressBack={() => navigation.goBack()}
       />
 
@@ -157,7 +244,7 @@ function AddDiaryScreen() {
             size={178}
             coverColor={selectedCoverColor.color}
             coverPattern={selectedCoverColor.type}
-            photoUri={photoUri}
+            photoUri={coverPhoto?.uri}
           />
         </View>
 
@@ -229,10 +316,10 @@ function AddDiaryScreen() {
                 style={styles.photoCardRow}
               >
                 <AppText style={styles.photoCardText}>
-                  {photoUri ? '이미지 변경' : '이미지 추가'}
+                  {coverPhoto ? '이미지 변경' : '이미지 추가'}
                 </AppText>
                 <AppText style={styles.photoCardOptionalText}>
-                  {photoUri ? '선택됨' : '선택사항'}
+                  {coverPhoto ? '선택됨' : '선택사항'}
                 </AppText>
               </Pressable>
             </View>
@@ -250,17 +337,23 @@ function AddDiaryScreen() {
         <Pressable
           style={[
             styles.createButton,
-            !isSelectedSportReady && styles.createButtonDisabled,
+            (!isSelectedSportReady || isSaving) && styles.createButtonDisabled,
           ]}
-          disabled={!isSelectedSportReady}
+          disabled={!isSelectedSportReady || isSaving}
+          onPress={handleSaveTicketBook}
+          accessibilityRole="button"
+          accessibilityState={{
+            disabled: !isSelectedSportReady || isSaving,
+          }}
         >
           <AppText
             style={[
               styles.createButtonText,
-              !isSelectedSportReady && styles.createButtonTextDisabled,
+              (!isSelectedSportReady || isSaving) &&
+                styles.createButtonTextDisabled,
             ]}
           >
-            티켓북 만들기
+            {isSaving ? '저장 중' : isEditing ? '수정 완료' : '티켓북 만들기'}
           </AppText>
         </Pressable>
       </View>

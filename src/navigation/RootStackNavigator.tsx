@@ -11,13 +11,18 @@ import TicketDetailScreen from '../screens/ticket/TicketDetailScreen.tsx';
 import { Ticket } from '../screens/ticket/types.ts';
 import { colors } from '../styles/colors.ts';
 import { useAuth } from '../features/auth/AuthProvider.tsx';
+import type { Diary } from '../screens/home/types.ts';
 
 export type RootStackParamList = {
   Loading: undefined;
   Auth: undefined;
   ProfileSetup: undefined;
   MainTab: undefined;
-  AddDiary: undefined;
+  AddDiary:
+    | {
+        ticketBook?: Diary;
+      }
+    | undefined;
   TicketList:
     | {
         createdTicket?: Ticket;

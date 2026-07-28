@@ -1,4 +1,5 @@
 import {
+  ActivityIndicator,
   FlatList,
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -16,6 +17,7 @@ import { colors } from '../../../styles/colors.ts';
 
 interface DiarySectionProps {
   diaries: Diary[];
+  isLoading: boolean;
   selectedIndex: number;
   onChangeIndex: (index: number) => void;
   onPressAddDiary: () => void;
@@ -25,6 +27,7 @@ interface DiarySectionProps {
 
 function DiarySection({
   diaries,
+  isLoading,
   selectedIndex,
   onChangeIndex,
   onPressAddDiary,
@@ -61,7 +64,11 @@ function DiarySection({
           </Pressable>
         )}
       </View>
-      {hasDiaries ? (
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator color={colors.primary} />
+        </View>
+      ) : hasDiaries ? (
         <>
           <FlatList
             data={diaries}
@@ -116,6 +123,7 @@ function DiaryCard({
           <DiaryCover
             size={168}
             coverColor={diary.coverColor}
+            coverPattern={diary.coverPattern}
             photoUri={diary.photoUri}
           />
         </View>
@@ -170,6 +178,11 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingContainer: {
+    height: 286,
     alignItems: 'center',
     justifyContent: 'center',
   },

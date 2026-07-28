@@ -101,6 +101,39 @@ export type Database = {
         }
         Relationships: []
       }
+      ticket_books: {
+        Row: {
+          cover_color: string
+          cover_pattern: string
+          cover_photo_path: string | null
+          created_at: string
+          id: string
+          sport: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cover_color: string
+          cover_pattern?: string
+          cover_photo_path?: string | null
+          created_at?: string
+          id?: string
+          sport?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cover_color?: string
+          cover_pattern?: string
+          cover_photo_path?: string | null
+          created_at?: string
+          id?: string
+          sport?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
