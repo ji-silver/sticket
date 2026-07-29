@@ -23,8 +23,11 @@ const appVersion = '0.0.1';
 
 function ProfileScreen() {
   const navigation = useNavigation<ProfileNavigationProp>();
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, deleteAccount } = useAuth();
   const [isLogoutDialogVisible, setIsLogoutDialogVisible] = useState(false);
+  const [isWithdrawalDialogVisible, setIsWithdrawalDialogVisible] =
+    useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const totalGames =
     attendanceRecord.win + attendanceRecord.lose + attendanceRecord.draw;
 
@@ -42,6 +45,31 @@ function ProfileScreen() {
     } catch (error) {
       console.error('로그아웃에 실패했습니다.', error);
       Alert.alert('로그아웃하지 못했어요', '잠시 후 다시 시도해 주세요.');
+    }
+  };
+
+  const handleConfirmWithdrawal = async () => {
+    if (isDeletingAccount) {
+      return;
+    }
+
+    setIsDeletingAccount(true);
+
+    try {
+      const didDelete = await deleteAccount();
+
+      if (!didDelete) {
+        setIsWithdrawalDialogVisible(false);
+      }
+    } catch (error) {
+      console.error('회원 탈퇴에 실패했습니다.', error);
+      setIsWithdrawalDialogVisible(false);
+      Alert.alert(
+        '회원 탈퇴를 완료하지 못했어요',
+        error instanceof Error ? error.message : '잠시 후 다시 시도해 주세요.',
+      );
+    } finally {
+      setIsDeletingAccount(false);
     }
   };
 
@@ -175,8 +203,9 @@ function ProfileScreen() {
                 styles.serviceRow,
                 pressed && styles.serviceRowPressed,
               ]}
-              onPress={() => {}}
+              onPress={() => setIsWithdrawalDialogVisible(true)}
               accessibilityRole="button"
+              accessibilityLabel="회원 탈퇴"
             >
               <AppText style={styles.withdrawalText}>회원 탈퇴</AppText>
               <ChevronRight size={18} color="#D92D20" strokeWidth={2} />
@@ -192,6 +221,19 @@ function ProfileScreen() {
         confirmLabel="로그아웃"
         onConfirm={handleConfirmLogout}
         onCancel={() => setIsLogoutDialogVisible(false)}
+      />
+
+      <ConfirmDialog
+        visible={isWithdrawalDialogVisible}
+        title="회원 탈퇴"
+        description={
+          '정말 회원 탈퇴할까요?\n회원 탈퇴 시 데이터는 복구할 수 없어요.\n\n탈퇴 진행 시 보안을 위해 가입한 계정을 다시 확인합니다.'
+        }
+        confirmLabel="탈퇴하기"
+        confirmTone="destructive"
+        isLoading={isDeletingAccount}
+        onConfirm={handleConfirmWithdrawal}
+        onCancel={() => setIsWithdrawalDialogVisible(false)}
       />
     </SafeAreaView>
   );

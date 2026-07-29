@@ -1,4 +1,10 @@
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
 import AppText from './AppText.tsx';
@@ -10,6 +16,7 @@ interface ConfirmDialogProps {
   confirmLabel: string;
   cancelLabel?: string;
   confirmTone?: 'primary' | 'destructive';
+  isLoading?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -21,6 +28,7 @@ function ConfirmDialog({
   confirmLabel,
   cancelLabel = '취소',
   confirmTone = 'primary',
+  isLoading = false,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -32,12 +40,21 @@ function ConfirmDialog({
       transparent
       animationType="fade"
       statusBarTranslucent
-      onRequestClose={onCancel}
+      onRequestClose={() => {
+        if (!isLoading) {
+          onCancel();
+        }
+      }}
     >
       <View style={styles.modalRoot}>
         <Pressable
           style={styles.backdrop}
-          onPress={onCancel}
+          onPress={() => {
+            if (!isLoading) {
+              onCancel();
+            }
+          }}
+          disabled={isLoading}
           accessible={false}
         />
 
@@ -60,7 +77,9 @@ function ConfirmDialog({
                 pressed && styles.buttonPressed,
               ]}
               onPress={onCancel}
+              disabled={isLoading}
               accessibilityRole="button"
+              accessibilityState={{ disabled: isLoading }}
             >
               <AppText style={styles.cancelButtonText}>{cancelLabel}</AppText>
             </Pressable>
@@ -70,12 +89,20 @@ function ConfirmDialog({
                 styles.button,
                 styles.confirmButton,
                 isDestructive && styles.destructiveButton,
-                pressed && styles.buttonPressed,
+                pressed && !isLoading && styles.buttonPressed,
               ]}
               onPress={onConfirm}
+              disabled={isLoading}
               accessibilityRole="button"
+              accessibilityState={{ disabled: isLoading, busy: isLoading }}
             >
-              <AppText style={styles.confirmButtonText}>{confirmLabel}</AppText>
+              {isLoading ? (
+                <ActivityIndicator size="small" color={colors.onPrimary} />
+              ) : (
+                <AppText style={styles.confirmButtonText}>
+                  {confirmLabel}
+                </AppText>
+              )}
             </Pressable>
           </View>
         </View>

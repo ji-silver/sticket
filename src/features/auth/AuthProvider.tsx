@@ -18,6 +18,7 @@ import type {
   AuthStatus,
   UserProfile,
 } from './auth.types';
+import { deleteCurrentAccount } from './account.service';
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
@@ -173,6 +174,22 @@ export function AuthProvider({ children }: PropsWithChildren) {
         setSession(null);
         setProfile(null);
         sessionUserIdRef.current = undefined;
+      },
+      deleteAccount: async () => {
+        if (!session) {
+          throw new Error('로그인 정보를 확인할 수 없습니다.');
+        }
+
+        const didDelete = await deleteCurrentAccount(session);
+
+        if (didDelete) {
+          setSession(null);
+          setProfile(null);
+          setErrorMessage(null);
+          sessionUserIdRef.current = undefined;
+        }
+
+        return didDelete;
       },
     }),
     [errorMessage, loadSession, profile, session, status],

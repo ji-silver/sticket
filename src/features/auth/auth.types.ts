@@ -24,4 +24,5 @@ export interface AuthContextValue {
   completeProfile: (profile: UserProfile) => void;
   retry: () => void;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<boolean>;
 }
