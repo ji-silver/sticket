@@ -1,0 +1,37 @@
+export type KboTeamId =
+  | 'ssg'
+  | 'lg'
+  | 'doosan'
+  | 'kia'
+  | 'samsung'
+  | 'lotte'
+  | 'hanwha'
+  | 'kiwoom'
+  | 'kt'
+  | 'nc';
+
+export type KboSeriesType = 'PRESEASON' | 'REGULAR' | 'POSTSEASON';
+
+export type KboGameStatus =
+  | 'SCHEDULED'
+  | 'IN_PROGRESS'
+  | 'FINISHED'
+  | 'CANCELLED'
+  | 'POSTPONED'
+  | 'UNKNOWN';
+
+export interface KboGame {
+  gameKey: string;
+  sourceGameId: string | null;
+  season: number;
+  seriesType: KboSeriesType;
+  gameDate: string;
+  startTime: string;
+  awayTeamId: KboTeamId;
+  homeTeamId: KboTeamId;
+  awayScore: number | null;
+  homeScore: number | null;
+  stadiumName: string;
+  status: KboGameStatus;
+  cancellationReason: string | null;
+}

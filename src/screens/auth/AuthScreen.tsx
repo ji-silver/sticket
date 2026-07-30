@@ -82,9 +82,7 @@ function AuthScreen() {
             style={styles.appleLogo}
           />
           <AppText style={styles.appleButtonText}>
-            {loadingProvider === 'apple'
-              ? '로그인 중...'
-              : 'Apple로 계속하기'}
+            {loadingProvider === 'apple' ? '로그인 중...' : 'Apple로 계속하기'}
           </AppText>
         </Pressable>
 
@@ -146,8 +144,8 @@ const styles = StyleSheet.create({
   },
   loginArea: {
     paddingHorizontal: 24,
-    paddingTop: 18,
-    paddingBottom: 10,
+    paddingTop: 28,
+    paddingBottom: 64,
     gap: 10,
   },
   loginButton: {

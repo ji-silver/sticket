@@ -227,7 +227,7 @@ function ProfileScreen() {
         visible={isWithdrawalDialogVisible}
         title="회원 탈퇴"
         description={
-          '정말 회원 탈퇴할까요?\n회원 탈퇴 시 데이터는 복구할 수 없어요.\n\n탈퇴 진행 시 보안을 위해 가입한 계정을 다시 확인합니다.'
+          '정말 회원 탈퇴할까요?\n회원 탈퇴 시 데이터는 복구할 수 없어요.\n\n탈퇴를 원하실 경우 보안을 위해 가입한 계정을 다시 확인합니다.'
         }
         confirmLabel="탈퇴하기"
         confirmTone="destructive"
