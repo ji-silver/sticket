@@ -5,13 +5,16 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "inspect": "tsx src/inspectSchedule.ts",
-    "collect": "tsx src/collectSchedule.ts"
+    "collect": "tsx src/collectSchedule.ts",
+    "test-db": "tsx src/testSupabaseConnection.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@supabase/supabase-js": "^2.111.0",
+    "dotenv": "^17.4.2",
     "playwright": "^1.62.0"
   },
   "devDependencies": {

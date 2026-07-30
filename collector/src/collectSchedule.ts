@@ -5,6 +5,7 @@ import type {
   KboSeriesType,
   KboTeamId,
 } from './types.ts';
+import { upsertGames } from './saveGames.ts';
 
 const KBO_SCHEDULE_URL = 'https://www.koreabaseball.com/Schedule/Schedule.aspx';
 
@@ -114,6 +115,12 @@ async function main() {
 
     validateGameKeys(games);
     printCollectionResult(games);
+
+    console.log('\nSupabase에 경기를 저장합니다.');
+
+    const savedGameCount = await upsertGames(games);
+
+    console.log(`Supabase 저장 완료: ${savedGameCount}경기`);
   } finally {
     await browser.close();
   }
