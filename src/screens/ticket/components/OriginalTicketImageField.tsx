@@ -22,9 +22,11 @@ interface OriginalTicketImageFieldProps {
 
 type ImageSource = 'camera' | 'library';
 
-const PICKER_OPTIONS = {
+const IMAGE_SELECTION_OPTIONS = {
   mediaType: 'photo' as const,
-  cropping: true,
+};
+
+const CROPPER_OPTIONS = {
   freeStyleCropEnabled: true,
   compressImageMaxWidth: 2400,
   compressImageMaxHeight: 2400,
@@ -39,6 +41,7 @@ function OriginalTicketImageField({
   onChange,
 }: OriginalTicketImageFieldProps) {
   const [isSourceSheetVisible, setIsSourceSheetVisible] = useState(false);
+  const [previewAspectRatio, setPreviewAspectRatio] = useState(2 / 3);
   const pendingImageSource = useRef<ImageSource | null>(null);
 
   const openSourceSheet = () => {
@@ -60,11 +63,21 @@ function OriginalTicketImageField({
    */
   const selectTicketImage = async (source: ImageSource) => {
     try {
-      const image =
+      const selectedImage =
         source === 'camera'
-          ? await ImagePicker.openCamera(PICKER_OPTIONS)
-          : await ImagePicker.openPicker(PICKER_OPTIONS);
+          ? await ImagePicker.openCamera(IMAGE_SELECTION_OPTIONS)
+          : await ImagePicker.openPicker(IMAGE_SELECTION_OPTIONS);
 
+      // iOS 크롭 화면의 기본값이 200×200이므로 원본 비율로 시작하도록
+      // 선택한 사진의 실제 크기를 전달합니다.
+      const image = await ImagePicker.openCropper({
+        path: selectedImage.path,
+        width: selectedImage.width,
+        height: selectedImage.height,
+        ...CROPPER_OPTIONS,
+      });
+
+      setPreviewAspectRatio(image.width / image.height);
       onChange(image.path);
     } catch (error) {
       const errorCode = (error as { code?: string } | null)?.code;
@@ -125,30 +138,26 @@ function OriginalTicketImageField({
       <View style={styles.sectionHeader}>
         <View style={styles.sectionTitleGroup}>
           <AppText style={styles.sectionTitle}>원본 티켓</AppText>
-          <AppText style={styles.optionalLabel}>선택</AppText>
-        </View>
-
-        {value && (
-          <View style={styles.headerAction}>
+          {value ? (
             <InlineActionButton
               label="변경"
               tone="primary"
               onPress={openSourceSheet}
               accessibilityLabel="원본 티켓 사진 변경"
             />
-          </View>
-        )}
+          ) : (
+            <AppText style={styles.optionalLabel}>선택</AppText>
+          )}
+        </View>
       </View>
 
       {value ? (
-        <View style={styles.selectedPreview}>
-          <Image
-            source={{ uri: value }}
-            style={styles.previewImage}
-            resizeMode="contain"
-            accessibilityLabel="선택한 원본 티켓 미리보기"
-          />
-        </View>
+        <Image
+          source={{ uri: value }}
+          style={[styles.previewImage, { aspectRatio: previewAspectRatio }]}
+          resizeMode="contain"
+          accessibilityLabel="선택한 원본 티켓 미리보기"
+        />
       ) : (
         <Pressable
           style={({ pressed }) => [
@@ -203,6 +212,7 @@ function OriginalTicketImageField({
                 title="사진 삭제"
                 tone="destructive"
                 onPress={() => {
+                  setPreviewAspectRatio(2 / 3);
                   onChange(null);
                   closeSourceSheet();
                 }}
@@ -251,7 +261,7 @@ const styles = StyleSheet.create({
     marginBottom: 28,
   },
   sectionHeader: {
-    position: 'relative',
+    height: 44,
     marginBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
@@ -259,12 +269,6 @@ const styles = StyleSheet.create({
   sectionTitleGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-  },
-  headerAction: {
-    position: 'absolute',
-    top: -12,
-    right: -8,
   },
   sectionTitle: {
     fontSize: 17,
@@ -272,12 +276,13 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   optionalLabel: {
+    marginLeft: 8,
     fontSize: 13,
     fontFamily: fonts.regular,
     color: colors.textSecondary,
   },
   uploadCard: {
-    minHeight: 82,
+    height: 82,
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderWidth: 1,
@@ -309,19 +314,12 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bold,
     color: colors.text,
   },
-  selectedPreview: {
-    width: '100%',
-    height: 180,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 18,
-    borderCurve: 'continuous',
-    backgroundColor: colors.background,
-  },
   previewImage: {
-    width: '100%',
-    height: '100%',
+    height: 82,
+    maxWidth: 120,
+    alignSelf: 'flex-start',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
     borderRadius: 10,
     borderCurve: 'continuous',
     backgroundColor: colors.background,

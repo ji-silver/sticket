@@ -1,4 +1,5 @@
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Pressable,
   ScrollView,
@@ -10,69 +11,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AppText from '../../components/common/AppText.tsx';
 import { fonts } from '../../styles/fonts.ts';
 import { useNavigation } from '@react-navigation/core';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AppCalendar from '../../components/common/AppCalendar.tsx';
 import { DateData } from 'react-native-calendars';
 import { colors } from '../../styles/colors.ts';
-import EmptyCard from '../../components/common/EmptyCard.tsx';
 import InlineActionButton from '../../components/common/InlineActionButton.tsx';
 import ScreenHeader from '../../components/common/ScreenHeader.tsx';
 import type { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
 import OriginalTicketImageField from './components/OriginalTicketImageField.tsx';
 import type { Ticket } from './types.ts';
-
-interface KboGame {
-  id: number;
-  date: string;
-  time: string;
-  stadiumName: string;
-  homeTeamName: string;
-  awayTeamName: string;
-}
-
-const mockKboGames: KboGame[] = [
-  {
-    id: 1,
-    date: '2026-07-14',
-    time: '14:00',
-    stadiumName: '고척스카이돔',
-    homeTeamName: '키움',
-    awayTeamName: '두산',
-  },
-  {
-    id: 2,
-    date: '2026-07-14',
-    time: '17:00',
-    stadiumName: '잠실야구장',
-    homeTeamName: 'LG',
-    awayTeamName: '롯데',
-  },
-  {
-    id: 3,
-    date: '2026-07-14',
-    time: '18:30',
-    stadiumName: '대전한화생명볼파크',
-    homeTeamName: '한화',
-    awayTeamName: 'KIA',
-  },
-  {
-    id: 4,
-    date: '2026-07-14',
-    time: '18:30',
-    stadiumName: 'SSG 랜더스필드',
-    homeTeamName: 'SSG',
-    awayTeamName: 'NC',
-  },
-  {
-    id: 5,
-    date: '2026-07-14',
-    time: '18:30',
-    stadiumName: 'KT 위즈파크',
-    homeTeamName: 'KT',
-    awayTeamName: '삼성',
-  },
-];
+import { getGamesByDate, KboGame } from '../../features/game/game.service.ts';
+import EmptyCard from '../../components/common/EmptyCard.tsx';
 
 function AddTicketScreen() {
   const navigation =
@@ -80,7 +30,49 @@ function AddTicketScreen() {
 
   const [selectedDate, setSelectedDate] = useState('');
   const [isCalendarOpen, setIsCalendarOpen] = useState(true);
-  const [selectedGameId, setSelectedGameId] = useState<number | null>(null);
+  const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
+  const [games, setGames] = useState<KboGame[]>([]);
+  const [isLoadingGames, setIsLoadingGames] = useState(false);
+  const [gameLoadError, setGameLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!selectedDate || isCalendarOpen) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    const loadGames = async () => {
+      setGames([]);
+      setGameLoadError(null);
+      setIsLoadingGames(true);
+
+      try {
+        const loadedGames = await getGamesByDate(selectedDate);
+
+        if (!isCancelled) {
+          setGames(loadedGames);
+        }
+      } catch (error) {
+        console.error('경기 정보를 불러오지 못했습니다.', error);
+
+        if (!isCancelled) {
+          setGameLoadError('날짜를 다시 선택해 재시도해 주세요.');
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsLoadingGames(false);
+        }
+      }
+    };
+
+    loadGames();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [isCalendarOpen, selectedDate]);
+
   const [seatName, setSeatName] = useState('');
   const [originalTicketImageUri, setOriginalTicketImageUri] = useState<
     string | null
@@ -101,20 +93,18 @@ function AddTicketScreen() {
     : {};
 
   const handlePressDay = (day: DateData) => {
-    if (selectedDate !== day.dateString) {
-      setSelectedGameId(null);
-      setSeatName('');
-    }
-
     setSelectedDate(day.dateString);
     setIsCalendarOpen(false);
+
+    setSelectedGameId(null);
+    setSeatName('');
   };
 
   const handlePressDateSummary = () => {
     setIsCalendarOpen(true);
   };
 
-  const handlePressGame = (gameId: number) => {
+  const handlePressGame = (gameId: string) => {
     if (selectedGameId !== gameId) {
       setSeatName('');
     }
@@ -123,7 +113,7 @@ function AddTicketScreen() {
   };
 
   const handleAddTicket = () => {
-    const selectedGame = mockKboGames.find(game => game.id === selectedGameId);
+    const selectedGame = games.find(game => game.id === selectedGameId);
 
     if (!selectedGame) return;
 
@@ -135,17 +125,13 @@ function AddTicketScreen() {
       seatName: seatName.trim(),
       homeTeamName: selectedGame.homeTeamName,
       awayTeamName: selectedGame.awayTeamName,
-      homeScore: 0,
-      awayScore: 0,
+      homeScore: selectedGame.homeScore ?? 0,
+      awayScore: selectedGame.awayScore ?? 0,
       originalTicketImageUri: originalTicketImageUri ?? undefined,
     };
 
     navigation.popTo('TicketList', { createdTicket: ticket });
   };
-
-  const gamesForSelectedDate = selectedDate
-    ? mockKboGames.filter(game => game.date === selectedDate)
-    : [];
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -202,14 +188,24 @@ function AddTicketScreen() {
                 </AppText>
               </View>
 
-              <View style={styles.gameList}>
-                {gamesForSelectedDate.length > 0 ? (
-                  gamesForSelectedDate.map(game => {
+              {isLoadingGames ? (
+                <View style={styles.gameLoadingCard}>
+                  <ActivityIndicator size="small" color={colors.primary} />
+                </View>
+              ) : gameLoadError ? (
+                <EmptyCard
+                  title="경기 정보를 불러오지 못했어요"
+                  description={gameLoadError}
+                  style={styles.emptyCard}
+                />
+              ) : games.length > 0 ? (
+                <View style={styles.gameList}>
+                  {games.map(game => {
                     const isSelected = selectedGameId === game.id;
 
                     return (
                       <Pressable
-                        key={String(game.id)}
+                        key={game.id}
                         style={({ pressed }) => [
                           styles.gameCard,
                           isSelected && styles.gameCardSelected,
@@ -240,10 +236,10 @@ function AddTicketScreen() {
 
                         <View style={styles.gameMetaRow}>
                           <View style={styles.gameMetaContent}>
-                            <AppText style={styles.gameTime}>
-                              {game.time}
-                            </AppText>
+                            <AppText style={styles.gameTime}>{game.time}</AppText>
+
                             <View style={styles.metaDot} />
+
                             <AppText
                               style={styles.stadiumName}
                               numberOfLines={1}
@@ -254,15 +250,15 @@ function AddTicketScreen() {
                         </View>
                       </Pressable>
                     );
-                  })
-                ) : (
-                  <EmptyCard
-                    title="이 날짜에는 경기가 없어요"
-                    description="다른 날짜를 선택해 직관 경기를 찾아보세요"
-                    style={styles.emptyCard}
-                  />
-                )}
-              </View>
+                  })}
+                </View>
+              ) : (
+                <EmptyCard
+                  title="이 날짜에는 경기가 없어요"
+                  description="다른 날짜를 선택해 직관 경기를 찾아보세요"
+                  style={styles.emptyCard}
+                />
+              )}
             </View>
           )}
 
@@ -390,6 +386,11 @@ const styles = StyleSheet.create({
 
   gameList: {
     gap: 10,
+  },
+  gameLoadingCard: {
+    minHeight: 156,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   gameCard: {

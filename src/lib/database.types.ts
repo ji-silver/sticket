@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       bucket_items: {
@@ -73,6 +48,81 @@ export type Database = {
             columns: ["ticket_book_id"]
             isOneToOne: false
             referencedRelation: "ticket_books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      games: {
+        Row: {
+          away_score: number | null
+          away_team_id: string
+          cancellation_reason: string | null
+          created_at: string
+          game_date: string
+          game_key: string
+          home_score: number | null
+          home_team_id: string
+          last_collected_at: string
+          season: number
+          series_type: string
+          source_game_id: string | null
+          sport: string
+          stadium_name: string | null
+          start_time: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          away_score?: number | null
+          away_team_id: string
+          cancellation_reason?: string | null
+          created_at?: string
+          game_date: string
+          game_key: string
+          home_score?: number | null
+          home_team_id: string
+          last_collected_at?: string
+          season: number
+          series_type: string
+          source_game_id?: string | null
+          sport?: string
+          stadium_name?: string | null
+          start_time?: string | null
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          away_score?: number | null
+          away_team_id?: string
+          cancellation_reason?: string | null
+          created_at?: string
+          game_date?: string
+          game_key?: string
+          home_score?: number | null
+          home_team_id?: string
+          last_collected_at?: string
+          season?: number
+          series_type?: string
+          source_game_id?: string | null
+          sport?: string
+          stadium_name?: string | null
+          start_time?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "games_away_team_id_fkey"
+            columns: ["away_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "games_home_team_id_fkey"
+            columns: ["home_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -306,9 +356,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },
