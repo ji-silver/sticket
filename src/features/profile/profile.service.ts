@@ -64,6 +64,7 @@ export async function saveProfile({
       .select('id')
       .eq('sport', 'baseball')
       .eq('name', favoriteTeamName)
+      .eq('is_active', true)
       .maybeSingle();
 
     if (teamError) {

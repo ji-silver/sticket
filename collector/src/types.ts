@@ -1,5 +1,6 @@
 export type KboTeamId =
   | 'ssg'
+  | 'sk'
   | 'lg'
   | 'doosan'
   | 'kia'
@@ -7,6 +8,7 @@ export type KboTeamId =
   | 'lotte'
   | 'hanwha'
   | 'kiwoom'
+  | 'nexen'
   | 'kt'
   | 'nc';
 

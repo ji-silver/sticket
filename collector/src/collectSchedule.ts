@@ -13,6 +13,7 @@ const SERIES_VALUES = ['1', '0,9,6', '3,4,5,7'] as const;
 
 const teamIdByName: Record<string, KboTeamId> = {
   SSG: 'ssg',
+  SK: 'sk',
   LG: 'lg',
   두산: 'doosan',
   KIA: 'kia',
@@ -20,6 +21,7 @@ const teamIdByName: Record<string, KboTeamId> = {
   롯데: 'lotte',
   한화: 'hanwha',
   키움: 'kiwoom',
+  넥센: 'nexen',
   KT: 'kt',
   NC: 'nc',
 };
