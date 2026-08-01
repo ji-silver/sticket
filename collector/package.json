@@ -6,6 +6,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "inspect": "tsx src/inspectSchedule.ts",
     "collect": "tsx src/collectSchedule.ts",
+    "backfill": "tsx src/collectSchedule.ts --backfill",
     "test-db": "tsx src/testSupabaseConnection.ts"
   },
   "keywords": [],

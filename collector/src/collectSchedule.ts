@@ -10,6 +10,8 @@ import { upsertGames } from './saveGames.ts';
 const KBO_SCHEDULE_URL = 'https://www.koreabaseball.com/Schedule/Schedule.aspx';
 
 const SERIES_VALUES = ['1', '0,9,6', '3,4,5,7'] as const;
+const BACKFILL_START_YEAR = 2015;
+const BACKFILL_MONTHS = ['03', '04', '05', '06', '07', '08', '09', '10', '11'];
 
 const teamIdByName: Record<string, KboTeamId> = {
   SSG: 'ssg',
@@ -40,6 +42,11 @@ interface RawScheduleRow {
   stadium: string;
   note: string;
   gameHref: string | null;
+}
+
+interface CollectionTarget {
+  year: number;
+  month: string;
 }
 
 async function selectScheduleOption(
@@ -98,6 +105,9 @@ async function readScheduleRows(page: Page): Promise<RawScheduleRow[]> {
 }
 
 async function main() {
+  const targets = getCollectionTargets();
+  const isBackfill = process.argv.includes('--backfill');
+
   const browser = await chromium.launch({
     headless: process.env.CI === 'true',
   });
@@ -114,47 +124,122 @@ async function main() {
 
     await page.waitForSelector('#tblScheduleList');
 
-    const today = getTodayInKorea();
-    const targetYear = today.slice(0, 4);
-    const targetMonth = today.slice(5, 7);
-
-    await selectScheduleOption(page, '#ddlYear', targetYear);
-    await selectScheduleOption(page, '#ddlMonth', targetMonth);
-
-    const selectedYear = Number(await page.locator('#ddlYear').inputValue());
-
-    const selectedMonth = await page.locator('#ddlMonth').inputValue();
-
-    console.log('선택된 연도:', selectedYear);
-    console.log('선택된 월:', selectedMonth);
-
     let totalSavedGameCount = 0;
 
-    for (const seriesValue of SERIES_VALUES) {
-      await selectScheduleOption(page, '#ddlSeries', seriesValue);
+    for (const [targetIndex, target] of targets.entries()) {
+      const targetYear = String(target.year);
+      const targetMonth = target.month;
 
-      const seriesType = parseSeriesType(seriesValue);
-      const rawRows = await readScheduleRows(page);
-      const games = parseScheduleRows(selectedYear, seriesType, rawRows);
+      console.log(
+        `\n[${targetIndex + 1}/${targets.length}] ${targetYear}년 ${targetMonth}월 수집`,
+      );
 
-      console.log('\n선택된 경기 종류:', seriesType);
+      await selectScheduleOption(page, '#ddlYear', targetYear);
+      await selectScheduleOption(page, '#ddlMonth', targetMonth);
 
-      validateGameKeys(games);
-      printCollectionResult(games);
+      const selectedYear = Number(await page.locator('#ddlYear').inputValue());
+      const selectedMonth = await page.locator('#ddlMonth').inputValue();
 
-      console.log('\nSupabase에 경기를 저장합니다.');
+      console.log('선택된 연도:', selectedYear);
+      console.log('선택된 월:', selectedMonth);
 
-      const savedGameCount = await upsertGames(games);
+      let targetSavedGameCount = 0;
 
-      totalSavedGameCount += savedGameCount;
+      for (const seriesValue of SERIES_VALUES) {
+        await selectScheduleOption(page, '#ddlSeries', seriesValue);
 
-      console.log(`Supabase 저장 완료: ${savedGameCount}경기`);
+        const seriesType = parseSeriesType(seriesValue);
+        const rawRows = await readScheduleRows(page);
+        const games = parseScheduleRows(selectedYear, seriesType, rawRows);
+
+        console.log('\n선택된 경기 종류:', seriesType);
+
+        validateGameKeys(games);
+        printCollectionResult(games, !isBackfill);
+
+        console.log('\nSupabase에 경기를 저장합니다.');
+
+        const savedGameCount = await upsertGames(games);
+
+        targetSavedGameCount += savedGameCount;
+
+        console.log(`Supabase 저장 완료: ${savedGameCount}경기`);
+      }
+
+      totalSavedGameCount += targetSavedGameCount;
+
+      console.log(
+        `${targetYear}년 ${targetMonth}월 저장 완료: ${targetSavedGameCount}경기`,
+      );
+
+      if (isBackfill) {
+        await page.waitForTimeout(300);
+      }
     }
 
-    console.log(`\n전체 저장 완료: ${totalSavedGameCount}경기`);
+    console.log(`\n전체 작업 완료: ${totalSavedGameCount}경기`);
   } finally {
     await browser.close();
   }
+}
+
+function getCollectionTargets(): CollectionTarget[] {
+  const today = getTodayInKorea();
+  const currentYear = Number(today.slice(0, 4));
+  const currentMonth = today.slice(5, 7);
+
+  if (process.argv.includes('--backfill')) {
+    const targets: CollectionTarget[] = [];
+
+    for (let year = BACKFILL_START_YEAR; year <= currentYear; year += 1) {
+      for (const month of BACKFILL_MONTHS) {
+        if (year === currentYear && month > currentMonth) {
+          continue;
+        }
+
+        targets.push({ year, month });
+      }
+    }
+
+    return targets;
+  }
+
+  const yearArgument = getArgumentValue('year');
+  const monthArgument = getArgumentValue('month');
+
+  if ((yearArgument === null) !== (monthArgument === null)) {
+    throw new Error('--year와 --month는 함께 입력해야 합니다.');
+  }
+
+  if (yearArgument === null || monthArgument === null) {
+    return [{ year: currentYear, month: currentMonth }];
+  }
+
+  const year = Number(yearArgument);
+  const month = monthArgument.padStart(2, '0');
+
+  if (!Number.isInteger(year) || year < BACKFILL_START_YEAR || year > currentYear) {
+    throw new Error(
+      `--year는 ${BACKFILL_START_YEAR}년부터 ${currentYear}년 사이여야 합니다.`,
+    );
+  }
+
+  if (!/^(0[1-9]|1[0-2])$/.test(month)) {
+    throw new Error('--month는 1부터 12 사이여야 합니다.');
+  }
+
+  if (year === currentYear && month > currentMonth) {
+    throw new Error('현재보다 미래인 연·월은 수집할 수 없습니다.');
+  }
+
+  return [{ year, month }];
+}
+
+function getArgumentValue(name: string): string | null {
+  const prefix = `--${name}=`;
+  const argument = process.argv.find(value => value.startsWith(prefix));
+
+  return argument?.slice(prefix.length) ?? null;
 }
 
 function parseScheduleRows(
@@ -380,7 +465,7 @@ function validateGameKeys(games: KboGame[]) {
   }
 }
 
-function printCollectionResult(games: KboGame[]) {
+function printCollectionResult(games: KboGame[], printDetails: boolean) {
   const gamesWithoutSourceId = games.filter(game => game.sourceGameId === null);
 
   const statusCounts = games.reduce<Record<string, number>>((counts, game) => {
@@ -395,6 +480,10 @@ function printCollectionResult(games: KboGame[]) {
 
   console.log('\n경기 상태별 개수');
   console.log(statusCounts);
+
+  if (!printDetails) {
+    return;
+  }
 
   console.log('\n앞의 경기 5개');
   console.log(JSON.stringify(games.slice(0, 5), null, 2));
