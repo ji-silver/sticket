@@ -27,6 +27,7 @@ const IMAGE_SELECTION_OPTIONS = {
 };
 
 const CROPPER_OPTIONS = {
+  mediaType: 'photo' as const,
   freeStyleCropEnabled: true,
   compressImageMaxWidth: 2400,
   compressImageMaxHeight: 2400,

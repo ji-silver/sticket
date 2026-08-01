@@ -222,6 +222,51 @@ export type Database = {
         }
         Relationships: []
       }
+      tickets: {
+        Row: {
+          created_at: string
+          game_key: string
+          id: string
+          original_photo_path: string | null
+          seat_name: string | null
+          ticket_book_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          game_key: string
+          id?: string
+          original_photo_path?: string | null
+          seat_name?: string | null
+          ticket_book_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          game_key?: string
+          id?: string
+          original_photo_path?: string | null
+          seat_name?: string | null
+          ticket_book_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_game_key_fkey"
+            columns: ["game_key"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["game_key"]
+          },
+          {
+            foreignKeyName: "tickets_ticket_book_id_fkey"
+            columns: ["ticket_book_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
