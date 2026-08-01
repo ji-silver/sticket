@@ -1,4 +1,4 @@
-import { chromium } from 'playwright';
+import { chromium, type Page } from 'playwright';
 import type {
   KboGame,
   KboGameStatus,
@@ -8,6 +8,8 @@ import type {
 import { upsertGames } from './saveGames.ts';
 
 const KBO_SCHEDULE_URL = 'https://www.koreabaseball.com/Schedule/Schedule.aspx';
+
+const SERIES_VALUES = ['1', '0,9,6', '3,4,5,7'] as const;
 
 const teamIdByName: Record<string, KboTeamId> = {
   SSG: 'ssg',
@@ -38,9 +40,64 @@ interface RawScheduleRow {
   gameHref: string | null;
 }
 
+async function selectScheduleOption(
+  page: Page,
+  selector: string,
+  value: string,
+) {
+  const select = page.locator(selector);
+
+  if ((await select.inputValue()) === value) {
+    return;
+  }
+
+  const responsePromise = page.waitForResponse(
+    response =>
+      response.url().includes('/ws/Schedule.asmx/GetScheduleList') &&
+      response.ok(),
+  );
+
+  await select.selectOption(value);
+  await responsePromise;
+}
+
+async function readScheduleRows(page: Page): Promise<RawScheduleRow[]> {
+  return page
+    .locator('#tblScheduleList > tbody > tr:has(.play)')
+    .evaluateAll(rows =>
+      rows.map(row => {
+        const cells = Array.from(
+          row.querySelectorAll(':scope > th, :scope > td'),
+        );
+
+        const dayCell = row.querySelector<HTMLElement>('.day');
+        const timeCell = row.querySelector<HTMLElement>('.time');
+        const playCell = row.querySelector<HTMLElement>('.play');
+        const relayCell = row.querySelector<HTMLElement>('.relay');
+        const gameLink =
+          row.querySelector<HTMLAnchorElement>('a[href*="gameId="]');
+
+        // 날짜 셀이 있으면 나머지 셀 번호가 하나씩 밀립니다.
+        const offset = dayCell ? 1 : 0;
+        const stadiumCell = cells[6 + offset] as HTMLElement | undefined;
+        const noteCell = cells[7 + offset] as HTMLElement | undefined;
+
+        return {
+          day: dayCell?.innerText.trim() ?? null,
+          time: timeCell?.innerText.trim() ?? '',
+          matchup: playCell?.innerText.replace(/\s+/g, '').trim() ?? '',
+          relay: relayCell?.innerText.trim() ?? '',
+          stadium: stadiumCell?.innerText.replace(/\s+/g, ' ').trim() ?? '',
+          note: noteCell?.innerText.replace(/\s+/g, ' ').trim() ?? '',
+          gameHref: gameLink?.getAttribute('href') ?? null,
+        };
+      }),
+    );
+}
+
 async function main() {
   const browser = await chromium.launch({
-    headless: false,
+    headless: process.env.CI === 'true',
   });
 
   const page = await browser.newPage({
@@ -55,72 +112,44 @@ async function main() {
 
     await page.waitForSelector('#tblScheduleList');
 
+    const today = getTodayInKorea();
+    const targetYear = today.slice(0, 4);
+    const targetMonth = today.slice(5, 7);
+
+    await selectScheduleOption(page, '#ddlYear', targetYear);
+    await selectScheduleOption(page, '#ddlMonth', targetMonth);
+
     const selectedYear = Number(await page.locator('#ddlYear').inputValue());
 
     const selectedMonth = await page.locator('#ddlMonth').inputValue();
 
-    const selectedSeriesValue = await page.locator('#ddlSeries').inputValue();
-
-    const seriesType = parseSeriesType(selectedSeriesValue);
-
     console.log('선택된 연도:', selectedYear);
     console.log('선택된 월:', selectedMonth);
-    console.log('선택된 경기 종류:', seriesType);
 
-    const rawRows: RawScheduleRow[] = await page
-      .locator('#tblScheduleList > tbody > tr')
-      .evaluateAll(rows =>
-        rows.map(row => {
-          const cells = Array.from(
-            row.querySelectorAll(':scope > th, :scope > td'),
-          );
+    let totalSavedGameCount = 0;
 
-          const dayCell = row.querySelector<HTMLElement>('.day');
+    for (const seriesValue of SERIES_VALUES) {
+      await selectScheduleOption(page, '#ddlSeries', seriesValue);
 
-          const timeCell = row.querySelector<HTMLElement>('.time');
+      const seriesType = parseSeriesType(seriesValue);
+      const rawRows = await readScheduleRows(page);
+      const games = parseScheduleRows(selectedYear, seriesType, rawRows);
 
-          const playCell = row.querySelector<HTMLElement>('.play');
+      console.log('\n선택된 경기 종류:', seriesType);
 
-          const relayCell = row.querySelector<HTMLElement>('.relay');
+      validateGameKeys(games);
+      printCollectionResult(games);
 
-          const gameLink =
-            row.querySelector<HTMLAnchorElement>('a[href*="gameId="]');
+      console.log('\nSupabase에 경기를 저장합니다.');
 
-          // 날짜 셀이 있으면 나머지 셀 번호가 하나씩 밀립니다.
-          const offset = dayCell ? 1 : 0;
+      const savedGameCount = await upsertGames(games);
 
-          const stadiumCell = cells[6 + offset] as HTMLElement | undefined;
+      totalSavedGameCount += savedGameCount;
 
-          const noteCell = cells[7 + offset] as HTMLElement | undefined;
+      console.log(`Supabase 저장 완료: ${savedGameCount}경기`);
+    }
 
-          return {
-            day: dayCell?.innerText.trim() ?? null,
-
-            time: timeCell?.innerText.trim() ?? '',
-
-            matchup: playCell?.innerText.replace(/\s+/g, '').trim() ?? '',
-
-            relay: relayCell?.innerText.trim() ?? '',
-
-            stadium: stadiumCell?.innerText.replace(/\s+/g, ' ').trim() ?? '',
-
-            note: noteCell?.innerText.replace(/\s+/g, ' ').trim() ?? '',
-
-            gameHref: gameLink?.getAttribute('href') ?? null,
-          };
-        }),
-      );
-
-    const games = parseScheduleRows(selectedYear, seriesType, rawRows);
-
-    validateGameKeys(games);
-    printCollectionResult(games);
-
-    console.log('\nSupabase에 경기를 저장합니다.');
-
-    const savedGameCount = await upsertGames(games);
-
-    console.log(`Supabase 저장 완료: ${savedGameCount}경기`);
+    console.log(`\n전체 저장 완료: ${totalSavedGameCount}경기`);
   } finally {
     await browser.close();
   }
