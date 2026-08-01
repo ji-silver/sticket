@@ -262,7 +262,7 @@ function AddTicketScreen() {
             </View>
           )}
 
-          {selectedGameId && (
+          {selectedDate && !isCalendarOpen && (
             <View style={styles.seatSection}>
               <View style={styles.seatSectionHeader}>
                 <AppText style={styles.sectionTitle}>좌석 정보</AppText>
