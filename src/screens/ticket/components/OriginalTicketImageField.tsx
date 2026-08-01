@@ -15,9 +15,14 @@ import InlineActionButton from '../../../components/common/InlineActionButton.ts
 import { colors } from '../../../styles/colors.ts';
 import { fonts } from '../../../styles/fonts.ts';
 
+export interface SelectedOriginalTicketImage {
+  uri: string;
+  base64: string;
+}
+
 interface OriginalTicketImageFieldProps {
-  value: string | null;
-  onChange: (uri: string | null) => void;
+  value: SelectedOriginalTicketImage | null;
+  onChange: (image: SelectedOriginalTicketImage | null) => void;
 }
 
 type ImageSource = 'camera' | 'library';
@@ -32,6 +37,8 @@ const CROPPER_OPTIONS = {
   compressImageMaxWidth: 2400,
   compressImageMaxHeight: 2400,
   compressImageQuality: 0.9,
+  includeBase64: true,
+  forceJpg: true,
   cropperToolbarTitle: '티켓 앞면 맞추기',
   cropperCancelText: '취소',
   cropperChooseText: '사용',
@@ -78,8 +85,16 @@ function OriginalTicketImageField({
         ...CROPPER_OPTIONS,
       });
 
+      if (!image.data) {
+        throw new Error('선택한 이미지 데이터를 읽지 못했습니다.');
+      }
+
       setPreviewAspectRatio(image.width / image.height);
-      onChange(image.path);
+
+      onChange({
+        uri: image.path,
+        base64: image.data,
+      });
     } catch (error) {
       const errorCode = (error as { code?: string } | null)?.code;
 
@@ -154,7 +169,7 @@ function OriginalTicketImageField({
 
       {value ? (
         <Image
-          source={{ uri: value }}
+          source={{ uri: value.uri }}
           style={[styles.previewImage, { aspectRatio: previewAspectRatio }]}
           resizeMode="contain"
           accessibilityLabel="선택한 원본 티켓 미리보기"

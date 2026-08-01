@@ -1,5 +1,6 @@
 import {
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Pressable,
   ScrollView,
@@ -19,10 +20,12 @@ import { colors } from '../../styles/colors.ts';
 import InlineActionButton from '../../components/common/InlineActionButton.tsx';
 import ScreenHeader from '../../components/common/ScreenHeader.tsx';
 import type { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
-import OriginalTicketImageField from './components/OriginalTicketImageField.tsx';
-import type { Ticket } from './types.ts';
+import OriginalTicketImageField, {
+  SelectedOriginalTicketImage,
+} from './components/OriginalTicketImageField.tsx';
 import { getGamesByDate, KboGame } from '../../features/game/game.service.ts';
 import EmptyCard from '../../components/common/EmptyCard.tsx';
+import { createTicket } from '../../features/ticket/ticket.service.ts';
 
 function AddTicketScreen() {
   const navigation =
@@ -74,11 +77,13 @@ function AddTicketScreen() {
   }, [isCalendarOpen, selectedDate]);
 
   const [seatName, setSeatName] = useState('');
-  const [originalTicketImageUri, setOriginalTicketImageUri] = useState<
-    string | null
-  >(null);
+  const [originalTicketImage, setOriginalTicketImage] =
+    useState<SelectedOriginalTicketImage | null>(null);
+
+  const [isSaving, setIsSaving] = useState(false);
 
   const canSaveTicket = selectedDate.length > 0 && selectedGameId !== null;
+  const isSaveDisabled = !canSaveTicket || isSaving;
 
   const selectedDateText = selectedDate ? formatDateText(selectedDate) : '';
 
@@ -112,25 +117,40 @@ function AddTicketScreen() {
     setSelectedGameId(gameId);
   };
 
-  const handleAddTicket = () => {
-    const selectedGame = games.find(game => game.id === selectedGameId);
+  const handleAddTicket = async () => {
+    if (!selectedGameId || isSaving) {
+      return;
+    }
 
-    if (!selectedGame) return;
+    setIsSaving(true);
 
-    const ticket: Ticket = {
-      id: Date.now(),
-      matchDate: selectedGame.date,
-      matchTime: selectedGame.time,
-      stadiumName: selectedGame.stadiumName,
-      seatName: seatName.trim(),
-      homeTeamName: selectedGame.homeTeamName,
-      awayTeamName: selectedGame.awayTeamName,
-      homeScore: selectedGame.homeScore ?? 0,
-      awayScore: selectedGame.awayScore ?? 0,
-      originalTicketImageUri: originalTicketImageUri ?? undefined,
-    };
+    try {
+      await createTicket({
+        gameKey: selectedGameId,
+        seatName,
+        originalPhotoBase64: originalTicketImage?.base64,
+      });
 
-    navigation.popTo('TicketList', { createdTicket: ticket });
+      navigation.goBack();
+    } catch (error) {
+      console.error('티켓을 저장하지 못했습니다.', error);
+
+      const errorCode =
+        typeof error === 'object' && error !== null && 'code' in error
+          ? error.code
+          : null;
+
+      if (errorCode === '23505') {
+        Alert.alert(
+          '이미 등록한 경기예요',
+          '같은 티켓북에는 동일한 경기를 한 번만 등록할 수 있어요.',
+        );
+      } else {
+        Alert.alert('티켓을 추가하지 못했어요', '잠시 후 다시 시도해 주세요.');
+      }
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -146,8 +166,8 @@ function AddTicketScreen() {
           keyboardDismissMode="on-drag"
         >
           <OriginalTicketImageField
-            value={originalTicketImageUri}
-            onChange={setOriginalTicketImageUri}
+            value={originalTicketImage}
+            onChange={setOriginalTicketImage}
           />
 
           <View style={styles.sectionHeader}>
@@ -236,7 +256,9 @@ function AddTicketScreen() {
 
                         <View style={styles.gameMetaRow}>
                           <View style={styles.gameMetaContent}>
-                            <AppText style={styles.gameTime}>{game.time}</AppText>
+                            <AppText style={styles.gameTime}>
+                              {game.time}
+                            </AppText>
 
                             <View style={styles.metaDot} />
 
@@ -271,6 +293,7 @@ function AddTicketScreen() {
 
               <View style={styles.seatInputCard}>
                 <TextInput
+                  maxLength={100}
                   value={seatName}
                   onChangeText={setSeatName}
                   style={styles.seatInput}
@@ -287,24 +310,31 @@ function AddTicketScreen() {
 
         <View style={styles.footer}>
           <Pressable
-            disabled={!canSaveTicket}
+            disabled={isSaveDisabled}
             onPress={handleAddTicket}
             style={({ pressed }) => [
               styles.saveButton,
-              !canSaveTicket && styles.saveButtonDisabled,
-              pressed && canSaveTicket && styles.saveButtonPressed,
+              isSaveDisabled && styles.saveButtonDisabled,
+              pressed && !isSaveDisabled && styles.saveButtonPressed,
             ]}
             accessibilityRole="button"
-            accessibilityState={{ disabled: !canSaveTicket }}
+            accessibilityState={{
+              disabled: isSaveDisabled,
+              busy: isSaving,
+            }}
           >
-            <AppText
-              style={[
-                styles.saveButtonText,
-                !canSaveTicket && styles.saveButtonTextDisabled,
-              ]}
-            >
-              티켓 추가
-            </AppText>
+            {isSaving ? (
+              <ActivityIndicator size="small" color={colors.onPrimary} />
+            ) : (
+              <AppText
+                style={[
+                  styles.saveButtonText,
+                  isSaveDisabled && styles.saveButtonTextDisabled,
+                ]}
+              >
+                티켓 추가
+              </AppText>
+            )}
           </Pressable>
         </View>
       </KeyboardAvoidingView>
