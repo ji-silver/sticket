@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppText from '../../components/common/AppText.tsx';
 import { fonts } from '../../styles/fonts.ts';
-import { useNavigation } from '@react-navigation/core';
+import { useNavigation, useRoute } from '@react-navigation/core';
 import { useEffect, useState } from 'react';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AppCalendar from '../../components/common/AppCalendar.tsx';
@@ -27,20 +27,27 @@ import { getGamesByDate, KboGame } from '../../features/game/game.service.ts';
 import EmptyCard from '../../components/common/EmptyCard.tsx';
 import { createTicket } from '../../features/ticket/ticket.service.ts';
 import { getTodayInKorea } from '../../lib/date.ts';
+import type { RouteProp } from '@react-navigation/native';
+
+type AddTicketRouteProp = RouteProp<RootStackParamList, 'AddTicket'>;
 
 function AddTicketScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const route = useRoute<AddTicketRouteProp>();
 
-  const [selectedDate, setSelectedDate] = useState('');
-  const [isCalendarOpen, setIsCalendarOpen] = useState(true);
+  const today = getTodayInKorea();
+  const routeInitialDate = route.params?.initialDate;
+  const initialDate =
+    routeInitialDate && routeInitialDate <= today ? routeInitialDate : '';
+
+  const [selectedDate, setSelectedDate] = useState(initialDate);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(!initialDate);
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
   const [games, setGames] = useState<KboGame[]>([]);
   const [isLoadingGames, setIsLoadingGames] = useState(false);
   const [gameLoadError, setGameLoadError] = useState<string | null>(null);
   const [gameRefreshKey, setGameRefreshKey] = useState(0);
-  const today = getTodayInKorea();
-
   useEffect(() => {
     if (!selectedDate || isCalendarOpen) {
       return;

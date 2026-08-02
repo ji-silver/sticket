@@ -24,7 +24,11 @@ export type RootStackParamList = {
       }
     | undefined;
   TicketList: undefined;
-  AddTicket: undefined;
+  AddTicket:
+    | {
+        initialDate?: string;
+      }
+    | undefined;
   ProfileEdit: undefined;
   TicketDetail: {
     ticket: Ticket;

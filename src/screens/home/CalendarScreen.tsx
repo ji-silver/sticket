@@ -1,86 +1,30 @@
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import AppText from '../../components/common/AppText.tsx';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
 import AppCalendar from '../../components/common/AppCalendar.tsx';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { DateData } from 'react-native-calendars';
-import { Plus } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/core';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
-import EmptyCard from '../../components/common/EmptyCard.tsx';
+import { getTodayInKorea } from '../../lib/date.ts';
+import { Ticket } from '../ticket/types.ts';
+import { useFocusEffect } from '@react-navigation/native';
+import { getTickets } from '../../features/ticket/ticket.service.ts';
 import TicketCard from '../ticket/components/TicketCard.tsx';
-import type { Ticket } from '../ticket/types.ts';
+import EmptyCard from '../../components/common/EmptyCard.tsx';
+import { Plus } from 'lucide-react-native';
 
 type CalendarNavigationProp = NativeStackNavigationProp<RootStackParamList>;
-
-const mockAttendanceRecords: Ticket[] = [
-  {
-    id: '1',
-    matchDate: '2026-07-03',
-    homeTeamName: '키움',
-    awayTeamName: '두산',
-    homeScore: 5,
-    awayScore: 3,
-    stadiumName: '고척스카이돔',
-    seatName: '1루 102구역 8열 12번',
-    matchTime: '18:30',
-  },
-  {
-    id: '2',
-    matchDate: '2026-07-14',
-    homeTeamName: 'LG',
-    awayTeamName: '롯데',
-    homeScore: 2,
-    awayScore: 3,
-    stadiumName: '잠실야구장',
-    seatName: '1루 블루석 107구역',
-    matchTime: '18:30',
-  },
-  {
-    id: '3',
-    matchDate: '2026-07-21',
-    homeTeamName: '한화',
-    awayTeamName: 'KIA',
-    homeScore: 7,
-    awayScore: 4,
-    stadiumName: '대전한화생명볼파크',
-    seatName: '내야 지정석 115구역',
-    matchTime: '18:30',
-  },
-  {
-    id: '4',
-    matchDate: '2026-07-28',
-    homeTeamName: 'SSG',
-    awayTeamName: 'NC',
-    homeScore: 6,
-    awayScore: 2,
-    stadiumName: 'SSG 랜더스필드',
-    seatName: '1루 응원지정석 23블록',
-    matchTime: '17:00',
-  },
-  {
-    id: '5',
-    matchDate: '2026-06-08',
-    homeTeamName: 'KT',
-    awayTeamName: '삼성',
-    homeScore: 4,
-    awayScore: 4,
-    stadiumName: 'KT 위즈파크',
-    seatName: '중앙 지정석 206구역',
-    matchTime: '18:30',
-  },
-];
-
-const formatDateString = (date: Date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-
-  return `${year}-${month}-${day}`;
-};
 
 const formatSelectedDate = (dateString: string) => {
   const [year, month, day] = dateString.split('-').map(Number);
@@ -92,13 +36,53 @@ const formatSelectedDate = (dateString: string) => {
 
 function CalendarScreen() {
   const navigation = useNavigation<CalendarNavigationProp>();
-  const todayString = formatDateString(new Date());
-  const [selectedDate, setSelectedDate] = useState(todayString);
+  const today = getTodayInKorea();
+
+  const [selectedDate, setSelectedDate] = useState(today);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+
+      const loadTickets = async () => {
+        setIsLoading(true);
+
+        try {
+          const loadedTickets = await getTickets();
+
+          if (isActive) {
+            setTickets(loadedTickets);
+          }
+        } catch (error) {
+          console.error('티켓을 불러오지 못했습니다.', error);
+
+          if (isActive) {
+            Alert.alert(
+              '직관 기록을 불러오지 못했어요',
+              '잠시 후 다시 시도해 주세요.',
+            );
+          }
+        } finally {
+          if (isActive) {
+            setIsLoading(false);
+          }
+        }
+      };
+
+      loadTickets();
+
+      return () => {
+        isActive = false;
+      };
+    }, []),
+  );
 
   const markedDates: Record<string, object> = {};
 
-  mockAttendanceRecords.forEach(record => {
-    markedDates[record.matchDate] = {
+  tickets.forEach(ticket => {
+    markedDates[ticket.matchDate] = {
       marked: true,
       dotColor: colors.primary,
     };
@@ -112,11 +96,15 @@ function CalendarScreen() {
     dotColor: colors.onPrimary,
   };
 
-  const selectedRecords = mockAttendanceRecords.filter(
-    record => record.matchDate === selectedDate,
+  const selectedRecords = tickets.filter(
+    ticket => ticket.matchDate === selectedDate,
   );
 
   const handlePressDay = (day: DateData) => {
+    if (day.dateString > today) {
+      return;
+    }
+
     setSelectedDate(day.dateString);
   };
 
@@ -133,6 +121,8 @@ function CalendarScreen() {
 
         <AppCalendar
           current={selectedDate}
+          maxDate={today}
+          disableAllTouchEventsForDisabledDays
           markedDates={markedDates}
           onDayPress={handlePressDay}
         />
@@ -144,14 +134,20 @@ function CalendarScreen() {
             </AppText>
           </View>
 
-          {selectedRecords.length > 0 ? (
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color={colors.primary} />
+            </View>
+          ) : selectedRecords.length > 0 ? (
             <View style={styles.recordList}>
               {selectedRecords.map(record => (
                 <TicketCard
-                  key={String(record.id)}
+                  key={record.id}
                   ticket={record}
                   onPress={() =>
-                    navigation.navigate('TicketDetail', { ticket: record })
+                    navigation.navigate('TicketDetail', {
+                      ticket: record,
+                    })
                   }
                 />
               ))}
@@ -167,9 +163,13 @@ function CalendarScreen() {
                   styles.addTicketButton,
                   pressed && styles.addTicketButtonPressed,
                 ]}
-                onPress={() => navigation.navigate('AddTicket')}
+                onPress={() =>
+                  navigation.navigate('AddTicket', {
+                    initialDate: selectedDate,
+                  })
+                }
                 accessibilityRole="button"
-                accessibilityLabel="티켓 추가"
+                accessibilityLabel="선택한 날짜에 티켓 추가"
               >
                 <Plus size={15} color={colors.onPrimary} strokeWidth={2.6} />
                 <AppText style={styles.addTicketButtonText}>티켓 추가</AppText>
@@ -222,6 +222,12 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontFamily: fonts.bold,
     color: colors.text,
+  },
+
+  loadingContainer: {
+    minHeight: 166,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   recordList: {
