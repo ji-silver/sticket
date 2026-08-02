@@ -4,6 +4,9 @@ on:
   workflow_dispatch:
 
   schedule:
+    - cron: '7 10 * 3-11 *'
+      timezone: 'Asia/Seoul'
+
     - cron: '17 11-23 * 3-11 *'
       timezone: 'Asia/Seoul'
 
@@ -39,7 +42,15 @@ jobs:
       - name: Chromium 설치
         run: npx playwright install --with-deps chromium
 
-      - name: KBO 경기 수집
+      - name: KBO 미래 일정 수집
+        if: github.event.schedule == '7 10 * 3-11 *'
+        run: npm run collect:schedule:upcoming
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+
+      - name: KBO 경기 상태 수집
+        if: github.event_name == 'workflow_dispatch' || github.event.schedule != '7 10 * 3-11 *'
         run: npm run collect
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

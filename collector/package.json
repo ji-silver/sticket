@@ -6,6 +6,8 @@
     "test": "tsx --test src/*.check.ts",
     "inspect": "tsx src/inspectSchedule.ts",
     "collect": "tsx src/collectSchedule.ts",
+    "collect:schedule": "tsx src/collectSchedule.ts --schedule",
+    "collect:schedule:upcoming": "tsx src/collectSchedule.ts --schedule --upcoming",
     "backfill": "tsx src/collectSchedule.ts --backfill",
     "test-db": "tsx src/testSupabaseConnection.ts"
   },

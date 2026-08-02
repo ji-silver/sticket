@@ -5,7 +5,11 @@ import type {
   KboSeriesType,
   KboTeamId,
 } from './types.ts';
-import { getRecentGameDates } from './dateWindow.ts';
+import {
+  getRecentGameDates,
+  getRemainingSeasonMonths,
+  getUpcomingScheduleMonths,
+} from './dateWindow.ts';
 import { upsertGames } from './saveGames.ts';
 
 const KBO_SCHEDULE_URL = 'https://www.koreabaseball.com/Schedule/Schedule.aspx';
@@ -108,15 +112,21 @@ async function readScheduleRows(page: Page): Promise<RawScheduleRow[]> {
 async function main() {
   const targets = getCollectionTargets();
   const isBackfill = process.argv.includes('--backfill');
+  const isScheduleCollection = process.argv.includes('--schedule');
   const today = getTodayInKorea();
   const automaticGameDates = new Set(getRecentGameDates(today));
   const isAutomaticCollection =
     !isBackfill &&
+    !isScheduleCollection &&
     getArgumentValue('year') === null &&
     getArgumentValue('month') === null;
 
   if (isAutomaticCollection) {
     console.log(`자동 수집 범위: ${Array.from(automaticGameDates).join(', ')}`);
+  }
+
+  if (isScheduleCollection) {
+    console.log('미래 경기 일정을 수집합니다.');
   }
 
   const browser = await chromium.launch({
@@ -167,15 +177,17 @@ async function main() {
           selectedYear,
           seriesType,
           rawRows,
-        ).filter(game => game.gameDate <= today);
+        );
         const games = isAutomaticCollection
           ? parsedGames.filter(game => automaticGameDates.has(game.gameDate))
-          : parsedGames;
+          : isScheduleCollection
+          ? parsedGames.filter(game => game.gameDate >= today)
+          : parsedGames.filter(game => game.gameDate <= today);
 
         console.log('\n선택된 경기 종류:', seriesType);
 
         validateGameKeys(games);
-        printCollectionResult(games, !isBackfill);
+        printCollectionResult(games, !isBackfill && !isScheduleCollection);
 
         console.log('\nSupabase에 경기를 저장합니다.');
 
@@ -192,7 +204,7 @@ async function main() {
         `${targetYear}년 ${targetMonth}월 저장 완료: ${targetSavedGameCount}경기`,
       );
 
-      if (isBackfill) {
+      if (isBackfill || isScheduleCollection) {
         await page.waitForTimeout(300);
       }
     }
@@ -207,8 +219,40 @@ function getCollectionTargets(): CollectionTarget[] {
   const today = getTodayInKorea();
   const currentYear = Number(today.slice(0, 4));
   const currentMonth = today.slice(5, 7);
+  const isBackfill = process.argv.includes('--backfill');
+  const isScheduleCollection = process.argv.includes('--schedule');
+  const isUpcomingScheduleCollection = process.argv.includes('--upcoming');
+  const yearArgument = getArgumentValue('year');
+  const monthArgument = getArgumentValue('month');
 
-  if (process.argv.includes('--backfill')) {
+  if (isBackfill && isScheduleCollection) {
+    throw new Error('--backfill과 --schedule은 함께 사용할 수 없습니다.');
+  }
+
+  if (isUpcomingScheduleCollection && !isScheduleCollection) {
+    throw new Error('--upcoming은 --schedule과 함께 사용해야 합니다.');
+  }
+
+  if (
+    isScheduleCollection &&
+    (yearArgument !== null || monthArgument !== null)
+  ) {
+    throw new Error('--schedule은 --year, --month와 함께 사용할 수 없습니다.');
+  }
+
+  if (isScheduleCollection) {
+    const months = isUpcomingScheduleCollection
+      ? getUpcomingScheduleMonths(today)
+      : getRemainingSeasonMonths(today);
+
+    if (months.length === 0) {
+      throw new Error('현재 시즌에 수집할 미래 일정이 없습니다.');
+    }
+
+    return months.map(month => ({ year: currentYear, month }));
+  }
+
+  if (isBackfill) {
     const targets: CollectionTarget[] = [];
 
     for (let year = BACKFILL_START_YEAR; year <= currentYear; year += 1) {
@@ -223,9 +267,6 @@ function getCollectionTargets(): CollectionTarget[] {
 
     return targets;
   }
-
-  const yearArgument = getArgumentValue('year');
-  const monthArgument = getArgumentValue('month');
 
   if ((yearArgument === null) !== (monthArgument === null)) {
     throw new Error('--year와 --month는 함께 입력해야 합니다.');

@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react';
+import type { ReactNode } from 'react';
 import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 import { CalendarX } from 'lucide-react-native';
 import AppText from './AppText.tsx';
@@ -7,7 +7,7 @@ import { fonts } from '../../styles/fonts.ts';
 interface EmptyCardProps {
   title: string;
   description: string;
-  children?: ReactElement;
+  children?: ReactNode;
   style?: StyleProp<ViewStyle>;
 }
 

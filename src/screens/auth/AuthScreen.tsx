@@ -80,6 +80,7 @@ function AuthScreen() {
           <Image
             source={require('../../assets/auth/apple-logo.png')}
             style={styles.appleLogo}
+            resizeMode="contain"
           />
           <AppText style={styles.appleButtonText}>
             {loadingProvider === 'apple' ? '로그인 중...' : 'Apple로 계속하기'}
@@ -102,6 +103,7 @@ function AuthScreen() {
           <Image
             source={require('../../assets/auth/google-g.png')}
             style={styles.googleLogo}
+            resizeMode="contain"
           />
 
           <AppText style={styles.googleButtonText}>
@@ -172,10 +174,11 @@ const styles = StyleSheet.create({
     opacity: 0.55,
   },
   appleLogo: {
-    width: 54,
-    height: 54,
-    marginLeft: -15,
-    marginRight: -19,
+    width: 50,
+    height: 50,
+    marginLeft: -14,
+    marginRight: -14,
+    marginTop: 4, // 텍스트와 수평을 맞추기 위해 위에서 아래로 살짝 밀어내림
   },
   appleButtonText: {
     fontSize: 15,
@@ -183,8 +186,8 @@ const styles = StyleSheet.create({
     color: colors.onPrimary,
   },
   googleLogo: {
-    width: 20,
-    height: 20,
+    width: 22,
+    height: 22,
   },
   googleButtonText: {
     fontSize: 15,

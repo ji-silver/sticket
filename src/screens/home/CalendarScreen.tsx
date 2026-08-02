@@ -101,10 +101,6 @@ function CalendarScreen() {
   );
 
   const handlePressDay = (day: DateData) => {
-    if (day.dateString > today) {
-      return;
-    }
-
     setSelectedDate(day.dateString);
   };
 
@@ -121,8 +117,6 @@ function CalendarScreen() {
 
         <AppCalendar
           current={selectedDate}
-          maxDate={today}
-          disableAllTouchEventsForDisabledDays
           markedDates={markedDates}
           onDayPress={handlePressDay}
         />
@@ -158,22 +152,26 @@ function CalendarScreen() {
               description="새로운 스포츠 추억을 추가해보세요"
               style={styles.emptyCard}
             >
-              <Pressable
-                style={({ pressed }) => [
-                  styles.addTicketButton,
-                  pressed && styles.addTicketButtonPressed,
-                ]}
-                onPress={() =>
-                  navigation.navigate('AddTicket', {
-                    initialDate: selectedDate,
-                  })
-                }
-                accessibilityRole="button"
-                accessibilityLabel="선택한 날짜에 티켓 추가"
-              >
-                <Plus size={15} color={colors.onPrimary} strokeWidth={2.6} />
-                <AppText style={styles.addTicketButtonText}>티켓 추가</AppText>
-              </Pressable>
+              {selectedDate <= today ? (
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.addTicketButton,
+                    pressed && styles.addTicketButtonPressed,
+                  ]}
+                  onPress={() =>
+                    navigation.navigate('AddTicket', {
+                      initialDate: selectedDate,
+                    })
+                  }
+                  accessibilityRole="button"
+                  accessibilityLabel="선택한 날짜에 티켓 추가"
+                >
+                  <Plus size={15} color={colors.onPrimary} strokeWidth={2.6} />
+                  <AppText style={styles.addTicketButtonText}>
+                    티켓 추가
+                  </AppText>
+                </Pressable>
+              ) : null}
             </EmptyCard>
           )}
         </View>
