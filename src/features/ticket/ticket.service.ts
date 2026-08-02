@@ -233,8 +233,8 @@ export async function getTickets() {
       };
     })
     .sort((firstTicket, secondTicket) => {
-      const dateComparison = firstTicket.matchDate.localeCompare(
-        secondTicket.matchDate,
+      const dateComparison = secondTicket.matchDate.localeCompare(
+        firstTicket.matchDate,
       );
 
       if (dateComparison !== 0) {
