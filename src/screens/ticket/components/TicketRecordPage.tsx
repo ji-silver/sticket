@@ -53,6 +53,9 @@ const teamColors: Record<string, string> = {
 function TicketRecordPage({ ticket }: TicketRecordPageProps) {
   const { top, bottom } = useSafeAreaInsets();
   const matchDateText = formatMatchDate(ticket.matchDate);
+  const awayScoreText = ticket.awayScore ?? '-';
+  const homeScoreText = ticket.homeScore ?? '-';
+
   const matchResult = getFavoriteTeamMatchResult(ticket, mockFavoriteTeamName);
   const matchResultText = matchResult ? matchResultLabels[matchResult] : null;
   const matchResultBadgeStyle =
@@ -143,9 +146,9 @@ function TicketRecordPage({ ticket }: TicketRecordPageProps) {
           <View
             style={styles.scoreBoard}
             accessible
-            accessibilityLabel={`원정 ${ticket.awayTeamName} ${
-              ticket.awayScore
-            } 대 홈 ${ticket.homeTeamName} ${ticket.homeScore}${
+            accessibilityLabel={`원정 ${
+              ticket.awayTeamName
+            } ${awayScoreText} 대 홈 ${ticket.homeTeamName} ${homeScoreText}${
               matchResultText
                 ? `, 응원 구단 ${mockFavoriteTeamName} 기준 ${matchResultText}`
                 : ''
@@ -171,9 +174,9 @@ function TicketRecordPage({ ticket }: TicketRecordPageProps) {
 
             <View style={styles.scoreCenter}>
               <View style={styles.scoreRow}>
-                <AppText style={styles.scoreText}>{ticket.awayScore}</AppText>
+                <AppText style={styles.scoreText}>{awayScoreText}</AppText>
                 <AppText style={styles.scoreDivider}>:</AppText>
-                <AppText style={styles.scoreText}>{ticket.homeScore}</AppText>
+                <AppText style={styles.scoreText}>{homeScoreText}</AppText>
               </View>
             </View>
 
@@ -478,6 +481,10 @@ function getFavoriteTeamMatchResult(
   ticket: Ticket,
   favoriteTeamName: string,
 ): MatchResult | null {
+  if (ticket.awayScore === null || ticket.homeScore === null) {
+    return null;
+  }
+
   const isAwayTeam = ticket.awayTeamName === favoriteTeamName;
   const isHomeTeam = ticket.homeTeamName === favoriteTeamName;
 

@@ -1,15 +1,15 @@
 export type SportId = 'baseball' | 'soccer' | 'basketball' | 'volleyball';
 
 export interface Ticket {
-  id: number;
+  id: string;
   matchDate: string;
   matchTime: string;
   stadiumName: string;
   seatName: string;
   homeTeamName: string;
   awayTeamName: string;
-  homeScore: number;
-  awayScore: number;
+  homeScore: number | null;
+  awayScore: number | null;
   barcodeValue?: string;
   originalTicketImageUri?: string;
 }

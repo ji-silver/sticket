@@ -3,6 +3,7 @@ import { decode } from 'base64-arraybuffer';
 import { supabase } from '../../lib/supabase.ts';
 
 const ORIGINAL_TICKET_BUCKET = 'ticket-originals';
+const SIGNED_URL_EXPIRES_IN_SECONDS = 60 * 60; // 유효시간 1시간
 const MAX_SEAT_NAME_LENGTH = 100;
 
 interface CreateTicketParams {
@@ -129,5 +130,127 @@ export async function createTicket({
     }
 
     throw error;
+  }
+}
+
+// ticket 테이블 조회
+// game:games!tickets_game_key_fkey는 tickets 테이블의 game_key 컬럼과 games 테이블의 key 컬럼을 조인하는 것
+export async function getTickets() {
+  const { data, error } = await supabase
+    .from('tickets')
+    .select(
+      `
+        id,
+        seat_name,
+        original_photo_path,
+        created_at,
+       
+        game:games!tickets_game_key_fkey (
+          game_date,
+          start_time,
+          stadium_name,
+          away_score,
+          home_score,
+          awayTeam:teams!games_away_team_id_fkey (
+            short_name
+          ),
+          homeTeam:teams!games_home_team_id_fkey (
+            short_name
+          )
+        )
+      `,
+    )
+    .order('created_at', {
+      ascending: false,
+    });
+
+  if (error) {
+    throw error;
+  }
+
+  const photoPaths = Array.from(
+    new Set(
+      data.flatMap(ticket =>
+        ticket.original_photo_path ? [ticket.original_photo_path] : [],
+      ),
+    ),
+  );
+
+  const signedUrlByPath = new Map<string, string>();
+
+  if (photoPaths.length > 0) {
+    const { data: signedPhotos, error: signedUrlError } = await supabase.storage
+      .from(ORIGINAL_TICKET_BUCKET)
+      .createSignedUrls(photoPaths, SIGNED_URL_EXPIRES_IN_SECONDS);
+
+    if (signedUrlError) {
+      throw signedUrlError;
+    }
+
+    signedPhotos.forEach(photo => {
+      if (photo.path && photo.signedUrl) {
+        signedUrlByPath.set(photo.path, photo.signedUrl);
+      }
+    });
+  }
+
+  return data
+    .map(ticket => {
+      const game = ticket.game;
+
+      if (!game || !game.awayTeam || !game.homeTeam) {
+        throw new Error('경기 또는 구단 정보를 찾을 수 없습니다.');
+      }
+
+      return {
+        id: ticket.id,
+        matchDate: game.game_date,
+        matchTime: game.start_time?.slice(0, 5) ?? '시간 미정',
+        stadiumName: game.stadium_name ?? '경기장 미정',
+        seatName: ticket.seat_name ?? '좌석 정보 없음',
+        homeTeamName: game.homeTeam.short_name,
+        awayTeamName: game.awayTeam.short_name,
+        homeScore: game.home_score,
+        awayScore: game.away_score,
+        originalTicketImageUri: ticket.original_photo_path
+          ? signedUrlByPath.get(ticket.original_photo_path)
+          : undefined,
+      };
+    })
+    .sort((firstTicket, secondTicket) => {
+      const dateComparison = firstTicket.matchDate.localeCompare(
+        secondTicket.matchDate,
+      );
+
+      if (dateComparison !== 0) {
+        return dateComparison;
+      }
+
+      return secondTicket.matchTime.localeCompare(firstTicket.matchTime);
+    });
+}
+
+export async function deleteTicket(ticketId: string) {
+  const { data: deletedTicket, error: deleteError } = await supabase
+    .from('tickets')
+    .delete()
+    .eq('id', ticketId)
+    .select('original_photo_path')
+    .single();
+
+  if (deleteError) {
+    throw deleteError;
+  }
+
+  if (!deletedTicket.original_photo_path) {
+    return;
+  }
+
+  const { error: removeError } = await supabase.storage
+    .from(ORIGINAL_TICKET_BUCKET)
+    .remove([deletedTicket.original_photo_path]);
+
+  if (removeError) {
+    console.error('원본 티켓 사진을 정리하지 못했습니다.', removeError);
   }
 }

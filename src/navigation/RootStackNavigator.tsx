@@ -23,12 +23,7 @@ export type RootStackParamList = {
         ticketBook?: Diary;
       }
     | undefined;
-  TicketList:
-    | {
-        createdTicket?: Ticket;
-        deletedTicketId?: number;
-      }
-    | undefined;
+  TicketList: undefined;
   AddTicket: undefined;
   ProfileEdit: undefined;
   TicketDetail: {

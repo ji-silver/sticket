@@ -1,5 +1,5 @@
 import { useLayoutEffect, useState } from 'react';
-import { Keyboard, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Keyboard, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Trash2 } from 'lucide-react-native';
 import { useNavigation, useRoute } from '@react-navigation/core';
@@ -13,6 +13,7 @@ import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
 import TicketDiaryPage from './components/diary/TicketDiaryPage.tsx';
 import TicketRecordPage from './components/TicketRecordPage.tsx';
+import { deleteTicket } from '../../features/ticket/ticket.service.ts';
 
 type TicketDetailNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type TicketDetailRouteProp = RouteProp<RootStackParamList, 'TicketDetail'>;
@@ -25,6 +26,7 @@ function TicketDetailScreen() {
 
   const [activeTab, setActiveTab] = useState<DetailTab>('record');
   const [isDeleteDialogVisible, setIsDeleteDialogVisible] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false); // 삭제 진행 중
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -37,9 +39,24 @@ function TicketDetailScreen() {
     setActiveTab(tab);
   };
 
-  const handleDeleteTicket = () => {
-    setIsDeleteDialogVisible(false);
-    navigation.popTo('TicketList', { deletedTicketId: ticket.id });
+  const handleDeleteTicket = async () => {
+    if (isDeleting) {
+      return;
+    }
+
+    setIsDeleting(true);
+
+    try {
+      await deleteTicket(ticket.id);
+
+      setIsDeleteDialogVisible(false);
+      navigation.goBack();
+    } catch (error) {
+      console.error('티켓을 삭제하지 못했습니다.', error);
+      Alert.alert('티켓을 삭제하지 못했어요', '잠시 후 다시 시도해 주세요.');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (

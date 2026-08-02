@@ -1,139 +1,81 @@
-import { useEffect, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Plus } from 'lucide-react-native';
-import { useNavigation, useRoute } from '@react-navigation/core';
+import { useNavigation } from '@react-navigation/core';
 import { fonts } from '../../styles/fonts.ts';
 import AppText from '../../components/common/AppText.tsx';
-import TicketCard from './components/TicketCard.tsx';
-import type { SportId, Ticket } from './types.ts';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RouteProp } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
 import { colors } from '../../styles/colors.ts';
 import FilterChip from '../../components/common/FilterChip.tsx';
 import InlineActionButton from '../../components/common/InlineActionButton.tsx';
 import ScreenHeader from '../../components/common/ScreenHeader.tsx';
-
-interface TicketListResponse {
-  diary: {
-    id: number;
-    title: string;
-    sport: SportId;
-  };
-  tickets: Ticket[];
-}
-
-const sampleOriginalTicketImageUri = Image.resolveAssetSource(
-  require('../../assets/diary/stickers/bread/original_5.png'),
-).uri;
-
-const mockTicketListResponse: TicketListResponse = {
-  diary: {
-    id: 1,
-    title: '야구',
-    sport: 'baseball',
-  },
-  tickets: [
-    {
-      id: 1,
-      matchDate: '2026-04-12',
-      stadiumName: '고척스카이돔',
-      seatName: '1루 102구역 8열 12번',
-      homeTeamName: '키움',
-      awayTeamName: '두산',
-      homeScore: 5,
-      awayScore: 3,
-      matchTime: '14:00',
-      barcodeValue: 'STICKET-20260412-0001',
-      originalTicketImageUri: sampleOriginalTicketImageUri,
-    },
-    {
-      id: 2,
-      matchDate: '2025-09-21',
-      stadiumName: '잠실야구장',
-      seatName: '3루 네이비석 214블록 6열 3번',
-      homeTeamName: 'LG',
-      awayTeamName: '키움',
-      homeScore: 2,
-      awayScore: 4,
-      matchTime: '14:00',
-    },
-    {
-      id: 3,
-      matchDate: '2025-09-21',
-      stadiumName: '잠실야구장',
-      seatName: '3루 네이비석 214블록 6열 3번',
-      homeTeamName: 'LG',
-      awayTeamName: '키움',
-      homeScore: 2,
-      awayScore: 4,
-      matchTime: '14:00',
-    },
-    {
-      id: 4,
-      matchDate: '2025-09-21',
-      stadiumName: '잠실야구장',
-      seatName: '3루 네이비석 214블록 6열 3번',
-      homeTeamName: 'LG',
-      awayTeamName: '키움',
-      homeScore: 2,
-      awayScore: 4,
-      matchTime: '14:00',
-    },
-    {
-      id: 5,
-      matchDate: '2025-09-21',
-      stadiumName: '잠실야구장',
-      seatName: '3루 네이비석 214블록 6열 3번',
-      homeTeamName: 'LG',
-      awayTeamName: '키움',
-      homeScore: 2,
-      awayScore: 4,
-      matchTime: '14:00',
-    },
-  ],
-};
+import { Ticket } from './types.ts';
+import { getTickets } from '../../features/ticket/ticket.service.ts';
+import TicketCard from './components/TicketCard.tsx';
 
 function TicketListScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const route = useRoute<RouteProp<RootStackParamList, 'TicketList'>>();
 
-  const data = mockTicketListResponse;
-  const [tickets, setTickets] = useState(data.tickets);
-  const diaryTitle = data.diary.title;
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const diaryTitle = '야구';
   const ticketCount = tickets.length;
   const hasTickets = ticketCount > 0;
 
-  const seasons = Array.from(
-    new Set(tickets.map(ticket => new Date(ticket.matchDate).getFullYear())),
-  ).sort((a, b) => b - a);
+  // useEffect는 컴포넌트 생성 기준, useFocusEffect는 화면이 사용장게 다시 보일때마다 실행
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
 
-  const [selectedSeason, setSelectedSeason] = useState<number | null>(
-    seasons[0] ?? null,
+      const loadTickets = async () => {
+        setIsLoading(true);
+
+        try {
+          const loadedTickets = await getTickets();
+
+          if (isActive) {
+            setTickets(loadedTickets);
+          }
+        } catch (error) {
+          console.error('티켓 목록을 불러오지 못했습니다.', error);
+
+          if (isActive) {
+            Alert.alert(
+              '티켓 목록을 불러오지 못했어요',
+              '잠시 후 다시 시도해 주세요.',
+            );
+          }
+        } finally {
+          if (isActive) {
+            setIsLoading(false);
+          }
+        }
+      };
+
+      loadTickets();
+
+      return () => {
+        isActive = false;
+      };
+    }, []),
   );
 
-  useEffect(() => {
-    const createdTicket = route.params?.createdTicket;
-
-    if (createdTicket === undefined) return;
-
-    setTickets(currentTickets => [createdTicket, ...currentTickets]);
-    setSelectedSeason(new Date(createdTicket.matchDate).getFullYear());
-    navigation.setParams({ createdTicket: undefined });
-  }, [navigation, route.params?.createdTicket]);
-
-  useEffect(() => {
-    const deletedTicketId = route.params?.deletedTicketId;
-
-    if (deletedTicketId === undefined) return;
-
-    setTickets(currentTickets =>
-      currentTickets.filter(ticket => ticket.id !== deletedTicketId),
-    );
-    navigation.setParams({ deletedTicketId: undefined });
-  }, [navigation, route.params?.deletedTicketId]);
+  const seasons = Array.from(
+    new Set(tickets.map(ticket => new Date(ticket.matchDate).getFullYear())),
+  ).sort((firstSeason, secondSeason) => secondSeason - firstSeason);
 
   const activeSeason =
     selectedSeason !== null && seasons.includes(selectedSeason)
@@ -147,11 +89,9 @@ function TicketListScreen() {
           ticket => new Date(ticket.matchDate).getFullYear() === activeSeason,
         );
 
-  // 티켓 추가
   const handlePressAddTicket = () => {
     navigation.navigate('AddTicket');
   };
-
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScreenHeader
@@ -210,16 +150,18 @@ function TicketListScreen() {
         )}
 
         <View style={styles.contentContainer}>
-          {hasTickets ? (
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size={'small'} color={colors.primary} />
+            </View>
+          ) : hasTickets ? (
             <View style={styles.ticketList}>
               {filteredTickets.map(ticket => (
                 <TicketCard
-                  key={String(ticket.id)}
+                  key={ticket.id}
                   ticket={ticket}
                   onPress={() =>
-                    navigation.navigate('TicketDetail', {
-                      ticket,
-                    })
+                    navigation.navigate('TicketDetail', { ticket })
                   }
                 />
               ))}
@@ -320,6 +262,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 28,
     paddingBottom: 32,
+  },
+  loadingContainer: {
+    minHeight: 214,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   ticketList: {
     gap: 16,
