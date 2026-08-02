@@ -33,6 +33,7 @@ function ProfileEditScreen() {
   const trimmedNickname = nickname.trim();
   const isNicknameValid =
     trimmedNickname.length >= 2 && trimmedNickname.length <= 10;
+  const isFormValid = isNicknameValid && favoriteTeam.length > 0;
 
   const handleSelectTeam = (team: string) => {
     setFavoriteTeam(team);
@@ -40,7 +41,7 @@ function ProfileEditScreen() {
   };
 
   const handleSave = async () => {
-    if (!isNicknameValid || isSaving) {
+    if (!isFormValid || isSaving) {
       return;
     }
 
@@ -49,7 +50,7 @@ function ProfileEditScreen() {
     try {
       const nextProfile = await saveProfile({
         nickname: trimmedNickname,
-        favoriteTeamName: favoriteTeam || null,
+        favoriteTeamName: favoriteTeam,
       });
 
       completeProfile(nextProfile);
@@ -109,12 +110,12 @@ function ProfileEditScreen() {
                 onPress={() => setIsTeamSheetOpen(true)}
                 accessibilityRole="button"
                 accessibilityLabel={`야구 응원 구단, ${
-                  favoriteTeam || '선택 안 함'
+                  favoriteTeam || '선택 필요'
                 }, 변경`}
               >
                 <AppText style={styles.sportName}>야구</AppText>
                 <AppText style={styles.teamName}>
-                  {favoriteTeam || '선택 안 함'}
+                  {favoriteTeam || '응원 구단을 선택해 주세요'}
                 </AppText>
                 <ChevronRight
                   size={19}
@@ -130,23 +131,20 @@ function ProfileEditScreen() {
           <Pressable
             style={({ pressed }) => [
               styles.saveButton,
-              (!isNicknameValid || isSaving) && styles.saveButtonDisabled,
-              pressed &&
-                isNicknameValid &&
-                !isSaving &&
-                styles.saveButtonPressed,
+              (!isFormValid || isSaving) && styles.saveButtonDisabled,
+              pressed && isFormValid && !isSaving && styles.saveButtonPressed,
             ]}
             onPress={handleSave}
-            disabled={!isNicknameValid || isSaving}
+            disabled={!isFormValid || isSaving}
             accessibilityRole="button"
             accessibilityState={{
-              disabled: !isNicknameValid || isSaving,
+              disabled: !isFormValid || isSaving,
             }}
           >
             <AppText
               style={[
                 styles.saveButtonText,
-                (!isNicknameValid || isSaving) && styles.saveButtonTextDisabled,
+                (!isFormValid || isSaving) && styles.saveButtonTextDisabled,
               ]}
             >
               {isSaving ? '저장 중' : '저장'}

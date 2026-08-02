@@ -13,11 +13,7 @@ import type { Session } from '@supabase/supabase-js';
 
 import { supabase } from '../../lib/supabase';
 import { getProfile } from '../profile/profile.service';
-import type {
-  AuthContextValue,
-  AuthStatus,
-  UserProfile,
-} from './auth.types';
+import type { AuthContextValue, AuthStatus, UserProfile } from './auth.types';
 import { deleteCurrentAccount } from './account.service';
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -133,7 +129,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     status = 'signedOut';
   } else if (profile === undefined) {
     status = 'loading';
-  } else if (!profile) {
+  } else if (!profile?.favorite_team_id || !profile.favorite_team) {
     status = 'profileRequired';
   } else {
     status = 'authenticated';

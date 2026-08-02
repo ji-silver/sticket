@@ -19,10 +19,12 @@ import { saveProfile } from '../../features/profile/profile.service.ts';
 import { useAuth } from '../../features/auth/AuthProvider.tsx';
 
 function ProfileSetupScreen() {
-  const { completeProfile } = useAuth();
-  const [nickname, setNickname] = useState('');
+  const { profile, completeProfile } = useAuth();
+  const [nickname, setNickname] = useState(profile?.nickname ?? '');
   const [hasBlurredNickname, setHasBlurredNickname] = useState(false);
-  const [favoriteTeam, setFavoriteTeam] = useState('');
+  const [favoriteTeam, setFavoriteTeam] = useState(
+    profile?.favorite_team?.name ?? '',
+  );
   const [isTeamSheetOpen, setIsTeamSheetOpen] = useState(false);
 
   const [isSaving, setIsSaving] = useState(false);
@@ -30,6 +32,7 @@ function ProfileSetupScreen() {
   const trimmedNickname = nickname.trim();
   const isNicknameValid =
     trimmedNickname.length >= 2 && trimmedNickname.length <= 10;
+  const isFormValid = isNicknameValid && favoriteTeam.length > 0;
   const showNicknameError = hasBlurredNickname && !isNicknameValid;
 
   const handleSelectTeam = (team: string) => {
@@ -38,7 +41,7 @@ function ProfileSetupScreen() {
   };
 
   const handlePressStart = async () => {
-    if (!isNicknameValid || isSaving) {
+    if (!isFormValid || isSaving) {
       setHasBlurredNickname(true);
       return;
     }
@@ -46,12 +49,12 @@ function ProfileSetupScreen() {
     setIsSaving(true);
 
     try {
-      const profile = await saveProfile({
+      const savedProfile = await saveProfile({
         nickname: trimmedNickname,
-        favoriteTeamName: favoriteTeam || null,
+        favoriteTeamName: favoriteTeam,
       });
 
-      completeProfile(profile);
+      completeProfile(savedProfile);
     } catch (error) {
       console.error('프로필 저장에 실패했습니다.', error);
 
@@ -126,10 +129,7 @@ function ProfileSetupScreen() {
             </View>
 
             <View style={styles.section}>
-              <View style={styles.teamLabelRow}>
-                <AppText style={styles.label}>응원 구단</AppText>
-                <AppText style={styles.optionalText}>선택 사항</AppText>
-              </View>
+              <AppText style={styles.label}>응원 구단</AppText>
 
               <Pressable
                 style={({ pressed }) => [
@@ -161,7 +161,7 @@ function ProfileSetupScreen() {
               </Pressable>
 
               <AppText style={styles.helperText}>
-                현재는 야구만 지원해요. 다른 스포츠는 추후 추가될 예정이에요.
+                현재는 야구만 지원하며, 응원 구단을 꼭 선택해야 해요.
               </AppText>
             </View>
           </View>
@@ -171,25 +171,21 @@ function ProfileSetupScreen() {
           <Pressable
             style={({ pressed }) => [
               styles.startButton,
-              (!isNicknameValid || isSaving) && styles.startButtonDisabled,
-              pressed &&
-                isNicknameValid &&
-                !isSaving &&
-                styles.startButtonPressed,
+              (!isFormValid || isSaving) && styles.startButtonDisabled,
+              pressed && isFormValid && !isSaving && styles.startButtonPressed,
             ]}
             onPress={handlePressStart}
-            disabled={!isNicknameValid || isSaving}
+            disabled={!isFormValid || isSaving}
             accessibilityRole="button"
             accessibilityLabel="프로필 설정 완료하고 시작하기"
             accessibilityState={{
-              disabled: !isNicknameValid || isSaving,
+              disabled: !isFormValid || isSaving,
             }}
           >
             <AppText
               style={[
                 styles.startButtonText,
-                (!isNicknameValid || isSaving) &&
-                  styles.startButtonTextDisabled,
+                (!isFormValid || isSaving) && styles.startButtonTextDisabled,
               ]}
             >
               {isSaving ? '저장 중' : '시작하기'}
@@ -254,20 +250,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  teamLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-  },
   label: {
     fontSize: 15,
     fontFamily: fonts.bold,
     color: colors.text,
-  },
-  optionalText: {
-    fontSize: 12,
-    fontFamily: fonts.regular,
-    color: colors.textSecondary,
   },
   characterCount: {
     fontSize: 12,
