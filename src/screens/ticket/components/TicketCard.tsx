@@ -44,13 +44,28 @@ function TicketCard({ ticket, onPress }: TicketCardProps) {
     >
       <View style={styles.contentArea}>
         <View style={styles.metaRow}>
-          <AppText style={styles.dateText}>
-            {month}.{day} {weekday} {ticket.matchTime}
-          </AppText>
+          <View style={styles.metaItem}>
+            <AppText style={styles.metaLabel}>경기일</AppText>
+            <AppText style={styles.metaValue}>
+              {month}.{day} ({weekday})
+            </AppText>
+          </View>
 
-          <AppText style={styles.stadiumText} numberOfLines={1}>
-            {ticket.stadiumName}
-          </AppText>
+          <View style={styles.metaDivider} />
+
+          <View style={styles.metaItem}>
+            <AppText style={styles.metaLabel}>시간</AppText>
+            <AppText style={styles.metaValue}>{ticket.matchTime}</AppText>
+          </View>
+
+          <View style={styles.metaDivider} />
+
+          <View style={styles.metaItem}>
+            <AppText style={styles.metaLabel}>경기장</AppText>
+            <AppText style={styles.stadiumText} numberOfLines={1}>
+              {ticket.stadiumName}
+            </AppText>
+          </View>
         </View>
 
         <View style={styles.matchup}>
@@ -108,6 +123,7 @@ function TicketCard({ ticket, onPress }: TicketCardProps) {
 
       <View style={styles.stubArea}>
         <View style={styles.seatBox}>
+          <AppText style={styles.stubSeatLabel}>좌석</AppText>
           <AppText style={styles.stubSeat} numberOfLines={1}>
             {ticket.seatName}
           </AppText>
@@ -140,15 +156,17 @@ const styles = StyleSheet.create({
     position: 'relative',
     borderRadius: 18,
     borderCurve: 'continuous',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
     backgroundColor: '#FFFFFF',
     shadowColor: '#000000',
     shadowOffset: {
       width: 0,
-      height: 3,
+      height: 2,
     },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
+    shadowOpacity: 0.025,
+    shadowRadius: 6,
+    elevation: 1,
   },
 
   ticketPressed: {
@@ -157,30 +175,48 @@ const styles = StyleSheet.create({
 
   contentArea: {
     paddingHorizontal: 18,
-    paddingTop: 14,
+    paddingTop: 16,
     paddingBottom: 12,
   },
 
   metaRow: {
+    minHeight: 38,
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
+    alignItems: 'stretch',
   },
 
-  dateText: {
-    flexShrink: 0,
-    fontSize: 12,
+  metaItem: {
+    flex: 1,
+    minWidth: 0,
+    justifyContent: 'center',
+  },
+
+  metaDivider: {
+    width: StyleSheet.hairlineWidth,
+    marginHorizontal: 10,
+    backgroundColor: colors.border,
+  },
+
+  metaLabel: {
+    marginBottom: 4,
+    fontSize: 9,
     fontFamily: fonts.bold,
-    color: '#777777',
+    lineHeight: 11,
+    color: colors.textSecondary,
+  },
+
+  metaValue: {
+    fontSize: 13,
+    fontFamily: fonts.bold,
+    lineHeight: 18,
+    color: colors.text,
   },
 
   stadiumText: {
-    flex: 1,
-    minWidth: 0,
     fontSize: 12,
-    fontFamily: fonts.regular,
-    color: '#777777',
-    textAlign: 'right',
+    fontFamily: fonts.bold,
+    lineHeight: 18,
+    color: colors.text,
   },
 
   matchup: {
@@ -197,7 +233,7 @@ const styles = StyleSheet.create({
   },
 
   teamName: {
-    fontSize: 15,
+    fontSize: 17,
     fontFamily: fonts.bold,
     color: '#111111',
     textAlign: 'center',
@@ -211,12 +247,12 @@ const styles = StyleSheet.create({
   },
 
   matchupCenter: {
-    width: 84,
+    width: 56,
     alignItems: 'center',
   },
 
   vsText: {
-    fontSize: 14,
+    fontSize: 12,
     fontFamily: fonts.bold,
     color: '#777777',
   },
@@ -228,7 +264,7 @@ const styles = StyleSheet.create({
   },
 
   perforation: {
-    marginHorizontal: 34,
+    marginHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -242,24 +278,24 @@ const styles = StyleSheet.create({
 
   leftCutout: {
     position: 'absolute',
-    left: -12,
-    top: -1,
+    left: -10,
+    top: 1,
     zIndex: 3,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     borderCurve: 'continuous',
     backgroundColor: colors.background,
   },
 
   rightCutout: {
     position: 'absolute',
-    right: -12,
-    top: -1,
+    right: -10,
+    top: 1,
     zIndex: 3,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     borderCurve: 'continuous',
     backgroundColor: colors.background,
   },
@@ -283,10 +319,17 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
 
+  stubSeatLabel: {
+    marginBottom: 3,
+    fontSize: 8,
+    fontFamily: fonts.bold,
+    color: colors.textPlaceholder,
+  },
+
   stubSeat: {
-    fontSize: 11,
-    fontFamily: fonts.regular,
-    color: '#666666',
+    fontSize: 12,
+    fontFamily: fonts.bold,
+    color: colors.textSecondary,
   },
 
   barcode: {

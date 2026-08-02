@@ -18,7 +18,7 @@ type CalendarNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const mockAttendanceRecords: Ticket[] = [
   {
-    id: 1,
+    id: '1',
     matchDate: '2026-07-03',
     homeTeamName: '키움',
     awayTeamName: '두산',
@@ -29,7 +29,7 @@ const mockAttendanceRecords: Ticket[] = [
     matchTime: '18:30',
   },
   {
-    id: 2,
+    id: '2',
     matchDate: '2026-07-14',
     homeTeamName: 'LG',
     awayTeamName: '롯데',
@@ -40,7 +40,7 @@ const mockAttendanceRecords: Ticket[] = [
     matchTime: '18:30',
   },
   {
-    id: 3,
+    id: '3',
     matchDate: '2026-07-21',
     homeTeamName: '한화',
     awayTeamName: 'KIA',
@@ -51,7 +51,7 @@ const mockAttendanceRecords: Ticket[] = [
     matchTime: '18:30',
   },
   {
-    id: 4,
+    id: '4',
     matchDate: '2026-07-28',
     homeTeamName: 'SSG',
     awayTeamName: 'NC',
@@ -62,7 +62,7 @@ const mockAttendanceRecords: Ticket[] = [
     matchTime: '17:00',
   },
   {
-    id: 5,
+    id: '5',
     matchDate: '2026-06-08',
     homeTeamName: 'KT',
     awayTeamName: '삼성',
