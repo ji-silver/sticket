@@ -6,6 +6,7 @@ type TicketBookSport = 'baseball';
 export type TicketBookCoverPattern = 'solid' | 'stripe';
 
 const COVER_BUCKET = 'ticket-book-covers';
+const ORIGINAL_TICKET_BUCKET = 'ticket-originals';
 const SIGNED_URL_EXPIRES_IN_SECONDS = 60 * 60;
 
 interface CreateTicketBookParams {
@@ -233,6 +234,16 @@ export async function updateTicketBook({
 
 export async function deleteTicketBook(ticketBookId: string) {
   const user = await getAuthenticatedUser();
+
+  const { data: tickets, error: ticketError } = await supabase
+    .from('tickets')
+    .select('original_photo_path')
+    .eq('ticket_book_id', ticketBookId);
+
+  if (ticketError) {
+    throw ticketError;
+  }
+
   const { data, error } = await supabase
     .from('ticket_books')
     .delete()
@@ -243,6 +254,20 @@ export async function deleteTicketBook(ticketBookId: string) {
 
   if (error) {
     throw error;
+  }
+
+  const originalPhotoPaths = tickets.flatMap(ticket =>
+    ticket.original_photo_path ? [ticket.original_photo_path] : [],
+  );
+
+  if (originalPhotoPaths.length > 0) {
+    const { error: removeError } = await supabase.storage
+      .from(ORIGINAL_TICKET_BUCKET)
+      .remove(originalPhotoPaths);
+
+    if (removeError) {
+      console.error('원본 티켓 사진을 정리하지 못했습니다.', removeError);
+    }
   }
 
   if (data.cover_photo_path) {

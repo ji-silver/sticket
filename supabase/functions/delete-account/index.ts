@@ -14,7 +14,8 @@ interface AppleTokenResponse {
   error_description?: string;
 }
 
-const TICKET_BOOK_COVER_BUCKET = 'ticket-book-covers';
+const STORAGE_BUCKETS = ['ticket-book-covers', 'ticket-originals'] as const;
+const STORAGE_BATCH_SIZE = 1000;
 
 function jsonResponse(body: Record<string, unknown>, status: number) {
   return new Response(JSON.stringify(body), {
@@ -170,46 +171,63 @@ async function revokeAppleAuthorization(
   }
 }
 
-async function getTicketBookCoverPaths(
+async function getStorageFilePaths(
   adminClient: ReturnType<typeof createClient>,
+  bucketName: (typeof STORAGE_BUCKETS)[number],
   userId: string,
 ) {
-  const bucket = adminClient.storage.from(TICKET_BOOK_COVER_BUCKET);
-  const { data: rootItems, error: rootError } = await bucket.list(userId, {
-    limit: 1000,
-  });
+  const bucket = adminClient.storage.from(bucketName);
 
-  if (rootError) {
-    throw rootError;
-  }
+  async function listFolder(folderPath: string): Promise<string[]> {
+    const paths: string[] = [];
 
-  const paths: string[] = [];
+    for (let offset = 0; ; offset += STORAGE_BATCH_SIZE) {
+      const { data: items, error } = await bucket.list(folderPath, {
+        limit: STORAGE_BATCH_SIZE,
+        offset,
+      });
 
-  for (const item of rootItems) {
-    const itemPath = `${userId}/${item.name}`;
+      if (error) {
+        throw error;
+      }
 
-    if (item.id) {
-      paths.push(itemPath);
-      continue;
+      for (const item of items) {
+        const itemPath = `${folderPath}/${item.name}`;
+
+        if (item.id) {
+          paths.push(itemPath);
+        } else {
+          paths.push(...(await listFolder(itemPath)));
+        }
+      }
+
+      if (items.length < STORAGE_BATCH_SIZE) {
+        break;
+      }
     }
 
-    const { data: nestedItems, error: nestedError } = await bucket.list(
-      itemPath,
-      { limit: 1000 },
+    return paths;
+  }
+
+  return listFolder(userId);
+}
+
+async function removeStorageFiles(
+  adminClient: ReturnType<typeof createClient>,
+  bucketName: (typeof STORAGE_BUCKETS)[number],
+  paths: string[],
+) {
+  const bucket = adminClient.storage.from(bucketName);
+
+  for (let index = 0; index < paths.length; index += STORAGE_BATCH_SIZE) {
+    const { error } = await bucket.remove(
+      paths.slice(index, index + STORAGE_BATCH_SIZE),
     );
 
-    if (nestedError) {
-      throw nestedError;
+    if (error) {
+      throw error;
     }
-
-    nestedItems.forEach(nestedItem => {
-      if (nestedItem.id) {
-        paths.push(`${itemPath}/${nestedItem.name}`);
-      }
-    });
   }
-
-  return paths;
 }
 
 Deno.serve(async request => {
@@ -288,15 +306,15 @@ Deno.serve(async request => {
       );
     }
 
-    const coverPaths = await getTicketBookCoverPaths(adminClient, user.id);
+    for (const bucketName of STORAGE_BUCKETS) {
+      const filePaths = await getStorageFilePaths(
+        adminClient,
+        bucketName,
+        user.id,
+      );
 
-    if (coverPaths.length > 0) {
-      const { error: storageError } = await adminClient.storage
-        .from(TICKET_BOOK_COVER_BUCKET)
-        .remove(coverPaths);
-
-      if (storageError) {
-        throw storageError;
+      if (filePaths.length > 0) {
+        await removeStorageFiles(adminClient, bucketName, filePaths);
       }
     }
 
