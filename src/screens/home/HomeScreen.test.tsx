@@ -75,6 +75,7 @@ describe('HomeScreen', () => {
           ticketBookId: 'ticket-1',
           title: '야구장 가서 치킨 먹기',
           isCompleted: false,
+          displayOrder: 0,
         },
       ]);
 
@@ -156,6 +157,7 @@ describe('HomeScreen', () => {
           ticketBookId: 'ticket-1',
           title: '기존 버킷리스트',
           isCompleted: false,
+          displayOrder: 0,
         },
       ]);
     });
@@ -185,6 +187,7 @@ describe('HomeScreen', () => {
         ticketBookId: 'ticket-1',
         title: '새로운 직관 목표',
         isCompleted: false,
+        displayOrder: 1,
       });
 
       await render(<HomeScreen />);

@@ -123,14 +123,6 @@ function BucketEditModal({
       return;
     }
 
-    if (nextTitle === bucket.title) {
-      setDraftTitles(currentTitles => ({
-        ...currentTitles,
-        [bucket.id]: nextTitle,
-      }));
-      return;
-    }
-
     committingTitleIdsRef.current.add(bucket.id);
 
     try {
@@ -374,11 +366,7 @@ function BucketEditRow({
         accessibilityLabel={`${bucket.title} 삭제`}
         accessibilityState={{ disabled }}
       >
-        <Trash2
-          size={17}
-          color={colors.textPlaceholder}
-          strokeWidth={2.2}
-        />
+        <Trash2 size={17} color={colors.textPlaceholder} strokeWidth={2.2} />
       </Pressable>
     </View>
   );
