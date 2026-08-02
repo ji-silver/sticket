@@ -26,6 +26,7 @@ import OriginalTicketImageField, {
 import { getGamesByDate, KboGame } from '../../features/game/game.service.ts';
 import EmptyCard from '../../components/common/EmptyCard.tsx';
 import { createTicket } from '../../features/ticket/ticket.service.ts';
+import { getTodayInKorea } from '../../lib/date.ts';
 
 function AddTicketScreen() {
   const navigation =
@@ -37,6 +38,8 @@ function AddTicketScreen() {
   const [games, setGames] = useState<KboGame[]>([]);
   const [isLoadingGames, setIsLoadingGames] = useState(false);
   const [gameLoadError, setGameLoadError] = useState<string | null>(null);
+  const [gameRefreshKey, setGameRefreshKey] = useState(0);
+  const today = getTodayInKorea();
 
   useEffect(() => {
     if (!selectedDate || isCalendarOpen) {
@@ -74,7 +77,7 @@ function AddTicketScreen() {
     return () => {
       isCancelled = true;
     };
-  }, [isCalendarOpen, selectedDate]);
+  }, [gameRefreshKey, isCalendarOpen, selectedDate]);
 
   const [seatName, setSeatName] = useState('');
   const [originalTicketImage, setOriginalTicketImage] =
@@ -98,6 +101,10 @@ function AddTicketScreen() {
     : {};
 
   const handlePressDay = (day: DateData) => {
+    if (day.dateString > today) {
+      return;
+    }
+
     setSelectedDate(day.dateString);
     setIsCalendarOpen(false);
 
@@ -115,6 +122,16 @@ function AddTicketScreen() {
     }
 
     setSelectedGameId(gameId);
+  };
+
+  const handleRefreshGames = () => {
+    if (isLoadingGames) {
+      return;
+    }
+
+    setSelectedGameId(null);
+    setSeatName('');
+    setGameRefreshKey(key => key + 1);
   };
 
   const handleAddTicket = async () => {
@@ -195,6 +212,8 @@ function AddTicketScreen() {
           {isCalendarOpen && (
             <AppCalendar
               current={selectedDate || undefined}
+              maxDate={today}
+              disableAllTouchEventsForDisabledDays
               markedDates={markedDates}
               onDayPress={handlePressDay}
             />
@@ -206,6 +225,14 @@ function AddTicketScreen() {
                 <AppText style={styles.sectionTitle}>
                   어떤 경기를 봤나요?
                 </AppText>
+
+                {!isLoadingGames && (
+                  <InlineActionButton
+                    label="새로고침"
+                    onPress={handleRefreshGames}
+                    accessibilityLabel="선택한 날짜 경기 정보 새로고침"
+                  />
+                )}
               </View>
 
               {isLoadingGames ? (
@@ -412,6 +439,9 @@ const styles = StyleSheet.create({
   },
   gameSectionHeader: {
     marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
 
   gameList: {

@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabase.ts';
+import { getTodayInKorea } from '../../lib/date.ts';
 
 export interface KboGame {
   id: string;
@@ -12,6 +13,10 @@ export interface KboGame {
 }
 
 export async function getGamesByDate(date: string): Promise<KboGame[]> {
+  if (date > getTodayInKorea()) {
+    return [];
+  }
+
   const { data, error } = await supabase
     .from('games')
     .select(

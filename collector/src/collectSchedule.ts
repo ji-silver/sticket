@@ -5,6 +5,7 @@ import type {
   KboSeriesType,
   KboTeamId,
 } from './types.ts';
+import { getRecentGameDates } from './dateWindow.ts';
 import { upsertGames } from './saveGames.ts';
 
 const KBO_SCHEDULE_URL = 'https://www.koreabaseball.com/Schedule/Schedule.aspx';
@@ -107,6 +108,16 @@ async function readScheduleRows(page: Page): Promise<RawScheduleRow[]> {
 async function main() {
   const targets = getCollectionTargets();
   const isBackfill = process.argv.includes('--backfill');
+  const today = getTodayInKorea();
+  const automaticGameDates = new Set(getRecentGameDates(today));
+  const isAutomaticCollection =
+    !isBackfill &&
+    getArgumentValue('year') === null &&
+    getArgumentValue('month') === null;
+
+  if (isAutomaticCollection) {
+    console.log(`자동 수집 범위: ${Array.from(automaticGameDates).join(', ')}`);
+  }
 
   const browser = await chromium.launch({
     headless: process.env.CI === 'true',
@@ -131,7 +142,9 @@ async function main() {
       const targetMonth = target.month;
 
       console.log(
-        `\n[${targetIndex + 1}/${targets.length}] ${targetYear}년 ${targetMonth}월 수집`,
+        `\n[${targetIndex + 1}/${
+          targets.length
+        }] ${targetYear}년 ${targetMonth}월 수집`,
       );
 
       await selectScheduleOption(page, '#ddlYear', targetYear);
@@ -150,7 +163,14 @@ async function main() {
 
         const seriesType = parseSeriesType(seriesValue);
         const rawRows = await readScheduleRows(page);
-        const games = parseScheduleRows(selectedYear, seriesType, rawRows);
+        const parsedGames = parseScheduleRows(
+          selectedYear,
+          seriesType,
+          rawRows,
+        ).filter(game => game.gameDate <= today);
+        const games = isAutomaticCollection
+          ? parsedGames.filter(game => automaticGameDates.has(game.gameDate))
+          : parsedGames;
 
         console.log('\n선택된 경기 종류:', seriesType);
 
@@ -212,13 +232,27 @@ function getCollectionTargets(): CollectionTarget[] {
   }
 
   if (yearArgument === null || monthArgument === null) {
-    return [{ year: currentYear, month: currentMonth }];
+    const targets = getRecentGameDates(today).map(date => ({
+      year: Number(date.slice(0, 4)),
+      month: date.slice(5, 7),
+    }));
+
+    return targets.filter(
+      (target, index) =>
+        targets.findIndex(
+          item => item.year === target.year && item.month === target.month,
+        ) === index,
+    );
   }
 
   const year = Number(yearArgument);
   const month = monthArgument.padStart(2, '0');
 
-  if (!Number.isInteger(year) || year < BACKFILL_START_YEAR || year > currentYear) {
+  if (
+    !Number.isInteger(year) ||
+    year < BACKFILL_START_YEAR ||
+    year > currentYear
+  ) {
     throw new Error(
       `--year는 ${BACKFILL_START_YEAR}년부터 ${currentYear}년 사이여야 합니다.`,
     );

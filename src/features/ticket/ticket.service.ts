@@ -1,6 +1,7 @@
 import { decode } from 'base64-arraybuffer';
 
 import { supabase } from '../../lib/supabase.ts';
+import { getTodayInKorea } from '../../lib/date.ts';
 
 const ORIGINAL_TICKET_BUCKET = 'ticket-originals';
 const SIGNED_URL_EXPIRES_IN_SECONDS = 60 * 60; // 유효시간 1시간
@@ -36,6 +37,20 @@ export async function createTicket({
 
   if (!user) {
     throw new Error('로그인 정보를 확인할 수 없습니다.');
+  }
+
+  const { data: game, error: gameError } = await supabase
+    .from('games')
+    .select('game_date')
+    .eq('game_key', gameKey)
+    .single();
+
+  if (gameError) {
+    throw gameError;
+  }
+
+  if (game.game_date > getTodayInKorea()) {
+    throw new Error('미래 경기는 티켓으로 등록할 수 없습니다.');
   }
 
   const { data: ticketBook, error: ticketBookError } = await supabase
