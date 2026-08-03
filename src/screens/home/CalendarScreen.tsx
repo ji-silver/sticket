@@ -12,7 +12,7 @@ import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
 import AppCalendar from '../../components/common/AppCalendar.tsx';
 import { useCallback, useState } from 'react';
-import { DateData } from 'react-native-calendars';
+import type { CalendarProps, DateData } from 'react-native-calendars';
 import { useNavigation } from '@react-navigation/core';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
@@ -23,8 +23,17 @@ import { getTickets } from '../../features/ticket/ticket.service.ts';
 import TicketCard from '../ticket/components/TicketCard.tsx';
 import EmptyCard from '../../components/common/EmptyCard.tsx';
 import { Plus } from 'lucide-react-native';
+import {
+  getTeamGamesByMonth,
+  TeamCalendarGame,
+} from '../../features/game/game.service.ts';
+import { useAuth } from '../../features/auth/AuthProvider.tsx';
 
 type CalendarNavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type CalendarDayProps = {
+  date?: DateData;
+  state?: 'selected' | 'disabled' | 'inactive' | 'today' | '';
+};
 
 const formatSelectedDate = (dateString: string) => {
   const [year, month, day] = dateString.split('-').map(Number);
@@ -34,14 +43,84 @@ const formatSelectedDate = (dateString: string) => {
   return `${month}월 ${day}일 ${weekday}요일`;
 };
 
+const getGameSummary = (games: TeamCalendarGame[]) => {
+  if (games.length > 1) {
+    return `${games.length} 경기`;
+  }
+
+  const game = games[0];
+
+  if (!game) {
+    return null;
+  }
+
+  if (game.status === 'CANCELLED') {
+    return '취소';
+  }
+
+  if (
+    game.status !== 'FINISHED' ||
+    game.awayScore === null ||
+    game.homeScore === null
+  ) {
+    return game.opponentName;
+  }
+
+  const favoriteTeamScore =
+    game.homeAway === 'H' ? game.homeScore : game.awayScore;
+  const opponentTeamScore =
+    game.homeAway === 'A' ? game.homeScore : game.awayScore;
+
+  const result =
+    favoriteTeamScore > opponentTeamScore
+      ? '승'
+      : favoriteTeamScore < opponentTeamScore
+      ? '패'
+      : '무';
+
+  return `${game.awayScore}:${game.homeScore} ${result}`;
+};
+
+const calendarTheme = {
+  weekVerticalMargin: 0,
+  'stylesheet.calendar.header': {
+    week: {
+      marginTop: 7,
+      flexDirection: 'row',
+    },
+    dayHeader: {
+      flex: 1,
+      height: 32,
+      borderRightWidth: StyleSheet.hairlineWidth,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+      color: '#9A9A9A',
+      fontSize: 12,
+      fontFamily: fonts.regular,
+      fontWeight: '400',
+      lineHeight: 32,
+      textAlign: 'center',
+    },
+  },
+} as CalendarProps['theme'];
+
 function CalendarScreen() {
   const navigation = useNavigation<CalendarNavigationProp>();
+  const { profile } = useAuth();
   const today = getTodayInKorea();
+
+  const [visibleMonth, setVisibleMonth] = useState(today.slice(0, 7));
+  const [teamGames, setTeamGames] = useState<TeamCalendarGame[]>([]);
+  const [isLoadingTeamGames, setIsLoadingTeamGames] = useState(false);
 
   const [selectedDate, setSelectedDate] = useState(today);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  /*
+   * useEffect와 다른 점은 useEffect는 컴포넌트가 생성될 때만 실행되지만, useFocusEffect는 화면이 다시 포커스될 때마다 실행된다는 점
+   * 즉 캘린더 화면에서 다른 화면으로 이동했다가 다시 돌아오면, useFocusEffect 안의 콜백이 다시 실행되어 티켓 데이터를 새로 불러오게 된다.
+   * */
   useFocusEffect(
     useCallback(() => {
       let isActive = true;
@@ -79,22 +158,69 @@ function CalendarScreen() {
     }, []),
   );
 
-  const markedDates: Record<string, object> = {};
+  useFocusEffect(
+    useCallback(() => {
+      const favoriteTeamId = profile?.favorite_team_id;
 
-  tickets.forEach(ticket => {
-    markedDates[ticket.matchDate] = {
-      marked: true,
-      dotColor: colors.primary,
-    };
-  });
+      if (!favoriteTeamId) {
+        setTeamGames([]);
+        return;
+      }
 
-  markedDates[selectedDate] = {
-    ...markedDates[selectedDate],
-    selected: true,
-    selectedColor: colors.primary,
-    selectedTextColor: colors.onPrimary,
-    dotColor: colors.onPrimary,
-  };
+      let isActive = true;
+
+      const loadTeamGames = async () => {
+        const [year, month] = visibleMonth.split('-').map(Number);
+
+        setTeamGames([]);
+        setIsLoadingTeamGames(true);
+
+        try {
+          const loadedGames = await getTeamGamesByMonth(
+            favoriteTeamId,
+            year,
+            month,
+          );
+
+          if (isActive) {
+            setTeamGames(loadedGames);
+          }
+        } catch (error) {
+          console.error('응원 구단 경기 일정을 불러오지 못했습니다.', error);
+
+          if (isActive) {
+            Alert.alert(
+              '경기 일정을 불러오지 못했어요',
+              '잠시 후 다시 시도해 주세요.',
+            );
+          }
+        } finally {
+          if (isActive) {
+            setIsLoadingTeamGames(false);
+          }
+        }
+      };
+
+      loadTeamGames();
+
+      return () => {
+        isActive = false;
+      };
+    }, [profile?.favorite_team_id, visibleMonth]),
+  );
+
+  const gamesByDate = teamGames.reduce<Record<string, TeamCalendarGame[]>>(
+    (result, game) => {
+      if (!result[game.date]) {
+        result[game.date] = [];
+      }
+
+      result[game.date].push(game);
+
+      return result;
+    },
+    {},
+  );
 
   const selectedRecords = tickets.filter(
     ticket => ticket.matchDate === selectedDate,
@@ -102,6 +228,125 @@ function CalendarScreen() {
 
   const handlePressDay = (day: DateData) => {
     setSelectedDate(day.dateString);
+  };
+
+  const handleMonthChange = (month: DateData) => {
+    const nextMonth = `${month.year}-${String(month.month).padStart(2, '0')}`;
+
+    setVisibleMonth(nextMonth);
+    setSelectedDate(
+      nextMonth === today.slice(0, 7) ? today : `${nextMonth}-01`,
+    );
+  };
+
+  const renderCalendarDay = ({ date, state }: CalendarDayProps) => {
+    if (!date) {
+      return <View style={styles.calendarDay} />;
+    }
+
+    const dateGames = gamesByDate[date.dateString] ?? [];
+    const firstGame = dateGames[0];
+    const gameSummary = getGameSummary(dateGames);
+    const gameResult = gameSummary?.endsWith('승')
+      ? '승'
+      : gameSummary?.endsWith('패')
+      ? '패'
+      : gameSummary?.endsWith('무')
+      ? '무'
+      : null;
+    const gameResultStyle =
+      gameResult === '승'
+        ? styles.calendarWinResult
+        : gameResult === '패'
+        ? styles.calendarLossResult
+        : gameResult === '무'
+        ? styles.calendarDrawResult
+        : null;
+    const gameSummaryText = gameResult
+      ? gameSummary?.slice(0, -2)
+      : gameSummary;
+
+    const isSelected = date.dateString === selectedDate;
+    const isToday = date.dateString === today;
+    const isInactive = state === 'disabled' || state === 'inactive';
+
+    const accessibilityGameText = firstGame
+      ? `, ${firstGame.homeAway === 'H' ? '홈' : '원정'} 경기, 상대 ${
+          firstGame.opponentName
+        }, ${gameSummary}`
+      : '';
+
+    return (
+      <Pressable
+        style={({ pressed }) => [
+          styles.calendarDay,
+          isSelected && styles.calendarDaySelected,
+          pressed && styles.calendarDayPressed,
+        ]}
+        onPress={() => handlePressDay(date)}
+        disabled={isInactive}
+        accessibilityRole="button"
+        accessibilityLabel={`${date.month}월 ${date.day}일${accessibilityGameText}`}
+        accessibilityState={{
+          selected: isSelected,
+          disabled: isInactive,
+        }}
+      >
+        <View style={styles.calendarDayTopRow}>
+          <AppText
+            style={[
+              styles.calendarDayNumber,
+              isToday && styles.calendarTodayText,
+              isInactive && styles.calendarInactiveText,
+            ]}
+          >
+            {date.day}
+          </AppText>
+
+          {firstGame ? (
+            <AppText
+              style={[
+                styles.calendarHomeAway,
+                firstGame.homeAway === 'H'
+                  ? styles.calendarHome
+                  : styles.calendarAway,
+              ]}
+            >
+              {firstGame.homeAway}
+            </AppText>
+          ) : null}
+        </View>
+
+        {gameSummary && gameResult ? (
+          <View
+            style={[
+              styles.calendarResultRow,
+              isInactive && styles.calendarInactiveResult,
+            ]}
+          >
+            <AppText style={styles.calendarResultScore} numberOfLines={1}>
+              {gameSummaryText}
+            </AppText>
+            <AppText
+              style={[styles.calendarResultBadge, gameResultStyle]}
+              numberOfLines={1}
+            >
+              {gameResult}
+            </AppText>
+          </View>
+        ) : gameSummary ? (
+          <AppText
+            style={[
+              styles.calendarGameSummary,
+              isInactive && styles.calendarInactiveText,
+            ]}
+            numberOfLines={1}
+          >
+            {gameSummary}
+          </AppText>
+        ) : null}
+      </Pressable>
+    );
   };
 
   return (
@@ -117,8 +362,11 @@ function CalendarScreen() {
 
         <AppCalendar
           current={selectedDate}
-          markedDates={markedDates}
-          onDayPress={handlePressDay}
+          firstDay={0}
+          dayComponent={renderCalendarDay}
+          onMonthChange={handleMonthChange}
+          displayLoadingIndicator={isLoadingTeamGames}
+          theme={calendarTheme}
         />
 
         <View style={styles.recordSection}>
@@ -206,6 +454,93 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontFamily: fonts.bold,
     color: colors.text,
+  },
+
+  calendarDay: {
+    alignSelf: 'stretch',
+    height: 56,
+    paddingHorizontal: 6,
+    paddingVertical: 7,
+    borderRightWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  calendarDaySelected: {
+    backgroundColor: colors.primarySoft,
+  },
+  calendarDayPressed: {
+    backgroundColor: colors.primarySoft,
+  },
+  calendarDayTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  calendarDayNumber: {
+    fontSize: 13,
+    fontFamily: fonts.regular,
+    color: colors.text,
+  },
+  calendarTodayText: {
+    fontFamily: fonts.bold,
+    color: colors.primary,
+  },
+  calendarInactiveText: {
+    color: colors.disabled,
+  },
+  calendarHomeAway: {
+    fontSize: 10,
+    fontFamily: fonts.bold,
+  },
+  calendarHome: {
+    color: colors.primary,
+  },
+  calendarAway: {
+    color: colors.textSecondary,
+  },
+  calendarGameSummary: {
+    alignSelf: 'stretch',
+    marginTop: 6,
+    fontSize: 10,
+    fontFamily: fonts.regular,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
+  calendarResultRow: {
+    marginTop: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 3,
+  },
+  calendarInactiveResult: {
+    opacity: 0.4,
+  },
+  calendarResultScore: {
+    fontSize: 10,
+    fontFamily: fonts.regular,
+    color: colors.textSecondary,
+  },
+  calendarResultBadge: {
+    minWidth: 16,
+    height: 16,
+    paddingHorizontal: 4,
+    borderRadius: 5,
+    overflow: 'hidden',
+    fontSize: 9,
+    fontFamily: fonts.bold,
+    color: colors.textSecondary,
+    lineHeight: 16,
+    textAlign: 'center',
+  },
+  calendarWinResult: {
+    backgroundColor: colors.primarySoft,
+  },
+  calendarLossResult: {
+    backgroundColor: '#FDECEC',
+  },
+  calendarDrawResult: {
+    backgroundColor: '#F0F1F2',
   },
   recordSection: {
     marginTop: 26,

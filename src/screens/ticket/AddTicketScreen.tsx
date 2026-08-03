@@ -47,7 +47,7 @@ function AddTicketScreen() {
   const [games, setGames] = useState<KboGame[]>([]);
   const [isLoadingGames, setIsLoadingGames] = useState(false);
   const [gameLoadError, setGameLoadError] = useState<string | null>(null);
-  const [gameRefreshKey, setGameRefreshKey] = useState(0);
+
   useEffect(() => {
     if (!selectedDate || isCalendarOpen) {
       return;
@@ -84,7 +84,7 @@ function AddTicketScreen() {
     return () => {
       isCancelled = true;
     };
-  }, [gameRefreshKey, isCalendarOpen, selectedDate]);
+  }, [isCalendarOpen, selectedDate]);
 
   const [seatName, setSeatName] = useState('');
   const [originalTicketImage, setOriginalTicketImage] =
@@ -129,16 +129,6 @@ function AddTicketScreen() {
     }
 
     setSelectedGameId(gameId);
-  };
-
-  const handleRefreshGames = () => {
-    if (isLoadingGames) {
-      return;
-    }
-
-    setSelectedGameId(null);
-    setSeatName('');
-    setGameRefreshKey(key => key + 1);
   };
 
   const handleAddTicket = async () => {
@@ -232,14 +222,6 @@ function AddTicketScreen() {
                 <AppText style={styles.sectionTitle}>
                   어떤 경기를 봤나요?
                 </AppText>
-
-                {!isLoadingGames && (
-                  <InlineActionButton
-                    label="새로고침"
-                    onPress={handleRefreshGames}
-                    accessibilityLabel="선택한 날짜 경기 정보 새로고침"
-                  />
-                )}
               </View>
 
               {isLoadingGames ? (
@@ -446,9 +428,6 @@ const styles = StyleSheet.create({
   },
   gameSectionHeader: {
     marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
   },
 
   gameList: {

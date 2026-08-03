@@ -12,6 +12,16 @@ export interface KboGame {
   homeScore: number | null;
 }
 
+export interface TeamCalendarGame {
+  id: string;
+  date: string;
+  homeAway: 'H' | 'A';
+  opponentName: string;
+  status: string;
+  awayScore: number | null;
+  homeScore: number | null;
+}
+
 export async function getGamesByDate(date: string): Promise<KboGame[]> {
   if (date > getTodayInKorea()) {
     return [];
@@ -58,6 +68,74 @@ export async function getGamesByDate(date: string): Promise<KboGame[]> {
       stadiumName: game.stadium_name ?? '경기장 미정',
       awayTeamName: game.awayTeam.short_name,
       homeTeamName: game.homeTeam.short_name,
+      awayScore: game.away_score,
+      homeScore: game.home_score,
+    };
+  });
+}
+
+// 해당 월의 시작일과 마지막일을 계산하여, 해당 월의 경기 정보를 가져오는 함수
+export async function getTeamGamesByMonth(
+  teamId: string,
+  year: number,
+  month: number,
+): Promise<TeamCalendarGame[]> {
+  const monthText = String(month).padStart(2, '0');
+  const lastDay = new Date(year, month, 0).getDate();
+
+  const startDate = `${year}-${monthText}-01`;
+  const endDate = `${year}-${monthText}-${String(lastDay).padStart(2, '0')}`;
+
+  const { data, error } = await supabase
+    .from('games')
+    .select(
+      `
+        game_key,
+        game_date,
+        status,
+        away_team_id,
+        home_team_id,
+        away_score,
+        home_score,
+        awayTeam:teams!games_away_team_id_fkey (
+          short_name
+        ),
+        homeTeam:teams!games_home_team_id_fkey (
+          short_name
+        )
+      `,
+    )
+    .gte('game_date', startDate)
+    .lte('game_date', endDate)
+    // gte이상 lte이하
+    .or(`away_team_id.eq.${teamId},home_team_id.eq.${teamId}`)
+    .order('game_date', {
+      ascending: true,
+    })
+    .order('start_time', {
+      ascending: true,
+      nullsFirst: false,
+    });
+
+  if (error) {
+    throw error;
+  }
+
+  return data.map(game => {
+    if (!game.awayTeam || !game.homeTeam) {
+      throw new Error('구단 정보를 찾을 수 없습니다.');
+    }
+
+    const isHome = game.home_team_id === teamId;
+
+    return {
+      id: game.game_key,
+      date: game.game_date,
+      homeAway: isHome ? 'H' : 'A',
+      opponentName: isHome
+        ? game.awayTeam.short_name
+        : game.homeTeam.short_name,
+      status: game.status,
       awayScore: game.away_score,
       homeScore: game.home_score,
     };
