@@ -225,27 +225,36 @@ export type Database = {
       tickets: {
         Row: {
           created_at: string
+          foods: string[]
           game_key: string
           id: string
+          memo: string | null
           original_photo_path: string | null
+          rating: number | null
           seat_name: string | null
           ticket_book_id: string
           updated_at: string
         }
         Insert: {
           created_at?: string
+          foods?: string[]
           game_key: string
           id?: string
+          memo?: string | null
           original_photo_path?: string | null
+          rating?: number | null
           seat_name?: string | null
           ticket_book_id: string
           updated_at?: string
         }
         Update: {
           created_at?: string
+          foods?: string[]
           game_key?: string
           id?: string
+          memo?: string | null
           original_photo_path?: string | null
+          rating?: number | null
           seat_name?: string | null
           ticket_book_id?: string
           updated_at?: string
