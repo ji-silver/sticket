@@ -7,7 +7,44 @@ jest.mock('../../lib/supabase.ts', () => ({
 }));
 
 import { supabase } from '../../lib/supabase.ts';
-import { updateTicketOriginalPhoto } from './ticket.service.ts';
+import { getTickets, updateTicketOriginalPhoto } from './ticket.service.ts';
+
+describe('getTickets', () => {
+  it('취소된 경기 상태를 티켓에 전달한다', async () => {
+    const order = jest.fn().mockResolvedValue({
+      data: [
+        {
+          id: 'ticket-1',
+          seat_name: null,
+          rating: null,
+          memo: null,
+          foods: [],
+          original_photo_path: null,
+          created_at: '2026-08-05T00:00:00Z',
+          game: {
+            game_date: '2026-08-05',
+            start_time: '18:30:00',
+            stadium_name: '고척 스카이돔',
+            status: 'CANCELLED',
+            away_score: null,
+            home_score: null,
+            awayTeam: { short_name: 'LG' },
+            homeTeam: { short_name: '키움' },
+          },
+        },
+      ],
+      error: null,
+    });
+
+    (supabase.from as jest.Mock).mockReturnValue({
+      select: jest.fn().mockReturnValue({ order }),
+    });
+
+    const tickets = await getTickets();
+
+    expect(tickets[0].isCancelled).toBe(true);
+  });
+});
 
 describe('updateTicketOriginalPhoto', () => {
   it('DB 갱신이 실패하면 새 사진만 정리하고 기존 사진은 유지한다', async () => {

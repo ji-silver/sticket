@@ -39,7 +39,9 @@ function TicketCard({ ticket, onPress }: TicketCardProps) {
       onPress={onPress}
       style={({ pressed }) => [styles.ticket, pressed && styles.ticketPressed]}
       accessibilityRole="button"
-      accessibilityLabel={`${month}월 ${day}일 ${ticket.awayTeamName} 대 ${ticket.homeTeamName}, 직관 기록 보기`}
+      accessibilityLabel={`${month}월 ${day}일 ${ticket.awayTeamName} 대 ${
+        ticket.homeTeamName
+      }${ticket.isCancelled ? ', 경기 취소' : ''}, 직관 기록 보기`}
       accessibilityHint="직관 기록 상세 화면으로 이동합니다"
     >
       <View style={styles.contentArea}>
@@ -87,7 +89,14 @@ function TicketCard({ ticket, onPress }: TicketCardProps) {
           </View>
 
           <View style={styles.matchupCenter}>
-            <AppText style={styles.vsText}>VS</AppText>
+            <AppText
+              style={[
+                styles.vsText,
+                ticket.isCancelled && styles.cancelledText,
+              ]}
+            >
+              {ticket.isCancelled ? '취소' : 'VS'}
+            </AppText>
           </View>
 
           <View style={styles.teamSide}>
@@ -262,6 +271,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: fonts.bold,
     color: '#777777',
+  },
+
+  cancelledText: {
+    color: colors.textSecondary,
   },
 
   perforationWrap: {

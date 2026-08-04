@@ -15,6 +15,7 @@ export interface Ticket {
   awayTeamName: string;
   homeScore: number | null;
   awayScore: number | null;
+  isCancelled: boolean;
   barcodeValue?: string;
   originalTicketImageUri?: string;
 }

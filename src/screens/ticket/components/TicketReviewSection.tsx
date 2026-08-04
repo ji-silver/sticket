@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
     borderCurve: 'continuous',
     backgroundColor: colors.surface,
     fontSize: 15,
-    lineHeight: 29,
+    lineHeight: 22,
     fontFamily: fonts.regular,
     color: colors.text,
     overflow: 'hidden',
@@ -397,7 +397,7 @@ const styles = StyleSheet.create({
   },
   recordMeasureText: {
     fontSize: 15,
-    lineHeight: 29,
+    lineHeight: 22,
     fontFamily: fonts.regular,
   },
   recordLimitText: {

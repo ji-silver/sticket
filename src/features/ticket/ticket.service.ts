@@ -169,6 +169,7 @@ export async function getTickets() {
           game_date,
           start_time,
           stadium_name,
+          status,
           away_score,
           home_score,
           awayTeam:teams!games_away_team_id_fkey (
@@ -234,6 +235,7 @@ export async function getTickets() {
         awayTeamName: game.awayTeam.short_name,
         homeScore: game.home_score,
         awayScore: game.away_score,
+        isCancelled: game.status === 'CANCELLED',
         originalTicketImageUri: ticket.original_photo_path
           ? signedUrlByPath.get(ticket.original_photo_path)
           : undefined,

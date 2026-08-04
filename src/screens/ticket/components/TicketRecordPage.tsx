@@ -45,7 +45,7 @@ function TicketRecordPage({ ticket }: TicketRecordPageProps) {
   const matchDateText = formatMatchDate(ticket.matchDate);
   const awayScoreText = ticket.awayScore ?? '-';
   const homeScoreText = ticket.homeScore ?? '-';
-  const matchResult = favoriteTeamName
+  const matchResult = !ticket.isCancelled && favoriteTeamName
     ? getFavoriteTeamMatchResult(ticket, favoriteTeamName)
     : null;
   const matchResultText = matchResult ? matchResultLabels[matchResult] : null;
@@ -99,13 +99,19 @@ function TicketRecordPage({ ticket }: TicketRecordPageProps) {
           <View
             style={styles.scoreBoard}
             accessible
-            accessibilityLabel={`원정 ${
-              ticket.awayTeamName
-            } ${awayScoreText} 대 홈 ${ticket.homeTeamName} ${homeScoreText}${
-              matchResultText && favoriteTeamName
-                ? `, 응원 구단 ${favoriteTeamName} 기준 ${matchResultText}`
-                : ''
-            }`}
+            accessibilityLabel={
+              ticket.isCancelled
+                ? `원정 ${ticket.awayTeamName} 대 홈 ${ticket.homeTeamName}, 경기 취소`
+                : `원정 ${
+                    ticket.awayTeamName
+                  } ${awayScoreText} 대 홈 ${
+                    ticket.homeTeamName
+                  } ${homeScoreText}${
+                    matchResultText && favoriteTeamName
+                      ? `, 응원 구단 ${favoriteTeamName} 기준 ${matchResultText}`
+                      : ''
+                  }`
+            }
           >
             <View style={styles.teamSide}>
               <AppText
@@ -126,11 +132,17 @@ function TicketRecordPage({ ticket }: TicketRecordPageProps) {
             </View>
 
             <View style={styles.scoreCenter}>
-              <View style={styles.scoreRow}>
-                <AppText style={styles.scoreText}>{awayScoreText}</AppText>
-                <AppText style={styles.scoreDivider}>:</AppText>
-                <AppText style={styles.scoreText}>{homeScoreText}</AppText>
-              </View>
+              {ticket.isCancelled ? (
+                <View style={styles.cancelledBadge}>
+                  <AppText style={styles.cancelledText}>경기 취소</AppText>
+                </View>
+              ) : (
+                <View style={styles.scoreRow}>
+                  <AppText style={styles.scoreText}>{awayScoreText}</AppText>
+                  <AppText style={styles.scoreDivider}>:</AppText>
+                  <AppText style={styles.scoreText}>{homeScoreText}</AppText>
+                </View>
+              )}
             </View>
 
             <View style={styles.teamSide}>
@@ -286,6 +298,20 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontFamily: fonts.bold,
     color: colors.disabled,
+  },
+  cancelledBadge: {
+    minHeight: 26,
+    paddingHorizontal: 10,
+    borderRadius: 13,
+    borderCurve: 'continuous',
+    backgroundColor: '#F0F1F2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelledText: {
+    fontSize: 11,
+    fontFamily: fonts.bold,
+    color: colors.textSecondary,
   },
   matchResultBadge: {
     maxWidth: '100%',
