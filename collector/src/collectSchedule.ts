@@ -10,6 +10,7 @@ import {
   getRemainingSeasonMonths,
   getUpcomingScheduleMonths,
 } from './dateWindow.ts';
+import { syncGameLineups, syncMissingTicketLineups } from './gameLineups.ts';
 import { upsertGames } from './saveGames.ts';
 
 const KBO_SCHEDULE_URL = 'https://www.koreabaseball.com/Schedule/Schedule.aspx';
@@ -193,9 +194,16 @@ async function main() {
 
         const savedGameCount = await upsertGames(games);
 
+        const savedLineupCount =
+          isBackfill || isScheduleCollection ? 0 : await syncGameLineups(games);
+
         targetSavedGameCount += savedGameCount;
 
         console.log(`Supabase 저장 완료: ${savedGameCount}경기`);
+
+        if (savedLineupCount > 0) {
+          console.log(`라인업 저장 완료: ${savedLineupCount}경기`);
+        }
       }
 
       totalSavedGameCount += targetSavedGameCount;
@@ -206,6 +214,14 @@ async function main() {
 
       if (isBackfill || isScheduleCollection) {
         await page.waitForTimeout(300);
+      }
+    }
+
+    if (isAutomaticCollection) {
+      const backfilledLineupCount = await syncMissingTicketLineups();
+
+      if (backfilledLineupCount > 0) {
+        console.log(`기존 티켓 라인업 저장 완료: ${backfilledLineupCount}경기`);
       }
     }
 
@@ -483,7 +499,7 @@ function parseGameStatus(
     return 'CANCELLED';
   }
 
-  if (relay.includes('리뷰')) {
+  if (relay.trim() === '리뷰') {
     return 'FINISHED';
   }
 

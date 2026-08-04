@@ -26,6 +26,14 @@ describe('getTickets', () => {
             start_time: '18:30:00',
             stadium_name: '고척 스카이돔',
             status: 'CANCELLED',
+            away_lineup: [
+              {
+                battingOrder: 1,
+                position: 'CF',
+                playerName: '홍창기',
+              },
+            ],
+            home_lineup: [],
             away_score: null,
             home_score: null,
             awayTeam: { short_name: 'LG' },
@@ -43,6 +51,13 @@ describe('getTickets', () => {
     const tickets = await getTickets();
 
     expect(tickets[0].isCancelled).toBe(true);
+    expect(tickets[0].awayLineup).toEqual([
+      {
+        battingOrder: 1,
+        position: 'CF',
+        playerName: '홍창기',
+      },
+    ]);
   });
 });
 

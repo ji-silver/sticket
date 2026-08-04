@@ -1,5 +1,23 @@
 export type SportId = 'baseball' | 'soccer' | 'basketball' | 'volleyball';
 
+export type BaseballPosition =
+  | 'P'
+  | 'C'
+  | '1B'
+  | '2B'
+  | '3B'
+  | 'SS'
+  | 'LF'
+  | 'CF'
+  | 'RF'
+  | 'DH';
+
+export interface LineupPlayer {
+  battingOrder: number;
+  position: BaseballPosition;
+  playerName: string;
+}
+
 export interface Ticket {
   id: string;
   matchDate: string;
@@ -16,6 +34,8 @@ export interface Ticket {
   homeScore: number | null;
   awayScore: number | null;
   isCancelled: boolean;
+  awayLineup: LineupPlayer[];
+  homeLineup: LineupPlayer[];
   barcodeValue?: string;
   originalTicketImageUri?: string;
 }

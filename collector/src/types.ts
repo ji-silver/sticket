@@ -22,6 +22,12 @@ export type KboGameStatus =
   | 'POSTPONED'
   | 'UNKNOWN';
 
+export interface KboLineupPlayer {
+  battingOrder: number;
+  position: string;
+  playerName: string;
+}
+
 export interface KboGame {
   gameKey: string;
   sourceGameId: string | null;

@@ -2,12 +2,28 @@ import { decode } from 'base64-arraybuffer';
 
 import { supabase } from '../../lib/supabase.ts';
 import { getTodayInKorea } from '../../lib/date.ts';
+import type {
+  BaseballPosition,
+  LineupPlayer,
+} from '../../screens/ticket/types.ts';
 
 const ORIGINAL_TICKET_BUCKET = 'ticket-originals';
 const SIGNED_URL_EXPIRES_IN_SECONDS = 60 * 60; // 유효시간 1시간
 const MAX_SEAT_NAME_LENGTH = 100;
 const MAX_MEMO_LENGTH = 300;
 const MAX_FOOD_COUNT = 10;
+const BASEBALL_POSITIONS: BaseballPosition[] = [
+  'P',
+  'C',
+  '1B',
+  '2B',
+  '3B',
+  'SS',
+  'LF',
+  'CF',
+  'RF',
+  'DH',
+];
 
 interface CreateTicketParams {
   gameKey: string;
@@ -170,6 +186,8 @@ export async function getTickets() {
           start_time,
           stadium_name,
           status,
+          away_lineup,
+          home_lineup,
           away_score,
           home_score,
           awayTeam:teams!games_away_team_id_fkey (
@@ -236,6 +254,8 @@ export async function getTickets() {
         homeScore: game.home_score,
         awayScore: game.away_score,
         isCancelled: game.status === 'CANCELLED',
+        awayLineup: parseLineup(game.away_lineup),
+        homeLineup: parseLineup(game.home_lineup),
         originalTicketImageUri: ticket.original_photo_path
           ? signedUrlByPath.get(ticket.original_photo_path)
           : undefined,
@@ -252,6 +272,34 @@ export async function getTickets() {
 
       return secondTicket.matchTime.localeCompare(firstTicket.matchTime);
     });
+}
+
+function parseLineup(value: unknown): LineupPlayer[] {
+  if (!Array.isArray(value)) return [];
+
+  return value.flatMap(player => {
+    if (
+      typeof player !== 'object' ||
+      player === null ||
+      !('battingOrder' in player) ||
+      !('position' in player) ||
+      !('playerName' in player) ||
+      typeof player.battingOrder !== 'number' ||
+      typeof player.position !== 'string' ||
+      typeof player.playerName !== 'string' ||
+      !BASEBALL_POSITIONS.includes(player.position as BaseballPosition)
+    ) {
+      return [];
+    }
+
+    return [
+      {
+        battingOrder: player.battingOrder,
+        position: player.position as BaseballPosition,
+        playerName: player.playerName,
+      },
+    ];
+  });
 }
 
 export async function updateTicketSeat(ticketId: string, seatName: string) {

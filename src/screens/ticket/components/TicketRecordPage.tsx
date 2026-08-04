@@ -11,6 +11,7 @@ import { useAuth } from '../../../features/auth/AuthProvider.tsx';
 import { colors } from '../../../styles/colors.ts';
 import { fonts } from '../../../styles/fonts.ts';
 import type { Ticket } from '../types.ts';
+import TicketLineupSection from './TicketLineupSection.tsx';
 import TicketReviewSection from './TicketReviewSection.tsx';
 import TicketVisitInfoSection from './TicketVisitInfoSection.tsx';
 
@@ -61,6 +62,11 @@ function TicketRecordPage({ ticket }: TicketRecordPageProps) {
       : matchResult === 'draw'
       ? styles.matchResultTextDraw
       : null;
+  const showsAwayLineup = favoriteTeamName === ticket.awayTeamName;
+  const lineupTeamName = showsAwayLineup
+    ? ticket.awayTeamName
+    : ticket.homeTeamName;
+  const lineup = showsAwayLineup ? ticket.awayLineup : ticket.homeLineup;
   const [snackbarMessage, setSnackbarMessage] = useState<string | null>(null);
   const snackbarTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -189,6 +195,12 @@ function TicketRecordPage({ ticket }: TicketRecordPageProps) {
           initialMemo={ticket.memo}
           initialFoods={ticket.foods}
         />
+
+        {lineup.length === 9 ? (
+          <View style={styles.lineupArea}>
+            <TicketLineupSection teamName={lineupTeamName} lineup={lineup} />
+          </View>
+        ) : null}
       </ScrollView>
 
       {snackbarMessage ? (
@@ -240,6 +252,9 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     paddingBottom: 40,
+  },
+  lineupArea: {
+    paddingHorizontal: 24,
   },
   matchSummary: {
     paddingHorizontal: 24,

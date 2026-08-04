@@ -54,6 +54,7 @@ export type Database = {
       }
       games: {
         Row: {
+          away_lineup: Json
           away_score: number | null
           away_team_id: string
           cancellation_reason: string | null
@@ -63,6 +64,8 @@ export type Database = {
           home_score: number | null
           home_team_id: string
           last_collected_at: string
+          home_lineup: Json
+          lineup_collected_at: string | null
           season: number
           series_type: string
           source_game_id: string | null
@@ -73,6 +76,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          away_lineup?: Json
           away_score?: number | null
           away_team_id: string
           cancellation_reason?: string | null
@@ -82,6 +86,8 @@ export type Database = {
           home_score?: number | null
           home_team_id: string
           last_collected_at?: string
+          home_lineup?: Json
+          lineup_collected_at?: string | null
           season: number
           series_type: string
           source_game_id?: string | null
@@ -92,6 +98,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          away_lineup?: Json
           away_score?: number | null
           away_team_id?: string
           cancellation_reason?: string | null
@@ -101,6 +108,8 @@ export type Database = {
           home_score?: number | null
           home_team_id?: string
           last_collected_at?: string
+          home_lineup?: Json
+          lineup_collected_at?: string | null
           season?: number
           series_type?: string
           source_game_id?: string | null
