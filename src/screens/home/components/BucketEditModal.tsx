@@ -8,12 +8,11 @@ import {
   View,
 } from 'react-native';
 import { Check, Plus, Trash2 } from 'lucide-react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Bucket } from '../types.ts';
 import { useEffect, useRef, useState } from 'react';
 import { fonts } from '../../../styles/fonts.ts';
 import AppBottomSheet from '../../../components/common/AppBottomSheet.tsx';
-import AppText from '../../../components/common/AppText.tsx';
+import AppSnackbar from '../../../components/common/AppSnackbar.tsx';
 import InlineActionButton from '../../../components/common/InlineActionButton.tsx';
 import { colors } from '../../../styles/colors.ts';
 
@@ -42,7 +41,6 @@ function BucketEditModal({
   onRestoreBucket,
   pendingBucketIds,
 }: BucketEditModalProps) {
-  const { bottom: bottomInset } = useSafeAreaInsets();
   const scrollViewRef = useRef<ScrollView>(null);
   const shouldScrollToEndRef = useRef(false);
   const committingTitleIdsRef = useRef(new Set<string>());
@@ -260,34 +258,13 @@ function BucketEditModal({
       </ScrollView>
 
       {lastDeletedBucket !== null && (
-        <View
-          style={[styles.undoBar, { bottom: Math.max(bottomInset, 12) }]}
-          accessibilityRole="alert"
-        >
-          <AppText style={styles.undoMessage} numberOfLines={1}>
-            버킷리스트를 삭제했어요
-          </AppText>
-
-          <Pressable
-            style={({ pressed }) => [
-              styles.undoButton,
-              pressed && styles.buttonPressed,
-            ]}
-            onPress={() => {
-              handleUndoDelete();
-            }}
-            disabled={isRestoring}
-            accessibilityRole="button"
-            accessibilityLabel="버킷리스트 삭제 실행 취소"
-            accessibilityState={{ disabled: isRestoring }}
-          >
-            {isRestoring ? (
-              <ActivityIndicator size="small" color={colors.onPrimary} />
-            ) : (
-              <AppText style={styles.undoButtonText}>실행 취소</AppText>
-            )}
-          </Pressable>
-        </View>
+        <AppSnackbar
+          message="버킷리스트를 삭제했어요"
+          actionLabel="실행 취소"
+          actionAccessibilityLabel="버킷리스트 삭제 실행 취소"
+          actionLoading={isRestoring}
+          onAction={handleUndoDelete}
+        />
       )}
     </AppBottomSheet>
   );
@@ -469,37 +446,5 @@ const styles = StyleSheet.create({
   },
   controlDisabled: {
     opacity: 0.5,
-  },
-  undoBar: {
-    position: 'absolute',
-    right: 0,
-    left: 0,
-    minHeight: 48,
-    paddingLeft: 16,
-    paddingRight: 6,
-    borderRadius: 14,
-    borderCurve: 'continuous',
-    backgroundColor: colors.text,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  undoMessage: {
-    flex: 1,
-    fontSize: 14,
-    fontFamily: fonts.regular,
-    color: colors.onPrimary,
-  },
-  undoButton: {
-    minWidth: 76,
-    minHeight: 44,
-    paddingHorizontal: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  undoButtonText: {
-    fontSize: 14,
-    fontFamily: fonts.bold,
-    color: colors.onPrimary,
   },
 });

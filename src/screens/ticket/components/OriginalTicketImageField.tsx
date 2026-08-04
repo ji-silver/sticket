@@ -18,6 +18,7 @@ import { fonts } from '../../../styles/fonts.ts';
 export interface SelectedOriginalTicketImage {
   uri: string;
   base64: string;
+  aspectRatio: number;
 }
 
 interface OriginalTicketImageFieldProps {
@@ -25,7 +26,7 @@ interface OriginalTicketImageFieldProps {
   onChange: (image: SelectedOriginalTicketImage | null) => void;
 }
 
-type ImageSource = 'camera' | 'library';
+export type OriginalTicketImageSource = 'camera' | 'library';
 
 const IMAGE_SELECTION_OPTIONS = {
   mediaType: 'photo' as const,
@@ -44,13 +45,84 @@ const CROPPER_OPTIONS = {
   cropperChooseText: '사용',
 };
 
+export async function pickOriginalTicketImage(
+  source: OriginalTicketImageSource,
+): Promise<SelectedOriginalTicketImage | null> {
+  try {
+    const selectedImage =
+      source === 'camera'
+        ? await ImagePicker.openCamera(IMAGE_SELECTION_OPTIONS)
+        : await ImagePicker.openPicker(IMAGE_SELECTION_OPTIONS);
+
+    const image = await ImagePicker.openCropper({
+      path: selectedImage.path,
+      width: selectedImage.width,
+      height: selectedImage.height,
+      ...CROPPER_OPTIONS,
+    });
+
+    if (!image.data) {
+      throw new Error('선택한 이미지 데이터를 읽지 못했습니다.');
+    }
+
+    return {
+      uri: image.path,
+      base64: image.data,
+      aspectRatio: image.width / image.height,
+    };
+  } catch (error) {
+    const errorCode = (error as { code?: string } | null)?.code;
+
+    if (errorCode === 'E_PICKER_CANCELLED') {
+      return null;
+    }
+
+    if (
+      errorCode === 'E_NO_CAMERA_PERMISSION' ||
+      errorCode === 'E_NO_LIBRARY_PERMISSION'
+    ) {
+      const permissionName =
+        errorCode === 'E_NO_CAMERA_PERMISSION' ? '카메라' : '사진';
+
+      Alert.alert(
+        `${permissionName} 권한이 필요해요`,
+        `기기 설정에서 ${permissionName} 접근을 허용해 주세요.`,
+        [
+          { text: '취소', style: 'cancel' },
+          {
+            text: '설정 열기',
+            onPress: () => {
+              Linking.openSettings();
+            },
+          },
+        ],
+      );
+
+      return null;
+    }
+
+    if (errorCode === 'E_PICKER_CANNOT_RUN_CAMERA_ON_SIMULATOR') {
+      Alert.alert(
+        '카메라를 실행할 수 없어요',
+        '카메라 촬영은 실제 기기에서 확인해 주세요.',
+      );
+
+      return null;
+    }
+
+    console.error('원본 티켓 이미지를 불러오지 못했습니다.', error);
+    Alert.alert('사진을 불러오지 못했어요', '잠시 후 다시 시도해 주세요.');
+    return null;
+  }
+}
+
 function OriginalTicketImageField({
   value,
   onChange,
 }: OriginalTicketImageFieldProps) {
   const [isSourceSheetVisible, setIsSourceSheetVisible] = useState(false);
   const [previewAspectRatio, setPreviewAspectRatio] = useState(2 / 3);
-  const pendingImageSource = useRef<ImageSource | null>(null);
+  const pendingImageSource = useRef<OriginalTicketImageSource | null>(null);
 
   const openSourceSheet = () => {
     setIsSourceSheetVisible(true);
@@ -60,7 +132,7 @@ function OriginalTicketImageField({
     setIsSourceSheetVisible(false);
   };
 
-  const requestTicketImage = (source: ImageSource) => {
+  const requestTicketImage = (source: OriginalTicketImageSource) => {
     pendingImageSource.current = source;
     closeSourceSheet();
   };
@@ -69,75 +141,13 @@ function OriginalTicketImageField({
    * 카메라 또는 앨범에서 티켓 앞면 한 장을 가져옵니다.
    * 세로형 지류 티켓과 모바일 티켓을 모두 지원하기 위해 고정 비율을 사용하지 않습니다.
    */
-  const selectTicketImage = async (source: ImageSource) => {
-    try {
-      const selectedImage =
-        source === 'camera'
-          ? await ImagePicker.openCamera(IMAGE_SELECTION_OPTIONS)
-          : await ImagePicker.openPicker(IMAGE_SELECTION_OPTIONS);
+  const selectTicketImage = async (source: OriginalTicketImageSource) => {
+    const image = await pickOriginalTicketImage(source);
 
-      // iOS 크롭 화면의 기본값이 200×200이므로 원본 비율로 시작하도록
-      // 선택한 사진의 실제 크기를 전달합니다.
-      const image = await ImagePicker.openCropper({
-        path: selectedImage.path,
-        width: selectedImage.width,
-        height: selectedImage.height,
-        ...CROPPER_OPTIONS,
-      });
+    if (!image) return;
 
-      if (!image.data) {
-        throw new Error('선택한 이미지 데이터를 읽지 못했습니다.');
-      }
-
-      setPreviewAspectRatio(image.width / image.height);
-
-      onChange({
-        uri: image.path,
-        base64: image.data,
-      });
-    } catch (error) {
-      const errorCode = (error as { code?: string } | null)?.code;
-
-      if (errorCode === 'E_PICKER_CANCELLED') {
-        return;
-      }
-
-      if (
-        errorCode === 'E_NO_CAMERA_PERMISSION' ||
-        errorCode === 'E_NO_LIBRARY_PERMISSION'
-      ) {
-        const permissionName =
-          errorCode === 'E_NO_CAMERA_PERMISSION' ? '카메라' : '사진';
-
-        Alert.alert(
-          `${permissionName} 권한이 필요해요`,
-          `기기 설정에서 ${permissionName} 접근을 허용해 주세요.`,
-          [
-            { text: '취소', style: 'cancel' },
-            {
-              text: '설정 열기',
-              onPress: () => {
-                Linking.openSettings();
-              },
-            },
-          ],
-        );
-
-        return;
-      }
-
-      if (errorCode === 'E_PICKER_CANNOT_RUN_CAMERA_ON_SIMULATOR') {
-        Alert.alert(
-          '카메라를 실행할 수 없어요',
-          '카메라 촬영은 실제 기기에서 확인해 주세요.',
-        );
-
-        return;
-      }
-
-      console.error('원본 티켓 이미지를 불러오지 못했습니다.', error);
-      Alert.alert('사진을 불러오지 못했어요', '잠시 후 다시 시도해 주세요.');
-    }
+    setPreviewAspectRatio(image.aspectRatio);
+    onChange(image);
   };
 
   const handleSourceSheetDismiss = () => {

@@ -1,5 +1,6 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
+  Alert,
   Image,
   KeyboardAvoidingView,
   Modal,
@@ -10,23 +11,36 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { ChevronRight, Plus, X } from 'lucide-react-native';
+import { Plus, X } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AppBottomSheet from '../../../components/common/AppBottomSheet.tsx';
+import AppSnackbar from '../../../components/common/AppSnackbar.tsx';
 import AppText from '../../../components/common/AppText.tsx';
+import ConfirmDialog from '../../../components/common/ConfirmDialog.tsx';
 import InlineActionButton from '../../../components/common/InlineActionButton.tsx';
 import { colors } from '../../../styles/colors.ts';
 import { fonts } from '../../../styles/fonts.ts';
 import type { Ticket } from '../types.ts';
 import TicketLineupSection from './TicketLineupSection.tsx';
 import TicketStarRating from './TicketStarRating.tsx';
+import {
+  deleteTicketOriginalPhoto,
+  updateTicketFoods,
+  updateTicketMemo,
+  updateTicketOriginalPhoto,
+  updateTicketRating,
+} from '../../../features/ticket/ticket.service.ts';
+import TicketSeatEditSheet from './TicketSeatEditSheet.tsx';
+import {
+  pickOriginalTicketImage,
+  type OriginalTicketImageSource,
+} from './OriginalTicketImageField.tsx';
 
 interface TicketRecordPageProps {
   ticket: Ticket;
 }
 
-const initialRecord = '7회 말 역전 만루홈런';
 const recordInputHeight = 111;
-const initialFoods = ['크림새우', '닭강정', '떡볶이'];
 const mockFavoriteTeamName = '키움';
 
 type MatchResult = 'win' | 'lose' | 'draw';
@@ -71,33 +85,112 @@ function TicketRecordPage({ ticket }: TicketRecordPageProps) {
       ? styles.matchResultTextDraw
       : null;
 
-  const [rating, setRating] = useState(0);
-  const [record, setRecord] = useState(initialRecord);
-  const [recordDraft, setRecordDraft] = useState(initialRecord);
+  const [rating, setRating] = useState(ticket.rating ?? 0);
+  const [record, setRecord] = useState(ticket.memo ?? '');
+  const [recordDraft, setRecordDraft] = useState(ticket.memo ?? '');
   const [isEditingRecord, setIsEditingRecord] = useState(false);
   const [isRecordLimitExceeded, setIsRecordLimitExceeded] = useState(false);
-  const previousRecordDraft = useRef(initialRecord);
-  const [foods, setFoods] = useState(initialFoods);
+  const previousRecordDraft = useRef(ticket.memo ?? '');
+  const [foods, setFoods] = useState(() => [...ticket.foods]);
   const [foodDraft, setFoodDraft] = useState('');
   const [isEditingFoods, setIsEditingFoods] = useState(false);
   const [isOriginalTicketVisible, setIsOriginalTicketVisible] = useState(false);
+  const [originalTicketImageUri, setOriginalTicketImageUri] = useState(
+    ticket.originalTicketImageUri,
+  );
+  const [
+    isOriginalTicketEditSheetVisible,
+    setIsOriginalTicketEditSheetVisible,
+  ] = useState(false);
+  const [
+    isOriginalTicketSourceSheetVisible,
+    setIsOriginalTicketSourceSheetVisible,
+  ] = useState(false);
+  const [
+    isOriginalTicketDeleteDialogVisible,
+    setIsOriginalTicketDeleteDialogVisible,
+  ] = useState(false);
+  const [isSavingOriginalTicket, setIsSavingOriginalTicket] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const toastTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingOriginalTicketEditAction = useRef<'change' | 'delete' | null>(
+    null,
+  );
+  const shouldOpenOriginalTicketEditSheet = useRef(false);
+  const pendingOriginalTicketImageSource =
+    useRef<OriginalTicketImageSource | null>(null);
+  const [seatName, setSeatName] = useState(ticket.seatName);
+  const [isSeatSheetVisible, setIsSeatSheetVisible] = useState(false);
+
+  useEffect(
+    () => () => {
+      if (toastTimeout.current) {
+        clearTimeout(toastTimeout.current);
+      }
+    },
+    [],
+  );
+
+  const showToast = (message: string) => {
+    if (toastTimeout.current) {
+      clearTimeout(toastTimeout.current);
+    }
+
+    setToastMessage(message);
+    toastTimeout.current = setTimeout(() => setToastMessage(null), 3000);
+  };
 
   const trimmedFoodDraft = foodDraft.trim();
   const canAddFood =
-    trimmedFoodDraft.length > 0 && !foods.includes(trimmedFoodDraft);
+    foods.length < 10 &&
+    trimmedFoodDraft.length > 0 &&
+    !foods.includes(trimmedFoodDraft);
 
-  const handlePressRecordAction = () => {
-    if (isEditingRecord) {
-      setRecord(recordDraft.trim());
-      setIsEditingRecord(false);
+  const handleChangeRating = async (nextRating: number) => {
+    const previousRating = rating;
+
+    setRating(nextRating);
+
+    try {
+      const savedRating = await updateTicketRating(
+        ticket.id,
+        nextRating === 0 ? null : nextRating,
+      );
+
+      setRating(savedRating ?? 0);
+    } catch (error) {
+      console.error('별점을 저장하지 못했습니다.', error);
+
+      setRating(previousRating);
+
+      Alert.alert('별점을 저장하지 못했어요', '잠시 후 다시 시도해 주세요');
+    }
+  };
+
+  const handlePressRecordAction = async () => {
+    if (!isEditingRecord) {
+      previousRecordDraft.current = record;
+      setRecordDraft(record);
       setIsRecordLimitExceeded(false);
+      setIsEditingRecord(true);
       return;
     }
 
-    previousRecordDraft.current = record;
-    setRecordDraft(record);
-    setIsRecordLimitExceeded(false);
-    setIsEditingRecord(true);
+    try {
+      const savedMemo = await updateTicketMemo(ticket.id, recordDraft);
+
+      setRecord(savedMemo ?? '');
+      setRecordDraft(savedMemo ?? '');
+      setIsEditingRecord(false);
+      setIsRecordLimitExceeded(false);
+    } catch (error) {
+      console.error('오늘의 기록을 저장하지 못했습니다.', error);
+
+      Alert.alert(
+        '오늘의 기록을 저장하지 못했어요',
+        '잠시 후 다시 시도해 주세요.',
+      );
+    }
   };
 
   const handleChangeRecordDraft = (value: string) => {
@@ -116,17 +209,140 @@ function TicketRecordPage({ ticket }: TicketRecordPageProps) {
     setIsEditingFoods(current => !current);
   };
 
-  const handleAddFood = () => {
+  const handleAddFood = async () => {
     if (!canAddFood) return;
 
-    setFoods(currentFoods => [...currentFoods, trimmedFoodDraft]);
-    setFoodDraft('');
+    const nextFoods = [...foods, trimmedFoodDraft];
+
+    try {
+      const savedFoods = await updateTicketFoods(ticket.id, nextFoods);
+
+      setFoods(savedFoods);
+      setFoodDraft('');
+    } catch (error) {
+      console.error('야구 푸드를 저장하지 못했습니다.', error);
+
+      Alert.alert(
+        '야구 푸드를 저장하지 못했어요',
+        '잠시 후 다시 시도해 주세요.',
+      );
+    }
   };
 
-  const handleRemoveFood = (foodToRemove: string) => {
-    setFoods(currentFoods =>
-      currentFoods.filter(food => food !== foodToRemove),
-    );
+  const handleRemoveFood = async (foodToRemove: string) => {
+    const nextFoods = foods.filter(food => food !== foodToRemove);
+
+    try {
+      const savedFoods = await updateTicketFoods(ticket.id, nextFoods);
+
+      setFoods(savedFoods);
+    } catch (error) {
+      console.error('야구 푸드를 삭제하지 못했습니다.', error);
+
+      Alert.alert(
+        '야구 푸드를 삭제하지 못했어요',
+        '잠시 후 다시 시도해 주세요.',
+      );
+    }
+  };
+
+  const handlePressOriginalTicket = () => {
+    if (isSavingOriginalTicket) return;
+
+    if (originalTicketImageUri) {
+      setIsOriginalTicketVisible(true);
+    } else {
+      setIsOriginalTicketSourceSheetVisible(true);
+    }
+  };
+
+  const requestOriginalTicketEdit = (action: 'change' | 'delete') => {
+    pendingOriginalTicketEditAction.current = action;
+    setIsOriginalTicketEditSheetVisible(false);
+  };
+
+  const handlePressOriginalTicketEdit = () => {
+    if (isSavingOriginalTicket) return;
+
+    shouldOpenOriginalTicketEditSheet.current = true;
+    setIsOriginalTicketVisible(false);
+  };
+
+  const handleOriginalTicketViewerClosed = () => {
+    if (!shouldOpenOriginalTicketEditSheet.current) return;
+
+    shouldOpenOriginalTicketEditSheet.current = false;
+    setIsOriginalTicketEditSheetVisible(true);
+  };
+
+  const handleOriginalTicketEditSheetClosed = () => {
+    const action = pendingOriginalTicketEditAction.current;
+    pendingOriginalTicketEditAction.current = null;
+
+    if (action === 'change') {
+      setIsOriginalTicketSourceSheetVisible(true);
+    } else if (action === 'delete') {
+      setIsOriginalTicketDeleteDialogVisible(true);
+    }
+  };
+
+  const requestOriginalTicketImage = (source: OriginalTicketImageSource) => {
+    pendingOriginalTicketImageSource.current = source;
+    setIsOriginalTicketSourceSheetVisible(false);
+  };
+
+  const handleOriginalTicketSourceSheetClosed = async () => {
+    const source = pendingOriginalTicketImageSource.current;
+    pendingOriginalTicketImageSource.current = null;
+
+    if (!source) return;
+
+    const selectedImage = await pickOriginalTicketImage(source);
+
+    if (!selectedImage) return;
+
+    setIsSavingOriginalTicket(true);
+
+    try {
+      const signedUrl = await updateTicketOriginalPhoto(
+        ticket.id,
+        selectedImage.base64,
+      );
+
+      setOriginalTicketImageUri(signedUrl);
+      showToast('원본 티켓 사진을 저장했어요');
+    } catch (error) {
+      console.error('원본 티켓 사진을 저장하지 못했습니다.', error);
+      Alert.alert(
+        '원본 티켓 사진을 저장하지 못했어요',
+        '잠시 후 다시 시도해 주세요.',
+      );
+    } finally {
+      setIsSavingOriginalTicket(false);
+    }
+  };
+
+  const handleDeleteOriginalTicket = async () => {
+    if (isSavingOriginalTicket) return;
+
+    setIsSavingOriginalTicket(true);
+
+    try {
+      await deleteTicketOriginalPhoto(ticket.id);
+
+      setIsOriginalTicketDeleteDialogVisible(false);
+      setIsOriginalTicketVisible(false);
+      setOriginalTicketImageUri(undefined);
+      showToast('원본 티켓 사진을 삭제했어요');
+    } catch (error) {
+      console.error('원본 티켓 사진을 삭제하지 못했습니다.', error);
+      Alert.alert(
+        '원본 티켓 사진을 삭제하지 못했어요',
+        '잠시 후 다시 시도해 주세요.',
+      );
+    } finally {
+      setIsSavingOriginalTicket(false);
+    }
   };
 
   return (
@@ -211,31 +427,51 @@ function TicketRecordPage({ ticket }: TicketRecordPageProps) {
           ) : null}
         </View>
 
-        {ticket.originalTicketImageUri ? (
-          <Pressable
-            style={({ pressed }) => [
-              styles.originalTicketButton,
-              pressed && styles.originalTicketButtonPressed,
-            ]}
-            onPress={() => setIsOriginalTicketVisible(true)}
-            accessibilityRole="button"
-            accessibilityLabel="원본 티켓 전체 보기"
-          >
-            <AppText style={styles.originalTicketTitle}>원본 티켓</AppText>
+        <View style={styles.visitInfoArea}>
+          <View style={[styles.detailCard, styles.visitInfoCard]}>
+            <View style={styles.blockHeader}>
+              <AppText style={styles.blockTitle}>좌석</AppText>
 
-            <View style={styles.originalTicketAction}>
-              <AppText style={styles.originalTicketActionText}>보기</AppText>
-              <ChevronRight
-                size={18}
-                color={colors.textSecondary}
-                strokeWidth={2.2}
+              <InlineActionButton
+                label={seatName ? '수정' : '입력'}
+                tone="primary"
+                onPress={() => setIsSeatSheetVisible(true)}
+                accessibilityLabel={
+                  seatName
+                    ? `좌석 정보 ${seatName}, 수정하기`
+                    : '좌석 정보 입력하기'
+                }
               />
             </View>
-          </Pressable>
-        ) : null}
+
+            <AppText
+              style={[styles.seatValue, !seatName && styles.placeholderText]}
+              numberOfLines={2}
+            >
+              {seatName ?? '좌석을 입력해 주세요'}
+            </AppText>
+
+            <View style={[styles.cardDivider, styles.visitInfoDivider]} />
+
+            <View style={styles.blockHeader}>
+              <AppText style={styles.blockTitle}>원본 티켓</AppText>
+
+              <InlineActionButton
+                label={originalTicketImageUri ? '보기' : '추가'}
+                tone="primary"
+                onPress={handlePressOriginalTicket}
+                accessibilityLabel={
+                  originalTicketImageUri
+                    ? '원본 티켓 전체 보기'
+                    : '원본 티켓 사진 추가'
+                }
+              />
+            </View>
+          </View>
+        </View>
 
         <View style={styles.recordArea}>
-          <View style={styles.recordCard}>
+          <View style={styles.detailCard}>
             <View style={styles.ratingBlock}>
               <View style={styles.blockHeader}>
                 <AppText style={styles.blockTitle}>
@@ -243,7 +479,7 @@ function TicketRecordPage({ ticket }: TicketRecordPageProps) {
                 </AppText>
               </View>
 
-              <TicketStarRating value={rating} onChange={setRating} />
+              <TicketStarRating value={rating} onChange={handleChangeRating} />
             </View>
 
             <View style={styles.cardDivider} />
@@ -273,6 +509,7 @@ function TicketRecordPage({ ticket }: TicketRecordPageProps) {
                   <TextInput
                     value={recordDraft}
                     onChangeText={handleChangeRecordDraft}
+                    maxLength={300}
                     style={styles.recordInput}
                     placeholder="오늘의 기록을 작성해주세요"
                     placeholderTextColor={colors.textSecondary}
@@ -419,12 +656,78 @@ function TicketRecordPage({ ticket }: TicketRecordPageProps) {
         </View>
       </ScrollView>
 
-      {ticket.originalTicketImageUri ? (
+      <TicketSeatEditSheet
+        visible={isSeatSheetVisible}
+        ticketId={ticket.id}
+        seatName={seatName}
+        onSaved={setSeatName}
+        onClose={() => setIsSeatSheetVisible(false)}
+      />
+
+      <AppBottomSheet
+        visible={isOriginalTicketEditSheetVisible}
+        title="원본 티켓 편집"
+        onClose={() => setIsOriginalTicketEditSheetVisible(false)}
+        onClosed={handleOriginalTicketEditSheetClosed}
+        closeAccessibilityLabel="원본 티켓 편집 닫기"
+      >
+        <View style={styles.ticketActionList}>
+          <TicketPhotoActionRow
+            title="사진 변경"
+            onPress={() => requestOriginalTicketEdit('change')}
+          />
+
+          <View style={styles.ticketActionDivider} />
+
+          <TicketPhotoActionRow
+            title="사진 삭제"
+            tone="destructive"
+            onPress={() => requestOriginalTicketEdit('delete')}
+          />
+        </View>
+      </AppBottomSheet>
+
+      <AppBottomSheet
+        visible={isOriginalTicketSourceSheetVisible}
+        title={originalTicketImageUri ? '티켓 사진 변경' : '티켓 사진 추가'}
+        description="티켓 앞면이 잘 보이는 사진을 선택해 주세요"
+        onClose={() => setIsOriginalTicketSourceSheetVisible(false)}
+        onClosed={handleOriginalTicketSourceSheetClosed}
+        closeAccessibilityLabel="티켓 사진 선택 닫기"
+      >
+        <View style={styles.ticketActionList}>
+          <TicketPhotoActionRow
+            title="사진 촬영"
+            onPress={() => requestOriginalTicketImage('camera')}
+          />
+
+          <View style={styles.ticketActionDivider} />
+
+          <TicketPhotoActionRow
+            title="앨범에서 선택"
+            onPress={() => requestOriginalTicketImage('library')}
+          />
+        </View>
+      </AppBottomSheet>
+
+      <ConfirmDialog
+        visible={isOriginalTicketDeleteDialogVisible}
+        title="원본 티켓 사진을 삭제할까요?"
+        description="삭제한 사진은 되돌릴 수 없어요."
+        confirmLabel="삭제"
+        confirmTone="destructive"
+        isLoading={isSavingOriginalTicket}
+        onConfirm={handleDeleteOriginalTicket}
+        onCancel={() => setIsOriginalTicketDeleteDialogVisible(false)}
+      />
+
+      {originalTicketImageUri ? (
         <Modal
           visible={isOriginalTicketVisible}
           animationType="fade"
           presentationStyle="fullScreen"
           onRequestClose={() => setIsOriginalTicketVisible(false)}
+          onDismiss={handleOriginalTicketViewerClosed}
         >
           <View
             style={[
@@ -450,16 +753,29 @@ function TicketRecordPage({ ticket }: TicketRecordPageProps) {
               >
                 <X size={24} color={colors.text} strokeWidth={2.2} />
               </Pressable>
+
+              <View style={styles.originalTicketEditButton}>
+                <InlineActionButton
+                  label="편집"
+                  tone="primary"
+                  onPress={handlePressOriginalTicketEdit}
+                  accessibilityLabel="원본 티켓 사진 편집"
+                />
+              </View>
             </View>
 
             <Image
-              source={{ uri: ticket.originalTicketImageUri }}
+              source={{ uri: originalTicketImageUri }}
               style={styles.originalTicketImage}
               resizeMode="contain"
               accessibilityLabel="원본 티켓 이미지"
             />
           </View>
         </Modal>
+      ) : null}
+
+      {toastMessage ? (
+        <AppSnackbar message={toastMessage} horizontalInset={24} />
       ) : null}
     </KeyboardAvoidingView>
   );
@@ -495,6 +811,39 @@ function getFavoriteTeamMatchResult(
   const opponentScore = isAwayTeam ? ticket.homeScore : ticket.awayScore;
 
   return favoriteTeamScore > opponentScore ? 'win' : 'lose';
+}
+
+interface TicketPhotoActionRowProps {
+  title: string;
+  tone?: 'default' | 'destructive';
+  onPress: () => void;
+}
+
+function TicketPhotoActionRow({
+  title,
+  tone = 'default',
+  onPress,
+}: TicketPhotoActionRowProps) {
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.ticketActionRow,
+        pressed && styles.ticketActionRowPressed,
+      ]}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+    >
+      <AppText
+        style={[
+          styles.ticketActionText,
+          tone === 'destructive' && styles.ticketActionTextDestructive,
+        ]}
+      >
+        {title}
+      </AppText>
+    </Pressable>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -595,37 +944,24 @@ const styles = StyleSheet.create({
   matchResultTextDraw: {
     color: colors.textSecondary,
   },
-  originalTicketButton: {
-    height: 58,
-    marginHorizontal: 24,
-    marginTop: 8,
-    paddingHorizontal: 18,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    borderCurve: 'continuous',
-    backgroundColor: colors.surface,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+
+  visitInfoArea: {
+    paddingHorizontal: 24,
+    paddingTop: 8,
   },
-  originalTicketButtonPressed: {
-    backgroundColor: colors.primarySoft,
+  visitInfoCard: {
+    paddingVertical: 12,
   },
-  originalTicketTitle: {
-    fontSize: 16,
-    fontFamily: fonts.bold,
+  seatValue: {
+    minHeight: 24,
+    marginTop: 0,
+    fontSize: 15,
+    lineHeight: 22,
+    fontFamily: fonts.regular,
     color: colors.text,
   },
-  originalTicketAction: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-  },
-  originalTicketActionText: {
-    fontSize: 14,
-    fontFamily: fonts.semiBold,
-    color: colors.textSecondary,
+  visitInfoDivider: {
+    marginVertical: 12,
   },
   originalTicketViewer: {
     flex: 1,
@@ -643,7 +979,7 @@ const styles = StyleSheet.create({
   },
   originalTicketCloseButton: {
     position: 'absolute',
-    right: 14,
+    left: 14,
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -653,16 +989,44 @@ const styles = StyleSheet.create({
   originalTicketCloseButtonPressed: {
     backgroundColor: colors.background,
   },
+  originalTicketEditButton: {
+    position: 'absolute',
+    right: 10,
+  },
   originalTicketImage: {
     flex: 1,
     width: '100%',
     marginVertical: 16,
   },
+  ticketActionList: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+  },
+  ticketActionRow: {
+    height: 58,
+    paddingHorizontal: 4,
+    justifyContent: 'center',
+  },
+  ticketActionRowPressed: {
+    backgroundColor: colors.background,
+  },
+  ticketActionText: {
+    fontSize: 16,
+    fontFamily: fonts.bold,
+    color: colors.text,
+  },
+  ticketActionTextDestructive: {
+    color: '#D92D20',
+  },
+  ticketActionDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
+  },
   recordArea: {
     paddingHorizontal: 24,
     paddingTop: 20,
   },
-  recordCard: {
+  detailCard: {
     paddingHorizontal: 18,
     paddingVertical: 18,
     borderWidth: 1,

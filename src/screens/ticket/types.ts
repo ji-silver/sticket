@@ -5,7 +5,12 @@ export interface Ticket {
   matchDate: string;
   matchTime: string;
   stadiumName: string;
-  seatName: string;
+
+  seatName: string | null;
+  rating: number | null;
+  memo: string | null;
+  foods: string[];
+
   homeTeamName: string;
   awayTeamName: string;
   homeScore: number | null;
