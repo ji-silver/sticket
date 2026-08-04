@@ -26,6 +26,7 @@ import OriginalTicketImageField, {
 import { getGamesByDate, KboGame } from '../../features/game/game.service.ts';
 import EmptyCard from '../../components/common/EmptyCard.tsx';
 import { createTicket } from '../../features/ticket/ticket.service.ts';
+import { useAuth } from '../../features/auth/AuthProvider.tsx';
 import { getTodayInKorea } from '../../lib/date.ts';
 import type { RouteProp } from '@react-navigation/native';
 
@@ -35,6 +36,8 @@ function AddTicketScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<AddTicketRouteProp>();
+  const { profile } = useAuth();
+  const favoriteTeamName = profile?.favorite_team?.short_name;
 
   const today = getTodayInKorea();
   const routeInitialDate = route.params?.initialDate;
@@ -57,6 +60,7 @@ function AddTicketScreen() {
 
     const loadGames = async () => {
       setGames([]);
+      setSelectedGameId(null);
       setGameLoadError(null);
       setIsLoadingGames(true);
 
@@ -65,6 +69,18 @@ function AddTicketScreen() {
 
         if (!isCancelled) {
           setGames(loadedGames);
+
+          const favoriteTeamGames = favoriteTeamName
+            ? loadedGames.filter(
+                game =>
+                  game.awayTeamName === favoriteTeamName ||
+                  game.homeTeamName === favoriteTeamName,
+              )
+            : [];
+
+          if (favoriteTeamGames.length === 1) {
+            setSelectedGameId(favoriteTeamGames[0].id);
+          }
         }
       } catch (error) {
         console.error('경기 정보를 불러오지 못했습니다.', error);
@@ -84,7 +100,7 @@ function AddTicketScreen() {
     return () => {
       isCancelled = true;
     };
-  }, [isCalendarOpen, selectedDate]);
+  }, [favoriteTeamName, isCalendarOpen, selectedDate]);
 
   const [seatName, setSeatName] = useState('');
   const [originalTicketImage, setOriginalTicketImage] =

@@ -13,6 +13,7 @@ import { createTicket } from '../../features/ticket/ticket.service';
 
 const mockGoBack = jest.fn();
 const mockUseRoute = jest.fn();
+const mockUseAuth = jest.fn();
 
 jest.mock('@react-navigation/core', () => ({
   useNavigation: () => ({ goBack: mockGoBack }),
@@ -25,6 +26,10 @@ jest.mock('../../features/game/game.service.ts', () => ({
 
 jest.mock('../../features/ticket/ticket.service.ts', () => ({
   createTicket: jest.fn(),
+}));
+
+jest.mock('../../features/auth/AuthProvider.tsx', () => ({
+  useAuth: () => mockUseAuth(),
 }));
 
 jest.mock('../../lib/date.ts', () => ({
@@ -67,6 +72,9 @@ describe('AddTicketScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseRoute.mockReturnValue({ params: { initialDate: undefined } });
+    mockUseAuth.mockReturnValue({
+      profile: { favorite_team: { short_name: '키움' } },
+    });
   });
 
   const setup = async () => {
@@ -97,6 +105,59 @@ describe('AddTicketScreen', () => {
   });
 
   describe('달력 및 경기 연동', () => {
+    it('응원 구단 경기가 하나면 자동 선택하고 다른 경기로 변경할 수 있다', async () => {
+      mockUseAuth.mockReturnValue({
+        profile: { favorite_team: { short_name: 'LG' } },
+      });
+      (getGamesByDate as jest.Mock).mockResolvedValueOnce([
+        {
+          id: 'favorite-game',
+          awayTeamName: '두산',
+          homeTeamName: 'LG',
+          time: '18:30',
+          stadiumName: '잠실',
+        },
+        {
+          id: 'other-game',
+          awayTeamName: '키움',
+          homeTeamName: 'KIA',
+          time: '18:30',
+          stadiumName: '광주',
+        },
+      ]);
+
+      await setup();
+      fireEvent.press(screen.getByText('Mock Date 1'));
+
+      const favoriteGame = await screen.findByRole('button', {
+        name: /두산 원정 대 LG 홈/,
+      });
+      const otherGame = screen.getByRole('button', {
+        name: /키움 원정 대 KIA 홈/,
+      });
+
+      await waitFor(() => {
+        expect(favoriteGame.props.accessibilityState).toMatchObject({
+          selected: true,
+        });
+      });
+
+      fireEvent.press(otherGame);
+
+      await waitFor(() => {
+        expect(
+          screen.getByRole('button', {
+            name: /키움 원정 대 KIA 홈/,
+          }).props.accessibilityState,
+        ).toMatchObject({ selected: true });
+        expect(
+          screen.getByRole('button', {
+            name: /두산 원정 대 LG 홈/,
+          }).props.accessibilityState,
+        ).toMatchObject({ selected: false });
+      });
+    });
+
     it('달력에서 날짜를 선택하면, 해당 날짜의 경기를 서버에서 불러온다', async () => {
       (getGamesByDate as jest.Mock).mockResolvedValueOnce([
         {
