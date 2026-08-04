@@ -15,6 +15,8 @@ export interface KboGame {
 export interface TeamCalendarGame {
   id: string;
   date: string;
+  time: string;
+  stadiumName: string;
   homeAway: 'H' | 'A';
   opponentName: string;
   status: string;
@@ -74,6 +76,28 @@ export async function getGamesByDate(date: string): Promise<KboGame[]> {
   });
 }
 
+export async function getLeagueGameDatesByMonth(
+  year: number,
+  month: number,
+): Promise<string[]> {
+  const monthText = String(month).padStart(2, '0');
+  const lastDay = new Date(year, month, 0).getDate();
+  const startDate = `${year}-${monthText}-01`;
+  const endDate = `${year}-${monthText}-${String(lastDay).padStart(2, '0')}`;
+
+  const { data, error } = await supabase
+    .from('games')
+    .select('game_date')
+    .gte('game_date', startDate)
+    .lte('game_date', endDate);
+
+  if (error) {
+    throw error;
+  }
+
+  return Array.from(new Set(data.map(game => game.game_date)));
+}
+
 // 해당 월의 시작일과 마지막일을 계산하여, 해당 월의 경기 정보를 가져오는 함수
 export async function getTeamGamesByMonth(
   teamId: string,
@@ -92,6 +116,8 @@ export async function getTeamGamesByMonth(
       `
         game_key,
         game_date,
+        start_time,
+        stadium_name,
         status,
         away_team_id,
         home_team_id,
@@ -131,6 +157,8 @@ export async function getTeamGamesByMonth(
     return {
       id: game.game_key,
       date: game.game_date,
+      time: game.start_time?.slice(0, 5) ?? '시간 미정',
+      stadiumName: game.stadium_name ?? '경기장 미정',
       homeAway: isHome ? 'H' : 'A',
       opponentName: isHome
         ? game.awayTeam.short_name
