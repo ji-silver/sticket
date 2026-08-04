@@ -121,13 +121,20 @@ function TicketCard({ ticket, onPress }: TicketCardProps) {
         <View style={styles.rightCutout} />
       </View>
 
-      <View style={styles.stubArea}>
-        <View style={styles.seatBox}>
-          <AppText style={styles.stubSeatLabel}>좌석</AppText>
-          <AppText style={styles.stubSeat} numberOfLines={1}>
-            {ticket.seatName}
-          </AppText>
-        </View>
+      <View
+        style={[
+          styles.stubArea,
+          !ticket.seatName && styles.stubAreaWithoutSeat,
+        ]}
+      >
+        {ticket.seatName ? (
+          <View style={styles.seatBox}>
+            <AppText style={styles.stubSeatLabel}>좌석</AppText>
+            <AppText style={styles.stubSeat} numberOfLines={1}>
+              {ticket.seatName}
+            </AppText>
+          </View>
+        ) : null}
 
         <View style={styles.barcode}>
           {barcodeModules.map((width, index) => (
@@ -312,6 +319,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+  },
+
+  stubAreaWithoutSeat: {
+    justifyContent: 'flex-end',
   },
 
   seatBox: {
