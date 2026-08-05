@@ -1,5 +1,7 @@
 import {
+  ActivityIndicator,
   Alert,
+  AppState,
   Keyboard,
   KeyboardAvoidingView,
   type LayoutChangeEvent,
@@ -7,9 +9,10 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../../../../styles/colors.ts';
+import AppSnackbar from '../../../../components/common/AppSnackbar.tsx';
 import AppText from '../../../../components/common/AppText.tsx';
 import GridPaper from './GridPaper.tsx';
 import DiaryPhotoItem from './DiaryPhotoItem.tsx';
@@ -24,7 +27,9 @@ import {
   DIARY_STICKER_PACKS,
   type DiaryStickerDefinition,
 } from './diaryStickerPacks.ts';
-import DiaryDrawingCanvas from './DiaryDrawingCanvas.tsx';
+import DiaryDrawingCanvas, {
+  type DiaryDrawingCanvasRef,
+} from './DiaryDrawingCanvas.tsx';
 import DiaryBottomToolbar, { type DiaryToolId } from './DiaryBottomToolbar.tsx';
 import DiaryPaperSelector, { type PaperType } from './DiaryPaperSelector.tsx';
 import DiaryTextItem from './DiaryTextItem.tsx';
@@ -35,8 +40,25 @@ import {
   type DiaryTextFrame,
   type DiaryTextStyle,
 } from './diaryText.ts';
+import {
+  getTicketDiaryData,
+  getTicketDiaryDrawingBase64,
+  getTicketDiaryPhotoUrls,
+  removeTicketDiaryFiles,
+  TICKET_DIARY_VERSION,
+  updateTicketDiaryData,
+  uploadTicketDiaryDrawing,
+  uploadTicketDiaryPhoto,
+  type SavedDiaryItem,
+} from '../../../../features/ticket/ticketDiary.service.ts';
 
 const MAXIMUM_DIARY_PHOTO_COUNT = 2;
+const AUTOSAVE_DELAY_MS = 800;
+const AUTOSAVE_ERROR_MESSAGE = '변경 내용을 저장하지 못했어요';
+
+interface TicketDiaryPageProps {
+  ticketId: string;
+}
 
 type DiaryItem =
   | {
@@ -67,6 +89,145 @@ type SelectedDiaryItem =
     }
   | null;
 
+interface DiarySaveSnapshot {
+  version: number;
+  paperType: PaperType;
+  items: DiaryItem[];
+  drawingBase64: string | null;
+  drawingRevision: number;
+}
+
+async function prepareDiaryItemsForSave(
+  ticketId: string,
+  currentItems: DiaryItem[],
+  uploadedPhotoPathById: Map<string, string>,
+): Promise<SavedDiaryItem[]> {
+  const savedItems: SavedDiaryItem[] = [];
+
+  for (const item of currentItems) {
+    if (item.type === 'photo') {
+      let storagePath =
+        item.data.storagePath ?? uploadedPhotoPathById.get(item.data.id);
+
+      if (!storagePath) {
+        if (!item.data.base64) {
+          throw new Error('저장할 다이어리 사진을 찾을 수 없습니다.');
+        }
+
+        storagePath = await uploadTicketDiaryPhoto(
+          ticketId,
+          item.data.id,
+          item.data.base64,
+        );
+
+        uploadedPhotoPathById.set(item.data.id, storagePath);
+      }
+
+      savedItems.push({
+        type: 'photo',
+        data: {
+          id: item.data.id,
+          storagePath,
+          width: item.data.width,
+          height: item.data.height,
+          matrix: item.data.matrix,
+        },
+      });
+
+      continue;
+    }
+
+    if (item.type === 'sticker') {
+      savedItems.push({
+        type: 'sticker',
+        data: {
+          id: item.data.id,
+          stickerId: item.data.stickerId,
+          width: item.data.width,
+          height: item.data.height,
+          matrix: item.data.matrix,
+        },
+      });
+
+      continue;
+    }
+
+    if (item.data.text.trim().length > 0) {
+      savedItems.push({
+        type: 'text',
+        data: item.data,
+      });
+    }
+  }
+
+  return savedItems;
+}
+
+function findDiaryStickerDefinition(stickerId: string) {
+  for (const pack of DIARY_STICKER_PACKS) {
+    const sticker = pack.stickers.find(item => item.id === stickerId);
+
+    if (sticker) {
+      return sticker;
+    }
+  }
+
+  return null;
+}
+
+async function restoreDiaryItems(
+  savedItems: SavedDiaryItem[],
+): Promise<DiaryItem[]> {
+  const photoPaths = savedItems.flatMap(item =>
+    item.type === 'photo' ? [item.data.storagePath] : [],
+  );
+
+  const signedUrlByPath = await getTicketDiaryPhotoUrls(photoPaths);
+
+  return savedItems.map(item => {
+    if (item.type === 'photo') {
+      const uri = signedUrlByPath.get(item.data.storagePath);
+
+      if (!uri) {
+        throw new Error('저장된 다이어리 사진을 불러올 수 없습니다.');
+      }
+
+      return {
+        type: 'photo',
+        data: {
+          ...item.data,
+          uri,
+          base64: null,
+          storagePath: item.data.storagePath,
+        },
+      };
+    }
+
+    if (item.type === 'sticker') {
+      const stickerDefinition = findDiaryStickerDefinition(item.data.stickerId);
+
+      if (!stickerDefinition) {
+        throw new Error(
+          `스티커 정보를 찾을 수 없습니다: ${item.data.stickerId}`,
+        );
+      }
+
+      return {
+        type: 'sticker',
+        data: {
+          ...item.data,
+          source: stickerDefinition.source,
+        },
+      };
+    }
+
+    return {
+      type: 'text',
+      data: item.data,
+    };
+  });
+}
+
 function moveDiaryItemToTop(
   currentItems: DiaryItem[],
   selectedItem: Exclude<SelectedDiaryItem, null>,
@@ -91,7 +252,35 @@ function moveDiaryItemToTop(
   ];
 }
 
-function TicketDiaryPage() {
+function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
+  const drawingCanvasRef = useRef<DiaryDrawingCanvasRef>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [drawingRevision, setDrawingRevision] = useState(0);
+  const [snackbarMessage, setSnackbarMessage] = useState<string | null>(null);
+
+  const isMountedRef = useRef(true);
+  const isAutosaveReadyRef = useRef(false);
+  const isRestoringDrawingRef = useRef(false);
+  const drawingCaptureVersionRef = useRef(0);
+  const drawingBase64Ref = useRef<string | null>(null);
+  const drawingStoragePathRef = useRef<string | null>(null);
+  const uploadedDrawingRevisionRef = useRef(0);
+  const uploadedPhotoPathByIdRef = useRef(new Map<string, string>());
+  const managedStoragePathsRef = useRef(new Set<string>());
+  const latestSnapshotRef = useRef<DiarySaveSnapshot | null>(null);
+  const nextSnapshotVersionRef = useRef(0);
+  const lastQueuedVersionRef = useRef(0);
+  const lastSavedVersionRef = useRef(0);
+  const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const enqueueDiarySaveRef = useRef<
+    (snapshot: DiarySaveSnapshot) => Promise<void>
+  >(async () => {});
+  const showSnackbarRef = useRef<(message: string) => void>(() => {});
+  const showAutosaveErrorRef = useRef<(error: unknown) => void>(() => {});
+  const snackbarTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+
   const [selectedTool, setSelectedTool] = useState<DiaryToolId | null>(null);
   const [paperType, setPaperType] = useState<PaperType>('plain');
   const [selectedStickerPackId, setSelectedStickerPackId] = useState(
@@ -116,6 +305,319 @@ function TicketDiaryPage() {
           item => item.type === 'text' && item.data.id === selectedItem.id,
         )
       : null;
+
+  const showSnackbar = (message: string) => {
+    if (!isMountedRef.current) {
+      return;
+    }
+
+    if (snackbarTimeoutRef.current) {
+      clearTimeout(snackbarTimeoutRef.current);
+    }
+
+    setSnackbarMessage(message);
+    snackbarTimeoutRef.current = setTimeout(
+      () => setSnackbarMessage(null),
+      3000,
+    );
+  };
+
+  const showAutosaveError = (error: unknown) => {
+    console.error('다이어리를 자동 저장하지 못했습니다.', error);
+    showSnackbar(AUTOSAVE_ERROR_MESSAGE);
+  };
+
+  const saveDiarySnapshot = async (snapshot: DiarySaveSnapshot) => {
+    const savedItems = await prepareDiaryItemsForSave(
+      ticketId,
+      snapshot.items,
+      uploadedPhotoPathByIdRef.current,
+    );
+
+    for (const item of savedItems) {
+      if (item.type === 'photo') {
+        managedStoragePathsRef.current.add(item.data.storagePath);
+      }
+    }
+
+    let drawingPath = drawingStoragePathRef.current;
+
+    if (
+      snapshot.drawingRevision > uploadedDrawingRevisionRef.current &&
+      snapshot.drawingBase64
+    ) {
+      drawingPath = await uploadTicketDiaryDrawing(
+        ticketId,
+        snapshot.drawingBase64,
+      );
+
+      drawingStoragePathRef.current = drawingPath;
+      uploadedDrawingRevisionRef.current = snapshot.drawingRevision;
+      managedStoragePathsRef.current.add(drawingPath);
+    }
+
+    await updateTicketDiaryData(ticketId, {
+      version: TICKET_DIARY_VERSION,
+      paperType: snapshot.paperType,
+      items: savedItems,
+      drawingPath,
+    });
+
+    const nextStoragePaths = new Set(
+      savedItems.flatMap(item =>
+        item.type === 'photo' ? [item.data.storagePath] : [],
+      ),
+    );
+
+    if (drawingPath) {
+      nextStoragePaths.add(drawingPath);
+    }
+
+    const removedStoragePaths = Array.from(
+      managedStoragePathsRef.current,
+    ).filter(path => !nextStoragePaths.has(path));
+
+    const activePhotoIds = new Set(
+      savedItems.flatMap(item =>
+        item.type === 'photo' ? [item.data.id] : [],
+      ),
+    );
+
+    for (const photoId of uploadedPhotoPathByIdRef.current.keys()) {
+      if (!activePhotoIds.has(photoId)) {
+        uploadedPhotoPathByIdRef.current.delete(photoId);
+      }
+    }
+
+    let didCleanupStorage = true;
+
+    if (removedStoragePaths.length > 0) {
+      try {
+        await removeTicketDiaryFiles(removedStoragePaths);
+      } catch (error) {
+        console.error('사용하지 않는 다이어리 파일을 정리하지 못했습니다.', error);
+        didCleanupStorage = false;
+      }
+    }
+
+    managedStoragePathsRef.current = didCleanupStorage
+      ? nextStoragePaths
+      : new Set([...nextStoragePaths, ...removedStoragePaths]);
+
+    lastSavedVersionRef.current = Math.max(
+      lastSavedVersionRef.current,
+      snapshot.version,
+    );
+  };
+
+  const enqueueDiarySave = (snapshot: DiarySaveSnapshot) => {
+    if (snapshot.version <= lastQueuedVersionRef.current) {
+      return saveQueueRef.current;
+    }
+
+    lastQueuedVersionRef.current = snapshot.version;
+
+    const queuedSave = saveQueueRef.current
+      .catch(() => undefined)
+      .then(() => saveDiarySnapshot(snapshot))
+      .catch(error => {
+        if (lastQueuedVersionRef.current === snapshot.version) {
+          lastQueuedVersionRef.current = lastSavedVersionRef.current;
+        }
+
+        throw error;
+      });
+
+    saveQueueRef.current = queuedSave;
+
+    return queuedSave;
+  };
+
+  enqueueDiarySaveRef.current = enqueueDiarySave;
+  showSnackbarRef.current = showSnackbar;
+  showAutosaveErrorRef.current = showAutosaveError;
+
+  useEffect(() => {
+    let isActive = true;
+
+    async function loadDiary() {
+      setIsLoading(true);
+      isAutosaveReadyRef.current = false;
+      latestSnapshotRef.current = null;
+      nextSnapshotVersionRef.current = 0;
+      lastQueuedVersionRef.current = 0;
+      lastSavedVersionRef.current = 0;
+      uploadedDrawingRevisionRef.current = 0;
+      uploadedPhotoPathByIdRef.current.clear();
+      managedStoragePathsRef.current.clear();
+
+      try {
+        const diaryData = await getTicketDiaryData(ticketId);
+
+        const [restoredItems, drawingBase64] = await Promise.all([
+          restoreDiaryItems(diaryData.items),
+          diaryData.drawingPath
+            ? getTicketDiaryDrawingBase64(diaryData.drawingPath)
+            : Promise.resolve(null),
+        ]);
+
+        if (!isActive) {
+          return;
+        }
+
+        for (const item of diaryData.items) {
+          if (item.type === 'photo') {
+            uploadedPhotoPathByIdRef.current.set(
+              item.data.id,
+              item.data.storagePath,
+            );
+            managedStoragePathsRef.current.add(item.data.storagePath);
+          }
+        }
+
+        if (diaryData.drawingPath) {
+          managedStoragePathsRef.current.add(diaryData.drawingPath);
+        }
+
+        drawingBase64Ref.current = drawingBase64;
+        drawingStoragePathRef.current = diaryData.drawingPath;
+        drawingCaptureVersionRef.current = 0;
+        setDrawingRevision(0);
+
+        setPaperType(diaryData.paperType);
+        setItems(restoredItems);
+        setSelectedItem(null);
+        setEditingTextId(null);
+        setSelectedTool(null);
+
+        if (!drawingCanvasRef.current) {
+          throw new Error('그림 캔버스를 불러올 수 없습니다.');
+        }
+
+        isRestoringDrawingRef.current = true;
+
+        try {
+          if (drawingBase64) {
+            try {
+              await drawingCanvasRef.current.loadBase64Data(drawingBase64);
+            } catch (drawingError) {
+              console.error(
+                '저장된 드로잉을 불러오지 못했습니다.',
+                drawingError,
+              );
+              drawingCanvasRef.current.clear();
+              showSnackbarRef.current('드로잉을 불러오지 못했어요');
+            }
+          } else {
+            drawingCanvasRef.current.clear();
+          }
+        } finally {
+          isRestoringDrawingRef.current = false;
+        }
+      } catch (error) {
+        if (!isActive) {
+          return;
+        }
+
+        console.error('다이어리를 불러오지 못했습니다.', error);
+
+        Alert.alert(
+          '다이어리를 불러오지 못했어요',
+          '잠시 후 다시 시도해 주세요.',
+        );
+      } finally {
+        if (isActive) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadDiary();
+
+    return () => {
+      isActive = false;
+    };
+  }, [ticketId]);
+
+  useEffect(() => {
+    if (isLoading) {
+      return;
+    }
+
+    if (!isAutosaveReadyRef.current) {
+      isAutosaveReadyRef.current = true;
+      return;
+    }
+
+    const snapshot: DiarySaveSnapshot = {
+      version: nextSnapshotVersionRef.current + 1,
+      paperType,
+      items,
+      drawingBase64: drawingBase64Ref.current,
+      drawingRevision,
+    };
+
+    nextSnapshotVersionRef.current = snapshot.version;
+    latestSnapshotRef.current = snapshot;
+
+    const autosaveTimer = setTimeout(() => {
+      enqueueDiarySaveRef.current(snapshot).catch(error => {
+        showAutosaveErrorRef.current(error);
+      });
+    }, AUTOSAVE_DELAY_MS);
+
+    return () => {
+      clearTimeout(autosaveTimer);
+    };
+  }, [drawingRevision, isLoading, items, paperType]);
+
+  useEffect(() => {
+    const appStateSubscription = AppState.addEventListener(
+      'change',
+      nextAppState => {
+        if (nextAppState === 'active') {
+          return;
+        }
+
+        const latestSnapshot = latestSnapshotRef.current;
+
+        if (
+          latestSnapshot &&
+          latestSnapshot.version > lastSavedVersionRef.current
+        ) {
+          enqueueDiarySaveRef.current(latestSnapshot).catch(error => {
+            showAutosaveErrorRef.current(error);
+          });
+        }
+      },
+    );
+
+    return () => {
+      appStateSubscription.remove();
+    };
+  }, []);
+
+  useEffect(
+    () => () => {
+      isMountedRef.current = false;
+
+      if (snackbarTimeoutRef.current) {
+        clearTimeout(snackbarTimeoutRef.current);
+      }
+
+      const latestSnapshot = latestSnapshotRef.current;
+
+      if (
+        latestSnapshot &&
+        latestSnapshot.version > lastSavedVersionRef.current
+      ) {
+        enqueueDiarySaveRef.current(latestSnapshot).catch(error => {
+          console.error('화면을 닫기 전 다이어리를 저장하지 못했습니다.', error);
+        });
+      }
+    },
+    [],
+  );
 
   const handleEditorLayout = ({ nativeEvent }: LayoutChangeEvent) => {
     const { width, height } = nativeEvent.layout;
@@ -480,6 +982,28 @@ function TicketDiaryPage() {
     }
   };
 
+  const handleDrawingChange = async () => {
+    if (isRestoringDrawingRef.current || !drawingCanvasRef.current) {
+      return;
+    }
+
+    const captureVersion = drawingCaptureVersionRef.current + 1;
+    drawingCaptureVersionRef.current = captureVersion;
+
+    try {
+      const drawingBase64 = await drawingCanvasRef.current.getBase64Data();
+
+      if (captureVersion !== drawingCaptureVersionRef.current) {
+        return;
+      }
+
+      drawingBase64Ref.current = drawingBase64;
+      setDrawingRevision(currentRevision => currentRevision + 1);
+    } catch (error) {
+      showAutosaveError(error);
+    }
+  };
+
   const handleFinishDrawing = () => {
     setSelectedTool(null);
   };
@@ -570,7 +1094,11 @@ function TicketDiaryPage() {
             );
           })}
 
-          <DiaryDrawingCanvas isDrawingMode={selectedTool === 'drawing'} />
+          <DiaryDrawingCanvas
+            ref={drawingCanvasRef}
+            isDrawingMode={selectedTool === 'drawing'}
+            onDrawingChange={handleDrawingChange}
+          />
 
           {selectedTool === 'drawing' ? (
             <Pressable
@@ -618,6 +1146,16 @@ function TicketDiaryPage() {
           />
         ) : null}
       </KeyboardAvoidingView>
+
+      {isLoading ? (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator color={colors.primary} />
+        </View>
+      ) : null}
+
+      {snackbarMessage ? (
+        <AppSnackbar message={snackbarMessage} horizontalInset={24} />
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -668,5 +1206,13 @@ const styles = StyleSheet.create({
 
   pressedDrawingDoneButton: {
     backgroundColor: colors.primarySoft,
+  },
+
+  loadingOverlay: {
+    ...StyleSheet.absoluteFill,
+    zIndex: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
   },
 });

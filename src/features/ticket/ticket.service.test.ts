@@ -7,7 +7,11 @@ jest.mock('../../lib/supabase.ts', () => ({
 }));
 
 import { supabase } from '../../lib/supabase.ts';
-import { getTickets, updateTicketOriginalPhoto } from './ticket.service.ts';
+import {
+  deleteTicket,
+  getTickets,
+  updateTicketOriginalPhoto,
+} from './ticket.service.ts';
 
 describe('getTickets', () => {
   it('취소된 경기 상태를 티켓에 전달한다', async () => {
@@ -115,5 +119,79 @@ describe('updateTicketOriginalPhoto', () => {
     expect(remove).toHaveBeenCalledWith([
       'user-1/book-1/ticket-1/original-1234.jpg',
     ]);
+  });
+});
+
+describe('deleteTicket', () => {
+  it('티켓 삭제 후 원본 사진과 다이어리 파일을 정리한다', async () => {
+    const single = jest.fn().mockResolvedValue({
+      data: {
+        original_photo_path: 'user-1/book-1/ticket-1/original.jpg',
+        diary_data: {
+          version: 1,
+          paperType: 'plain',
+          items: [
+            {
+              type: 'photo',
+              data: {
+                storagePath: 'user-1/ticket-1/photos/photo-1.jpg',
+              },
+            },
+          ],
+          drawingPath: 'user-1/ticket-1/drawing/drawing.data',
+        },
+      },
+      error: null,
+    });
+    const select = jest.fn().mockReturnValue({ single });
+    const eq = jest.fn().mockReturnValue({ select });
+    const removeOriginal = jest.fn().mockResolvedValue({ error: null });
+    const removeDiary = jest.fn().mockResolvedValue({ error: null });
+
+    (supabase.from as jest.Mock).mockReturnValue({
+      delete: jest.fn().mockReturnValue({ eq }),
+    });
+    (supabase.storage.from as jest.Mock).mockImplementation(bucket => ({
+      remove: bucket === 'ticket-originals' ? removeOriginal : removeDiary,
+    }));
+
+    await deleteTicket('ticket-1');
+
+    expect(removeOriginal).toHaveBeenCalledWith([
+      'user-1/book-1/ticket-1/original.jpg',
+    ]);
+    expect(removeDiary).toHaveBeenCalledWith([
+      'user-1/ticket-1/photos/photo-1.jpg',
+      'user-1/ticket-1/drawing/drawing.data',
+    ]);
+  });
+
+  it('다른 티켓의 다이어리 경로는 삭제하지 않는다', async () => {
+    const single = jest.fn().mockResolvedValue({
+      data: {
+        original_photo_path: null,
+        diary_data: {
+          version: 1,
+          paperType: 'plain',
+          items: [],
+          drawingPath: 'user-1/ticket-2/drawing/drawing.data',
+        },
+      },
+      error: null,
+    });
+    const select = jest.fn().mockReturnValue({ single });
+    const eq = jest.fn().mockReturnValue({ select });
+    const removeDiary = jest.fn().mockResolvedValue({ error: null });
+
+    (supabase.from as jest.Mock).mockReturnValue({
+      delete: jest.fn().mockReturnValue({ eq }),
+    });
+    (supabase.storage.from as jest.Mock).mockReturnValue({
+      remove: removeDiary,
+    });
+
+    await deleteTicket('ticket-1');
+
+    expect(removeDiary).not.toHaveBeenCalled();
   });
 });

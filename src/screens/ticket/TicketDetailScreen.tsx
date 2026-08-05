@@ -25,6 +25,7 @@ function TicketDetailScreen() {
   const { ticket } = route.params;
 
   const [activeTab, setActiveTab] = useState<DetailTab>('record');
+  const [hasOpenedDiary, setHasOpenedDiary] = useState(false);
   const [isDeleteDialogVisible, setIsDeleteDialogVisible] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false); // 삭제 진행 중
 
@@ -36,6 +37,11 @@ function TicketDetailScreen() {
 
   const handleChangeTab = (tab: DetailTab) => {
     Keyboard.dismiss();
+
+    if (tab === 'diary') {
+      setHasOpenedDiary(true);
+    }
+
     setActiveTab(tab);
   };
 
@@ -128,9 +134,11 @@ function TicketDetailScreen() {
         <TicketRecordPage ticket={ticket} />
       </View>
 
-      <View style={[styles.page, activeTab !== 'diary' && styles.hidden]}>
-        <TicketDiaryPage />
-      </View>
+      {hasOpenedDiary ? (
+        <View style={[styles.page, activeTab !== 'diary' && styles.hidden]}>
+          <TicketDiaryPage key={ticket.id} ticketId={ticket.id} />
+        </View>
+      ) : null}
 
       <ConfirmDialog
         visible={isDeleteDialogVisible}

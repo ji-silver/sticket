@@ -6,6 +6,10 @@ import type {
   BaseballPosition,
   LineupPlayer,
 } from '../../screens/ticket/types.ts';
+import {
+  getTicketDiaryFilePaths,
+  removeTicketDiaryFiles,
+} from './ticketDiary.service.ts';
 
 const ORIGINAL_TICKET_BUCKET = 'ticket-originals';
 const SIGNED_URL_EXPIRES_IN_SECONDS = 60 * 60; // 유효시간 1시간
@@ -530,22 +534,31 @@ export async function deleteTicket(ticketId: string) {
     .from('tickets')
     .delete()
     .eq('id', ticketId)
-    .select('original_photo_path')
+    .select('original_photo_path, diary_data')
     .single();
 
   if (deleteError) {
     throw deleteError;
   }
 
-  if (!deletedTicket.original_photo_path) {
-    return;
+  if (deletedTicket.original_photo_path) {
+    const { error: removeError } = await supabase.storage
+      .from(ORIGINAL_TICKET_BUCKET)
+      .remove([deletedTicket.original_photo_path]);
+
+    if (removeError) {
+      console.error('원본 티켓 사진을 정리하지 못했습니다.', removeError);
+    }
   }
 
-  const { error: removeError } = await supabase.storage
-    .from(ORIGINAL_TICKET_BUCKET)
-    .remove([deletedTicket.original_photo_path]);
+  const diaryFilePaths = getTicketDiaryFilePaths(
+    deletedTicket.diary_data,
+    ticketId,
+  );
 
-  if (removeError) {
-    console.error('원본 티켓 사진을 정리하지 못했습니다.', removeError);
+  try {
+    await removeTicketDiaryFiles(diaryFilePaths);
+  } catch (error) {
+    console.error('티켓 다이어리 파일을 정리하지 못했습니다.', error);
   }
 }

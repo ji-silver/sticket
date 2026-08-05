@@ -1,6 +1,6 @@
-import { supabase } from '../../lib/supabase.ts';
+import { decode } from 'base64-arraybuffer';
 import { Json } from '../../lib/database.types.ts';
-import { decode, encode } from 'base64-arraybuffer';
+import { supabase } from '../../lib/supabase.ts';
 
 const TICKET_DIARY_BUCKET = 'ticket-diaries';
 const SIGNED_URL_EXPIRES_IN_SECONDS = 60 * 60;
@@ -22,7 +22,7 @@ async function getAuthenticatedUserId(): Promise<string> {
   return user.id;
 }
 
-function readBlobAsArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
+function readBlobAsBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
@@ -31,15 +31,22 @@ function readBlobAsArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
     };
 
     reader.onload = () => {
-      if (typeof reader.result === 'string') {
+      if (typeof reader.result !== 'string') {
         reject(new Error('그림 파일 형식을 확인할 수 없습니다.'));
         return;
       }
 
-      resolve(reader.result);
+      const base64Separator = reader.result.indexOf(',');
+
+      if (base64Separator === -1) {
+        reject(new Error('그림 파일 형식을 확인할 수 없습니다.'));
+        return;
+      }
+
+      resolve(reader.result.slice(base64Separator + 1));
     };
 
-    reader.readAsArrayBuffer(blob);
+    reader.readAsDataURL(blob);
   });
 }
 
@@ -151,6 +158,27 @@ function parseTicketDiaryData(value: unknown): TicketDiaryData {
   return value as unknown as TicketDiaryData;
 }
 
+function belongsToTicket(storagePath: string, ticketId: string): boolean {
+  return storagePath.split('/')[1] === ticketId;
+}
+
+export function getTicketDiaryFilePaths(
+  value: unknown,
+  ticketId: string,
+): string[] {
+  const diaryData = parseTicketDiaryData(value);
+  const photoPaths = diaryData.items.flatMap(item =>
+    item.type === 'photo' && belongsToTicket(item.data.storagePath, ticketId)
+      ? [item.data.storagePath]
+      : [],
+  );
+
+  return diaryData.drawingPath &&
+    belongsToTicket(diaryData.drawingPath, ticketId)
+    ? [...photoPaths, diaryData.drawingPath]
+    : photoPaths;
+}
+
 export async function getTicketDiaryData(
   ticketId: string,
 ): Promise<TicketDiaryData> {
@@ -164,7 +192,21 @@ export async function getTicketDiaryData(
     throw error;
   }
 
-  return parseTicketDiaryData(data.diary_data);
+  const diaryData = parseTicketDiaryData(data.diary_data);
+
+  return {
+    ...diaryData,
+    items: diaryData.items.filter(
+      item =>
+        item.type !== 'photo' ||
+        belongsToTicket(item.data.storagePath, ticketId),
+    ),
+    drawingPath:
+      diaryData.drawingPath &&
+      belongsToTicket(diaryData.drawingPath, ticketId)
+        ? diaryData.drawingPath
+        : null,
+  };
 }
 
 export async function updateTicketDiaryData(
@@ -253,9 +295,7 @@ export async function getTicketDiaryDrawingBase64(
     throw error;
   }
 
-  const drawingBuffer = await readBlobAsArrayBuffer(data);
-
-  return encode(drawingBuffer);
+  return readBlobAsBase64(data);
 }
 
 export async function getTicketDiaryPhotoUrls(
