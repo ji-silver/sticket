@@ -61,10 +61,10 @@ export type Database = {
           created_at: string
           game_date: string
           game_key: string
+          home_lineup: Json
           home_score: number | null
           home_team_id: string
           last_collected_at: string
-          home_lineup: Json
           lineup_collected_at: string | null
           season: number
           series_type: string
@@ -83,10 +83,10 @@ export type Database = {
           created_at?: string
           game_date: string
           game_key: string
+          home_lineup?: Json
           home_score?: number | null
           home_team_id: string
           last_collected_at?: string
-          home_lineup?: Json
           lineup_collected_at?: string | null
           season: number
           series_type: string
@@ -105,10 +105,10 @@ export type Database = {
           created_at?: string
           game_date?: string
           game_key?: string
+          home_lineup?: Json
           home_score?: number | null
           home_team_id?: string
           last_collected_at?: string
-          home_lineup?: Json
           lineup_collected_at?: string | null
           season?: number
           series_type?: string
@@ -234,6 +234,7 @@ export type Database = {
       tickets: {
         Row: {
           created_at: string
+          diary_data: Json
           foods: string[]
           game_key: string
           id: string
@@ -246,6 +247,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          diary_data?: Json
           foods?: string[]
           game_key: string
           id?: string
@@ -258,6 +260,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          diary_data?: Json
           foods?: string[]
           game_key?: string
           id?: string
