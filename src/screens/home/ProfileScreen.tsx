@@ -1,41 +1,131 @@
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  Alert,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronRight, LogOut } from 'lucide-react-native';
-import { useNavigation } from '@react-navigation/native';
+import { ChevronRight, Info, LogOut } from 'lucide-react-native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import AppText from '../../components/common/AppText.tsx';
 import ConfirmDialog from '../../components/common/ConfirmDialog.tsx';
 import InlineActionButton from '../../components/common/InlineActionButton.tsx';
 import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
+import { getTodayInKorea } from '../../lib/date.ts';
 import type { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
 import { useAuth } from '../../features/auth/AuthProvider.tsx';
+import {
+  type AttendanceSummary,
+  getAttendanceSummary,
+} from '../../features/profile/profile.service.ts';
 
 type ProfileNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
   'MainTab'
 >;
 
-const attendanceRecord = { win: 2, lose: 1, draw: 0 };
+interface WinRateInfoAnchor {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
 
+const EMPTY_ATTENDANCE_SUMMARY: AttendanceSummary = {
+  totalGames: 0,
+  wins: 0,
+  draws: 0,
+  losses: 0,
+};
+
+const CURRENT_SEASON = Number(getTodayInKorea().slice(0, 4));
 const appVersion = '0.0.1';
 
 function ProfileScreen() {
   const navigation = useNavigation<ProfileNavigationProp>();
+  const { width: screenWidth } = useWindowDimensions();
   const { profile, signOut, deleteAccount } = useAuth();
+  const infoButtonRef = useRef<View>(null);
   const [isLogoutDialogVisible, setIsLogoutDialogVisible] = useState(false);
   const [isWithdrawalDialogVisible, setIsWithdrawalDialogVisible] =
     useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
-  const totalGames =
-    attendanceRecord.win + attendanceRecord.lose + attendanceRecord.draw;
+  const [winRateInfoAnchor, setWinRateInfoAnchor] =
+    useState<WinRateInfoAnchor | null>(null);
+  const [attendanceSummary, setAttendanceSummary] = useState<AttendanceSummary>(
+    EMPTY_ATTENDANCE_SUMMARY,
+  );
+
+  const [isAttendanceSummaryLoading, setIsAttendanceSummaryLoading] =
+    useState(true);
+
+  const favoriteTeamId = profile?.favorite_team_id;
+
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+
+      async function loadAttendanceSummary() {
+        if (!favoriteTeamId) {
+          setAttendanceSummary(EMPTY_ATTENDANCE_SUMMARY);
+          setIsAttendanceSummaryLoading(false);
+          return;
+        }
+
+        setIsAttendanceSummaryLoading(true);
+
+        try {
+          const summary = await getAttendanceSummary(
+            favoriteTeamId,
+            CURRENT_SEASON,
+          );
+
+          if (isActive) {
+            setAttendanceSummary(summary);
+          }
+        } catch (error) {
+          console.error('직관 요약을 불러오지 못했습니다.', error);
+
+          if (isActive) {
+            setAttendanceSummary(EMPTY_ATTENDANCE_SUMMARY);
+
+            Alert.alert(
+              '직관 요약을 불러오지 못했어요',
+              '잠시 후 다시 시도해 주세요.',
+            );
+          }
+        } finally {
+          if (isActive) {
+            setIsAttendanceSummaryLoading(false);
+          }
+        }
+      }
+
+      loadAttendanceSummary();
+
+      return () => {
+        isActive = false;
+      };
+    }, [favoriteTeamId]),
+  );
 
   if (!profile) {
     return null;
   }
 
   const favoriteTeamName = profile.favorite_team?.name ?? '선택 안 함';
+  const favoriteTeamShortName = profile.favorite_team?.short_name ?? '응원팀';
+  const decidedGames = attendanceSummary.wins + attendanceSummary.losses;
+  const winRate =
+    decidedGames === 0
+      ? null
+      : Math.round((attendanceSummary.wins / decidedGames) * 1000) / 10;
 
   const handleConfirmLogout = async () => {
     setIsLogoutDialogVisible(false);
@@ -47,6 +137,20 @@ function ProfileScreen() {
       Alert.alert('로그아웃하지 못했어요', '잠시 후 다시 시도해 주세요.');
     }
   };
+
+  const handleOpenWinRateInfo = () => {
+    infoButtonRef.current?.measureInWindow((x, y, width, height) => {
+      setWinRateInfoAnchor({ x, y, width, height });
+    });
+  };
+
+  const popoverWidth = Math.min(280, screenWidth - 32);
+  const popoverLeft = winRateInfoAnchor
+    ? Math.min(
+        Math.max(winRateInfoAnchor.x + winRateInfoAnchor.width / 2 - 44, 16),
+        screenWidth - popoverWidth - 16,
+      )
+    : 16;
 
   const handleConfirmWithdrawal = async () => {
     if (isDeletingAccount) {
@@ -113,22 +217,74 @@ function ProfileScreen() {
         </View>
 
         <View style={styles.summarySection}>
-          <AppText style={styles.sectionTitle}>직관 요약</AppText>
+          <View style={styles.summarySectionHeader}>
+            <AppText style={[styles.sectionTitle, styles.summarySectionTitle]}>
+              {favoriteTeamShortName} 직관 성적
+            </AppText>
+
+            <AppText style={styles.summaryTotal}>
+              {isAttendanceSummaryLoading
+                ? '-'
+                : `총 ${attendanceSummary.totalGames}경기`}
+            </AppText>
+          </View>
 
           <View style={styles.summaryCard}>
-            <View style={styles.summaryMetric}>
-              <AppText style={styles.summaryLabel}>누적 직관</AppText>
-              <AppText style={styles.totalGamesText}>{totalGames}경기</AppText>
+            <View style={styles.winRateHeader}>
+              <AppText style={styles.summaryLabel}>직관 승률</AppText>
+
+              <Pressable
+                ref={infoButtonRef}
+                style={({ pressed }) => [
+                  styles.infoButton,
+                  pressed && styles.infoButtonPressed,
+                ]}
+                onPress={handleOpenWinRateInfo}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="직관 승률 안내 열기"
+              >
+                <Info size={14} color={colors.primary} strokeWidth={2.2} />
+              </Pressable>
             </View>
 
-            <View style={styles.summaryDivider} />
+            <AppText
+              style={[
+                styles.winRateText,
+                !isAttendanceSummaryLoading && winRate === null
+                  ? styles.winRateEmptyText
+                  : null,
+              ]}
+            >
+              {isAttendanceSummaryLoading
+                ? '-'
+                : winRate === null
+                ? '기록 없음'
+                : `${winRate}%`}
+            </AppText>
 
-            <View style={[styles.summaryMetric, styles.recordMetric]}>
-              <AppText style={styles.summaryLabel}>직관 성적</AppText>
-              <AppText style={styles.recordText}>
-                {attendanceRecord.win}승 · {attendanceRecord.draw}무 ·{' '}
-                {attendanceRecord.lose}패
-              </AppText>
+            <View style={styles.recordRow}>
+              <RecordMetric
+                value={
+                  isAttendanceSummaryLoading ? '-' : attendanceSummary.wins
+                }
+                label="승"
+                emphasized
+              />
+              <View style={styles.recordDivider} />
+              <RecordMetric
+                value={
+                  isAttendanceSummaryLoading ? '-' : attendanceSummary.draws
+                }
+                label="무"
+              />
+              <View style={styles.recordDivider} />
+              <RecordMetric
+                value={
+                  isAttendanceSummaryLoading ? '-' : attendanceSummary.losses
+                }
+                label="패"
+              />
             </View>
           </View>
         </View>
@@ -214,6 +370,53 @@ function ProfileScreen() {
         </View>
       </ScrollView>
 
+      <Modal
+        visible={winRateInfoAnchor !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setWinRateInfoAnchor(null)}
+      >
+        <View style={styles.popoverLayer} accessibilityViewIsModal>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => setWinRateInfoAnchor(null)}
+            accessibilityRole="button"
+            accessibilityLabel="직관 승률 안내 닫기"
+          />
+
+          {winRateInfoAnchor ? (
+            <View
+              accessible
+              accessibilityLabel={`현재는 ${CURRENT_SEASON}시즌 응원팀의 종료 경기 기준이며, 무승부는 승률에서 제외돼요.`}
+              style={[
+                styles.winRatePopover,
+                {
+                  width: popoverWidth,
+                  left: popoverLeft,
+                  top: winRateInfoAnchor.y + winRateInfoAnchor.height + 8,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.popoverArrow,
+                  {
+                    left:
+                      winRateInfoAnchor.x +
+                      winRateInfoAnchor.width / 2 -
+                      popoverLeft -
+                      6,
+                  },
+                ]}
+              />
+              <AppText style={styles.popoverText}>
+                {`현재는 ${CURRENT_SEASON}시즌 응원팀의 종료 경기 기준이며, 무승부는 승률에서 제외돼요.`}
+              </AppText>
+            </View>
+          ) : null}
+        </View>
+      </Modal>
+
       <ConfirmDialog
         visible={isLogoutDialogVisible}
         title="로그아웃할까요?"
@@ -236,6 +439,27 @@ function ProfileScreen() {
         onCancel={() => setIsWithdrawalDialogVisible(false)}
       />
     </SafeAreaView>
+  );
+}
+
+function RecordMetric({
+  value,
+  label,
+  emphasized = false,
+}: {
+  value: number | string;
+  label: string;
+  emphasized?: boolean;
+}) {
+  return (
+    <View style={styles.recordMetric}>
+      <AppText
+        style={[styles.recordValue, emphasized && styles.recordValueEmphasized]}
+      >
+        {value}
+      </AppText>
+      <AppText style={styles.recordLabel}>{label}</AppText>
+    </View>
   );
 }
 
@@ -333,6 +557,22 @@ const styles = StyleSheet.create({
   summarySection: {
     marginTop: 24,
   },
+  summarySectionHeader: {
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  summarySectionTitle: {
+    marginBottom: 0,
+  },
+  summaryTotal: {
+    fontSize: 12,
+    fontFamily: fonts.regular,
+    color: colors.textSecondary,
+    fontVariant: ['tabular-nums'],
+  },
   sectionTitle: {
     marginBottom: 12,
     fontSize: 17,
@@ -340,46 +580,120 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   summaryCard: {
-    minHeight: 108,
-    padding: 18,
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 16,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 18,
     borderCurve: 'continuous',
     backgroundColor: colors.surface,
+  },
+  winRateHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 5,
   },
-  summaryMetric: {
-    minWidth: 82,
+  infoButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  recordMetric: {
-    flex: 1,
+  infoButtonPressed: {
+    opacity: 0.55,
   },
   summaryLabel: {
     fontSize: 12,
-    fontFamily: fonts.regular,
-    color: colors.secondary,
+    fontFamily: fonts.semiBold,
+    color: colors.textSecondary,
   },
-  totalGamesText: {
-    marginTop: 6,
-    fontSize: 22,
-    fontFamily: fonts.bold,
+  winRateText: {
+    marginTop: 2,
+    fontSize: 38,
+    lineHeight: 46,
+    fontFamily: fonts.black,
     color: colors.text,
+    fontVariant: ['tabular-nums'],
   },
-  recordText: {
-    marginTop: 6,
-    flexShrink: 1,
+  winRateEmptyText: {
+    fontSize: 20,
+    lineHeight: 46,
+    fontFamily: fonts.bold,
+    color: colors.textSecondary,
+  },
+  recordRow: {
+    marginTop: 12,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  recordMetric: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  recordValue: {
     fontSize: 17,
-    lineHeight: 23,
     fontFamily: fonts.bold,
     color: colors.text,
+    fontVariant: ['tabular-nums'],
   },
-  summaryDivider: {
+  recordValueEmphasized: {
+    color: colors.primary,
+  },
+  recordLabel: {
+    fontSize: 11,
+    fontFamily: fonts.regular,
+    color: colors.textSecondary,
+  },
+  recordDivider: {
     width: 1,
-    height: 52,
-    marginHorizontal: 18,
+    height: 22,
     backgroundColor: colors.border,
+  },
+  popoverLayer: {
+    flex: 1,
+  },
+  winRatePopover: {
+    position: 'absolute',
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    borderRadius: 14,
+    borderCurve: 'continuous',
+    backgroundColor: colors.text,
+    shadowColor: colors.shadow,
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    shadowOpacity: 0.16,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  popoverArrow: {
+    position: 'absolute',
+    top: -6,
+    width: 0,
+    height: 0,
+    borderLeftWidth: 6,
+    borderRightWidth: 6,
+    borderBottomWidth: 6,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: colors.text,
+  },
+  popoverText: {
+    fontSize: 13,
+    lineHeight: 20,
+    fontFamily: fonts.regular,
+    color: colors.onPrimary,
   },
 
   serviceSection: {

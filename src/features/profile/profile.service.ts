@@ -5,6 +5,19 @@ interface SaveProfileParams {
   favoriteTeamName: string;
 }
 
+export interface AttendanceSummary {
+  totalGames: number;
+  wins: number;
+  draws: number;
+  losses: number;
+}
+
+// 현재 구단과 과거 구단 같은 팀 처리
+const FRANCHISE_TEAM_IDS: Record<string, readonly string[]> = {
+  ssg: ['ssg', 'sk'],
+  kiwoom: ['kiwoom', 'nexen'],
+};
+
 export async function getProfile(userId: string) {
   const { data, error } = await supabase
     .from('profiles')
@@ -31,6 +44,82 @@ export async function getProfile(userId: string) {
   }
 
   return data;
+}
+
+export async function getAttendanceSummary(
+  favoriteTeamId: string,
+  season: number,
+): Promise<AttendanceSummary> {
+  const favoriteTeamIds = new Set(
+    FRANCHISE_TEAM_IDS[favoriteTeamId] ?? [favoriteTeamId],
+  );
+
+  const { data, error } = await supabase.from('tickets').select(
+    `
+        id,
+        game:games!tickets_game_key_fkey (
+          status,
+          season,
+          home_team_id,
+          away_team_id,
+          home_score,
+          away_score
+        )
+      `,
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  return data.reduce<AttendanceSummary>(
+    (summary, ticket) => {
+      const game = ticket.game;
+
+      if (
+        !game ||
+        game.season !== season ||
+        game.status !== 'FINISHED' ||
+        game.home_score === null ||
+        game.away_score === null
+      ) {
+        return summary;
+      }
+
+      const isFavoriteTeamHome = favoriteTeamIds.has(game.home_team_id);
+      const isFavoriteTeamAway = favoriteTeamIds.has(game.away_team_id);
+
+      if (!isFavoriteTeamHome && !isFavoriteTeamAway) {
+        return summary;
+      }
+
+      summary.totalGames += 1;
+
+      const favoriteTeamScore = isFavoriteTeamHome
+        ? game.home_score
+        : game.away_score;
+
+      const opponentScore = isFavoriteTeamHome
+        ? game.away_score
+        : game.home_score;
+
+      if (favoriteTeamScore > opponentScore) {
+        summary.wins += 1;
+      } else if (favoriteTeamScore < opponentScore) {
+        summary.losses += 1;
+      } else {
+        summary.draws += 1;
+      }
+
+      return summary;
+    },
+    {
+      totalGames: 0,
+      wins: 0,
+      draws: 0,
+      losses: 0,
+    },
+  );
 }
 
 export async function saveProfile({
