@@ -35,6 +35,7 @@ function TicketReviewSection({
   const previousRecordDraft = useRef(initialMemo ?? '');
   const [foods, setFoods] = useState(() => [...initialFoods]);
   const [foodDraft, setFoodDraft] = useState('');
+  const [isAddingFood, setIsAddingFood] = useState(false);
   const [isEditingFoods, setIsEditingFoods] = useState(false);
 
   const trimmedFoodDraft = foodDraft.trim();
@@ -100,7 +101,14 @@ function TicketReviewSection({
 
   const handleToggleFoodEditor = () => {
     setFoodDraft('');
+    setIsAddingFood(false);
     setIsEditingFoods(current => !current);
+  };
+
+  const handleStartAddingFood = () => {
+    setFoodDraft('');
+    setIsAddingFood(true);
+    setIsEditingFoods(false);
   };
 
   const handleAddFood = async () => {
@@ -113,6 +121,7 @@ function TicketReviewSection({
 
       setFoods(savedFoods);
       setFoodDraft('');
+      setIsAddingFood(false);
     } catch (error) {
       console.error('야구 푸드를 저장하지 못했습니다.', error);
       Alert.alert(
@@ -232,14 +241,26 @@ function TicketReviewSection({
           <View style={styles.blockHeader}>
             <AppText style={styles.blockTitle}>야구 푸드</AppText>
 
-            <InlineActionButton
-              label={isEditingFoods ? '완료' : '추가'}
-              tone="primary"
-              onPress={handleToggleFoodEditor}
-              accessibilityLabel={
-                isEditingFoods ? '야구 푸드 편집 완료' : '야구 푸드 추가'
-              }
-            />
+            {isAddingFood || isEditingFoods || foods.length > 0 ? (
+              <InlineActionButton
+                label={
+                  isAddingFood ? '취소' : isEditingFoods ? '완료' : '편집'
+                }
+                tone="primary"
+                onPress={
+                  isAddingFood
+                    ? () => setIsAddingFood(false)
+                    : handleToggleFoodEditor
+                }
+                accessibilityLabel={
+                  isAddingFood
+                    ? '야구 푸드 추가 취소'
+                    : isEditingFoods
+                    ? '야구 푸드 편집 완료'
+                    : '야구 푸드 편집'
+                }
+              />
+            ) : null}
           </View>
 
           {foods.length > 0 ? (
@@ -266,13 +287,24 @@ function TicketReviewSection({
                 </View>
               ))}
             </View>
-          ) : (
-            <AppText style={[styles.placeholderText, styles.foodEmptyText]}>
-              아직 기록한 야구장 푸드가 없어요
-            </AppText>
-          )}
+          ) : null}
 
-          {isEditingFoods ? (
+          {!isAddingFood && !isEditingFoods ? (
+            <Pressable
+              style={({ pressed }) => [
+                styles.foodAddChip,
+                pressed && styles.foodAddChipPressed,
+              ]}
+              onPress={handleStartAddingFood}
+              accessibilityRole="button"
+              accessibilityLabel="야구 푸드 추가"
+            >
+              <Plus size={15} color={colors.primary} strokeWidth={2.5} />
+              <AppText style={styles.foodAddChipText}>먹은 메뉴 추가</AppText>
+            </Pressable>
+          ) : null}
+
+          {isAddingFood ? (
             <View style={styles.foodInputRow}>
               <TextInput
                 value={foodDraft}
@@ -421,9 +453,6 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
   },
-  foodEmptyText: {
-    marginTop: 14,
-  },
   foodChip: {
     minHeight: 34,
     paddingHorizontal: 14,
@@ -445,6 +474,26 @@ const styles = StyleSheet.create({
     marginRight: -5,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  foodAddChip: {
+    minHeight: 34,
+    marginTop: 12,
+    paddingHorizontal: 13,
+    borderRadius: 17,
+    borderCurve: 'continuous',
+    backgroundColor: colors.primarySoft,
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  foodAddChipPressed: {
+    opacity: 0.6,
+  },
+  foodAddChipText: {
+    fontSize: 13,
+    fontFamily: fonts.bold,
+    color: colors.primary,
   },
   foodInputRow: {
     height: 44,
