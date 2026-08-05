@@ -1,12 +1,25 @@
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { StyleSheet } from 'react-native';
-import { useEffect, useRef } from 'react';
 import { type PencilKitRef, PencilKitView } from 'react-native-pencil-kit';
+
+export interface DiaryDrawingCanvasRef {
+  clear: () => void;
+  getBase64Data: () => Promise<string>;
+  loadBase64Data: (base64: string) => Promise<void>;
+}
 
 interface DiaryDrawingCanvasProps {
   isDrawingMode: boolean;
+  onDrawingChange?: () => void;
 }
 
-function DiaryDrawingCanvas({ isDrawingMode }: DiaryDrawingCanvasProps) {
+const DiaryDrawingCanvas = forwardRef<
+  DiaryDrawingCanvasRef,
+  DiaryDrawingCanvasProps
+>(function DiaryDrawingCanvasComponent(
+  { isDrawingMode, onDrawingChange },
+  forwardedRef,
+) {
   const drawingCanvasRef = useRef<PencilKitRef>(null);
 
   useEffect(() => {
@@ -17,6 +30,32 @@ function DiaryDrawingCanvas({ isDrawingMode }: DiaryDrawingCanvasProps) {
     }
   }, [isDrawingMode]);
 
+  useImperativeHandle(
+    forwardedRef,
+    () => ({
+      clear: () => {
+        drawingCanvasRef.current?.clear();
+      },
+
+      getBase64Data: async () => {
+        if (!drawingCanvasRef.current) {
+          throw new Error('그림 캔버스를 불러올 수 없습니다.');
+        }
+
+        return drawingCanvasRef.current.getBase64Data();
+      },
+
+      loadBase64Data: async (base64: string) => {
+        if (!drawingCanvasRef.current) {
+          throw new Error('그림 캔버스를 불러올 수 없습니다.');
+        }
+
+        await drawingCanvasRef.current.loadBase64Data(base64);
+      },
+    }),
+    [],
+  );
+
   return (
     <PencilKitView
       ref={drawingCanvasRef}
@@ -26,10 +65,11 @@ function DiaryDrawingCanvas({ isDrawingMode }: DiaryDrawingCanvasProps) {
       isOpaque={false}
       alwaysBounceHorizontal={false}
       alwaysBounceVertical={false}
+      onCanvasViewDrawingDidChange={onDrawingChange}
       style={styles.canvas}
     />
   );
-}
+});
 
 export default DiaryDrawingCanvas;
 

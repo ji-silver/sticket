@@ -36,6 +36,7 @@ export async function selectDiaryPhoto(
       mediaType: 'photo',
       cropping: true,
       freeStyleCropEnabled: true,
+      includeBase64: true,
       width: 2048,
       height: 2048,
       compressImageQuality: 0.9,
@@ -43,6 +44,9 @@ export async function selectDiaryPhoto(
       cropperCancelText: '취소',
       cropperChooseText: '선택',
     });
+    if (!image.data) {
+      throw new Error('선택한 사진 데이터를 불러올 수 없습니다.');
+    }
     const maximumPhotoWidth = editorSize.width * 0.5;
     const maximumPhotoHeight = editorSize.height * 0.5;
     const initialRatio = Math.min(
@@ -58,6 +62,8 @@ export async function selectDiaryPhoto(
     return {
       id: Date.now().toString(),
       uri: image.path,
+      base64: image.data,
+      storagePath: null,
       width: photoWidth,
       height: photoHeight,
       matrix: translate3(initialX, initialY),

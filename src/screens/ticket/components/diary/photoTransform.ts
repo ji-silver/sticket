@@ -22,6 +22,8 @@ export type Matrix3 = [
 export interface DiaryPhoto {
   id: string;
   uri: string;
+  base64: string | null;
+  storagePath: string | null;
   width: number;
   height: number;
   matrix: Matrix3;
