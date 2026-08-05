@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import DeviceInfo from 'react-native-device-info';
 import { ChevronRight, Info, LogOut } from 'lucide-react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -45,7 +46,7 @@ const EMPTY_ATTENDANCE_SUMMARY: AttendanceSummary = {
 };
 
 const CURRENT_SEASON = Number(getTodayInKorea().slice(0, 4));
-const appVersion = '0.0.1';
+const appVersion = DeviceInfo.getVersion();
 
 function ProfileScreen() {
   const navigation = useNavigation<ProfileNavigationProp>();

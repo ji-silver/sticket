@@ -2003,6 +2003,8 @@ PODS:
   - RecaptchaInterop (101.0.0)
   - RNAppleAuthentication (2.5.1):
     - React-Core
+  - RNDeviceInfo (15.0.2):
+    - React-Core
   - RNGestureHandler (3.0.2):
     - hermes-engine
     - RCTRequired
@@ -2466,6 +2468,7 @@ DEPENDENCIES:
   - ReactNativeDependencies (from `../node_modules/react-native/third-party-podspecs/ReactNativeDependencies.podspec`)
   - RecaptchaInterop
   - "RNAppleAuthentication (from `../node_modules/@invertase/react-native-apple-authentication`)"
+  - RNDeviceInfo (from `../node_modules/react-native-device-info`)
   - RNGestureHandler (from `../node_modules/react-native-gesture-handler`)
   - "RNGoogleSignin (from `../node_modules/@react-native-google-signin/google-signin`)"
   - RNImageCropPicker (from `../node_modules/react-native-image-crop-picker`)
@@ -2647,6 +2650,8 @@ EXTERNAL SOURCES:
     :podspec: "../node_modules/react-native/third-party-podspecs/ReactNativeDependencies.podspec"
   RNAppleAuthentication:
     :path: "../node_modules/@invertase/react-native-apple-authentication"
+  RNDeviceInfo:
+    :path: "../node_modules/react-native-device-info"
   RNGestureHandler:
     :path: "../node_modules/react-native-gesture-handler"
   RNGoogleSignin:
@@ -2754,6 +2759,7 @@ SPEC CHECKSUMS:
   ReactNativeDependencies: fa0a54b3f5319ae0e3b9aff32bfee7a424b88e66
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
   RNAppleAuthentication: a89c9804592b38ed4ab11f0aee68d05ba12ad432
+  RNDeviceInfo: 4c852998208b60dc192ae3529e5867817719ad1e
   RNGestureHandler: 953af68599a35f425ea962dda2ee15ee4e3ca719
   RNGoogleSignin: 0d72ae233fe10522497424748acf00fcc1ed2ee7
   RNImageCropPicker: 6b9ac564593efdf86b886f93aab4356e80db12de
