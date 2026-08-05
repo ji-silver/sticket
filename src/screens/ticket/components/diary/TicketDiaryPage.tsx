@@ -31,6 +31,9 @@ import DiaryDrawingCanvas, {
   type DiaryDrawingCanvasRef,
 } from './DiaryDrawingCanvas.tsx';
 import DiaryBottomToolbar, { type DiaryToolId } from './DiaryBottomToolbar.tsx';
+import DiaryLayerPanel, {
+  type DiaryLayerPanelItem,
+} from './DiaryLayerPanel.tsx';
 import DiaryPaperSelector, { type PaperType } from './DiaryPaperSelector.tsx';
 import DiaryTextItem from './DiaryTextItem.tsx';
 import DiaryTextToolbar from './DiaryTextToolbar.tsx';
@@ -45,16 +48,17 @@ import {
   getTicketDiaryDrawingBase64,
   getTicketDiaryPhotoUrls,
   removeTicketDiaryFiles,
+  type SavedDiaryItem,
   TICKET_DIARY_VERSION,
   updateTicketDiaryData,
   uploadTicketDiaryDrawing,
   uploadTicketDiaryPhoto,
-  type SavedDiaryItem,
 } from '../../../../features/ticket/ticketDiary.service.ts';
 
 const MAXIMUM_DIARY_PHOTO_COUNT = 2;
 const AUTOSAVE_DELAY_MS = 800;
 const AUTOSAVE_ERROR_MESSAGE = '변경 내용을 저장하지 못했어요';
+const DRAWING_LAYER_ID = '__drawing__';
 
 interface TicketDiaryPageProps {
   ticketId: string;
@@ -93,6 +97,7 @@ interface DiarySaveSnapshot {
   version: number;
   paperType: PaperType;
   items: DiaryItem[];
+  drawingIndex: number;
   drawingBase64: string | null;
   drawingRevision: number;
 }
@@ -228,28 +233,41 @@ async function restoreDiaryItems(
   });
 }
 
-function moveDiaryItemToTop(
-  currentItems: DiaryItem[],
-  selectedItem: Exclude<SelectedDiaryItem, null>,
-) {
-  const selectedItemIndex = currentItems.findIndex(
-    item => item.type === selectedItem.type && item.data.id === selectedItem.id,
-  );
+function getDiaryItemLayerId(item: DiaryItem) {
+  return `${item.type}:${item.data.id}`;
+}
 
-  if (
-    selectedItemIndex === -1 ||
-    selectedItemIndex === currentItems.length - 1
-  ) {
-    return currentItems;
+function createLayerPanelItems(
+  items: DiaryItem[],
+  drawingIndex: number,
+  hasDrawing: boolean,
+): DiaryLayerPanelItem[] {
+  const bottomToTop: DiaryLayerPanelItem[] = items.map(item => ({
+    id: getDiaryItemLayerId(item),
+    type: item.type,
+    label:
+      item.type === 'text'
+        ? item.data.text.trim() || '빈 텍스트'
+        : item.type === 'sticker'
+        ? '스티커'
+        : '사진',
+    imageSource:
+      item.type === 'photo'
+        ? { uri: item.data.uri }
+        : item.type === 'sticker'
+        ? item.data.source
+        : undefined,
+  }));
+
+  if (hasDrawing) {
+    bottomToTop.splice(drawingIndex, 0, {
+      id: DRAWING_LAYER_ID,
+      type: 'drawing',
+      label: '드로잉',
+    });
   }
 
-  const itemToMove = currentItems[selectedItemIndex];
-
-  return [
-    ...currentItems.slice(0, selectedItemIndex),
-    ...currentItems.slice(selectedItemIndex + 1),
-    itemToMove,
-  ];
+  return bottomToTop.reverse();
 }
 
 function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
@@ -277,11 +295,10 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
   >(async () => {});
   const showSnackbarRef = useRef<(message: string) => void>(() => {});
   const showAutosaveErrorRef = useRef<(error: unknown) => void>(() => {});
-  const snackbarTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
+  const snackbarTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [selectedTool, setSelectedTool] = useState<DiaryToolId | null>(null);
+  const [isLayerPanelVisible, setIsLayerPanelVisible] = useState(false);
   const [paperType, setPaperType] = useState<PaperType>('plain');
   const [selectedStickerPackId, setSelectedStickerPackId] = useState(
     DIARY_STICKER_PACKS[0]?.id ?? '',
@@ -296,6 +313,7 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
   // 사진, 스티커, 텍스트를 하나의 배열로 관리합니다.
   // 배열의 마지막 항목이 화면에서 가장 위에 표시됩니다.
   const [items, setItems] = useState<DiaryItem[]>([]);
+  const [drawingIndex, setDrawingIndex] = useState(0);
   const [selectedItem, setSelectedItem] = useState<SelectedDiaryItem>(null);
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
 
@@ -304,6 +322,19 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
       ? items.find(
           item => item.type === 'text' && item.data.id === selectedItem.id,
         )
+      : null;
+
+  const hasDrawing = drawingBase64Ref.current !== null;
+  const layerPanelItems = createLayerPanelItems(
+    items,
+    drawingIndex,
+    hasDrawing,
+  );
+  const selectedLayerId =
+    selectedTool === 'drawing'
+      ? DRAWING_LAYER_ID
+      : selectedItem
+      ? `${selectedItem.type}:${selectedItem.id}`
       : null;
 
   const showSnackbar = (message: string) => {
@@ -360,6 +391,11 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
       version: TICKET_DIARY_VERSION,
       paperType: snapshot.paperType,
       items: savedItems,
+      drawingIndex: snapshot.items
+        .slice(0, snapshot.drawingIndex)
+        .filter(
+          item => item.type !== 'text' || item.data.text.trim().length > 0,
+        ).length,
       drawingPath,
     });
 
@@ -378,9 +414,7 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
     ).filter(path => !nextStoragePaths.has(path));
 
     const activePhotoIds = new Set(
-      savedItems.flatMap(item =>
-        item.type === 'photo' ? [item.data.id] : [],
-      ),
+      savedItems.flatMap(item => (item.type === 'photo' ? [item.data.id] : [])),
     );
 
     for (const photoId of uploadedPhotoPathByIdRef.current.keys()) {
@@ -395,7 +429,10 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
       try {
         await removeTicketDiaryFiles(removedStoragePaths);
       } catch (error) {
-        console.error('사용하지 않는 다이어리 파일을 정리하지 못했습니다.', error);
+        console.error(
+          '사용하지 않는 다이어리 파일을 정리하지 못했습니다.',
+          error,
+        );
         didCleanupStorage = false;
       }
     }
@@ -486,9 +523,11 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
 
         setPaperType(diaryData.paperType);
         setItems(restoredItems);
+        setDrawingIndex(diaryData.drawingIndex);
         setSelectedItem(null);
         setEditingTextId(null);
         setSelectedTool(null);
+        setIsLayerPanelVisible(false);
 
         if (!drawingCanvasRef.current) {
           throw new Error('그림 캔버스를 불러올 수 없습니다.');
@@ -553,6 +592,7 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
       version: nextSnapshotVersionRef.current + 1,
       paperType,
       items,
+      drawingIndex,
       drawingBase64: drawingBase64Ref.current,
       drawingRevision,
     };
@@ -569,7 +609,7 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
     return () => {
       clearTimeout(autosaveTimer);
     };
-  }, [drawingRevision, isLoading, items, paperType]);
+  }, [drawingIndex, drawingRevision, isLoading, items, paperType]);
 
   useEffect(() => {
     const appStateSubscription = AppState.addEventListener(
@@ -612,7 +652,10 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
         latestSnapshot.version > lastSavedVersionRef.current
       ) {
         enqueueDiarySaveRef.current(latestSnapshot).catch(error => {
-          console.error('화면을 닫기 전 다이어리를 저장하지 못했습니다.', error);
+          console.error(
+            '화면을 닫기 전 다이어리를 저장하지 못했습니다.',
+            error,
+          );
         });
       }
     },
@@ -633,6 +676,26 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
     setSelectedTool(null);
   };
 
+  const removeDiaryItem = (itemType: DiaryItem['type'], itemId: string) => {
+    const removedItemIndex = items.findIndex(
+      item => item.type === itemType && item.data.id === itemId,
+    );
+
+    if (removedItemIndex === -1) {
+      return;
+    }
+
+    setItems(currentItems =>
+      currentItems.filter(
+        item => item.type !== itemType || item.data.id !== itemId,
+      ),
+    );
+
+    if (removedItemIndex < drawingIndex) {
+      setDrawingIndex(currentIndex => Math.max(0, currentIndex - 1));
+    }
+  };
+
   const finishCurrentTextEditing = () => {
     const currentEditingTextId = editingTextId;
 
@@ -643,22 +706,16 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
     Keyboard.dismiss();
     setEditingTextId(null);
 
-    setItems(currentItems => {
-      const editingText = currentItems.find(
-        item => item.type === 'text' && item.data.id === currentEditingTextId,
-      );
+    const editingText = items.find(
+      item => item.type === 'text' && item.data.id === currentEditingTextId,
+    );
 
-      if (
-        editingText?.type !== 'text' ||
-        editingText.data.text.trim().length > 0
-      ) {
-        return currentItems;
-      }
-
-      return currentItems.filter(
-        item => item.type !== 'text' || item.data.id !== currentEditingTextId,
-      );
-    });
+    if (
+      editingText?.type === 'text' &&
+      editingText.data.text.trim().length === 0
+    ) {
+      removeDiaryItem('text', currentEditingTextId);
+    }
   };
 
   const handleChangePhoto = (changedPhoto: DiaryPhoto) => {
@@ -683,18 +740,10 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
     };
 
     setSelectedItem(nextSelectedItem);
-
-    setItems(currentItems =>
-      moveDiaryItemToTop(currentItems, nextSelectedItem),
-    );
   };
 
   const handleDeletePhoto = (photoId: string) => {
-    setItems(currentItems =>
-      currentItems.filter(
-        item => item.type !== 'photo' || item.data.id !== photoId,
-      ),
-    );
+    removeDiaryItem('photo', photoId);
 
     setSelectedItem(currentItem => {
       if (currentItem?.type === 'photo' && currentItem.id === photoId) {
@@ -727,17 +776,10 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
     };
 
     setSelectedItem(nextSelectedItem);
-    setItems(currentItems =>
-      moveDiaryItemToTop(currentItems, nextSelectedItem),
-    );
   };
 
   const handleDeleteSticker = (stickerId: string) => {
-    setItems(currentItems =>
-      currentItems.filter(
-        item => item.type !== 'sticker' || item.data.id !== stickerId,
-      ),
-    );
+    removeDiaryItem('sticker', stickerId);
 
     setSelectedItem(currentItem => {
       if (currentItem?.type === 'sticker' && currentItem.id === stickerId) {
@@ -788,10 +830,6 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
     };
 
     setSelectedItem(nextSelectedItem);
-
-    setItems(currentItems =>
-      moveDiaryItemToTop(currentItems, nextSelectedItem),
-    );
   };
 
   const handleStartTextEditing = (textId: string) => {
@@ -856,11 +894,7 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
   };
 
   const handleDeleteText = (textId: string) => {
-    setItems(currentItems =>
-      currentItems.filter(
-        item => item.type !== 'text' || item.data.id !== textId,
-      ),
-    );
+    removeDiaryItem('text', textId);
 
     setSelectedItem(currentItem =>
       currentItem?.type === 'text' && currentItem.id === textId
@@ -966,6 +1000,14 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
   };
 
   const handlePressTool = (toolId: DiaryToolId) => {
+    if (toolId === 'layers') {
+      finishCurrentTextEditing();
+      setSelectedTool(null);
+      setIsLayerPanelVisible(currentValue => !currentValue);
+      return;
+    }
+
+    setIsLayerPanelVisible(false);
     setSelectedTool(toolId);
 
     if (toolId === 'drawing') {
@@ -979,6 +1021,63 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
 
     if (toolId === 'text') {
       handleAddText();
+    }
+  };
+
+  const handleSelectLayer = (layerId: string) => {
+    if (layerId === DRAWING_LAYER_ID) {
+      finishCurrentTextEditing();
+      setSelectedItem(null);
+      setSelectedTool('drawing');
+      return;
+    }
+
+    const selectedLayerItem = items.find(
+      item => getDiaryItemLayerId(item) === layerId,
+    );
+
+    if (!selectedLayerItem) {
+      return;
+    }
+
+    setSelectedTool(null);
+
+    if (selectedLayerItem.type === 'photo') {
+      handleSelectPhoto(selectedLayerItem.data.id);
+    } else if (selectedLayerItem.type === 'sticker') {
+      handleSelectSticker(selectedLayerItem.data.id);
+    } else {
+      handleSelectText(selectedLayerItem.data.id);
+    }
+  };
+
+  const handleMoveLayer = (layerId: string, targetIndex: number) => {
+    const topToBottom = [...layerPanelItems];
+    const sourceIndex = topToBottom.findIndex(item => item.id === layerId);
+
+    if (sourceIndex === -1 || sourceIndex === targetIndex) {
+      return;
+    }
+
+    const [movedLayer] = topToBottom.splice(sourceIndex, 1);
+    topToBottom.splice(targetIndex, 0, movedLayer);
+
+    const itemByLayerId = new Map(
+      items.map(item => [getDiaryItemLayerId(item), item]),
+    );
+    const bottomToTop = topToBottom.reverse();
+    const nextItems = bottomToTop.flatMap(layer => {
+      const item = itemByLayerId.get(layer.id);
+      return item ? [item] : [];
+    });
+    const nextDrawingIndex = bottomToTop.findIndex(
+      layer => layer.id === DRAWING_LAYER_ID,
+    );
+
+    setItems(nextItems);
+
+    if (nextDrawingIndex !== -1) {
+      setDrawingIndex(nextDrawingIndex);
     }
   };
 
@@ -997,6 +1096,15 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
         return;
       }
 
+      if (drawingBase64Ref.current === null) {
+        const lastPhotoIndex = items.reduce(
+          (result, item, index) => (item.type === 'photo' ? index + 1 : result),
+          0,
+        );
+
+        setDrawingIndex(lastPhotoIndex);
+      }
+
       drawingBase64Ref.current = drawingBase64;
       setDrawingRevision(currentRevision => currentRevision + 1);
     } catch (error) {
@@ -1006,6 +1114,65 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
 
   const handleFinishDrawing = () => {
     setSelectedTool(null);
+  };
+
+  const renderDiaryItem = (item: DiaryItem) => {
+    if (item.type === 'photo') {
+      const photo = item.data;
+
+      return (
+        <DiaryPhotoItem
+          key={`photo-${photo.id}`}
+          photo={photo}
+          editorSize={editorSize}
+          isSelected={
+            selectedItem?.type === 'photo' && selectedItem.id === photo.id
+          }
+          onSelect={() => handleSelectPhoto(photo.id)}
+          onChange={handleChangePhoto}
+          onDelete={() => handleDeletePhoto(photo.id)}
+        />
+      );
+    }
+
+    if (item.type === 'sticker') {
+      const sticker = item.data;
+
+      return (
+        <DiaryStickerItem
+          key={`sticker-${sticker.id}`}
+          sticker={sticker}
+          editorSize={editorSize}
+          isSelected={
+            selectedItem?.type === 'sticker' && selectedItem.id === sticker.id
+          }
+          onSelect={() => handleSelectSticker(sticker.id)}
+          onChange={handleChangeSticker}
+          onDelete={() => handleDeleteSticker(sticker.id)}
+        />
+      );
+    }
+
+    const textItem = item.data;
+
+    return (
+      <DiaryTextItem
+        key={`text-${textItem.id}`}
+        textItem={textItem}
+        editorSize={editorSize}
+        isSelected={
+          selectedItem?.type === 'text' && selectedItem.id === textItem.id
+        }
+        isEditing={editingTextId === textItem.id}
+        onSelect={() => handleSelectText(textItem.id)}
+        onStartEditing={() => handleStartTextEditing(textItem.id)}
+        onChangeText={value => handleChangeTextContent(textItem.id, value)}
+        onChangeFrame={frame => handleChangeTextFrame(textItem.id, frame)}
+        onChangeHeight={height => handleChangeTextHeight(textItem.id, height)}
+        onFinishEditing={() => handleFinishTextEditing(textItem.id)}
+        onDelete={() => handleDeleteText(textItem.id)}
+      />
+    );
   };
 
   return (
@@ -1026,79 +1193,20 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
             {paperType === 'grid' ? <GridPaper /> : null}
           </Pressable>
 
-          {items.map(item => {
-            if (item.type === 'photo') {
-              const photo = item.data;
-
-              return (
-                <DiaryPhotoItem
-                  key={`photo-${photo.id}`}
-                  photo={photo}
-                  editorSize={editorSize}
-                  isSelected={
-                    selectedItem?.type === 'photo' &&
-                    selectedItem.id === photo.id
-                  }
-                  onSelect={() => handleSelectPhoto(photo.id)}
-                  onChange={handleChangePhoto}
-                  onDelete={() => handleDeletePhoto(photo.id)}
-                />
-              );
-            }
-
-            if (item.type === 'sticker') {
-              const sticker = item.data;
-
-              return (
-                <DiaryStickerItem
-                  key={`sticker-${sticker.id}`}
-                  sticker={sticker}
-                  editorSize={editorSize}
-                  isSelected={
-                    selectedItem?.type === 'sticker' &&
-                    selectedItem.id === sticker.id
-                  }
-                  onSelect={() => handleSelectSticker(sticker.id)}
-                  onChange={handleChangeSticker}
-                  onDelete={() => handleDeleteSticker(sticker.id)}
-                />
-              );
-            }
-
-            const textItem = item.data;
-
-            return (
-              <DiaryTextItem
-                key={`text-${textItem.id}`}
-                textItem={textItem}
-                editorSize={editorSize}
-                isSelected={
-                  selectedItem?.type === 'text' &&
-                  selectedItem.id === textItem.id
-                }
-                isEditing={editingTextId === textItem.id}
-                onSelect={() => handleSelectText(textItem.id)}
-                onStartEditing={() => handleStartTextEditing(textItem.id)}
-                onChangeText={value =>
-                  handleChangeTextContent(textItem.id, value)
-                }
-                onChangeFrame={frame =>
-                  handleChangeTextFrame(textItem.id, frame)
-                }
-                onChangeHeight={height =>
-                  handleChangeTextHeight(textItem.id, height)
-                }
-                onFinishEditing={() => handleFinishTextEditing(textItem.id)}
-                onDelete={() => handleDeleteText(textItem.id)}
-              />
-            );
-          })}
+          {items.slice(0, drawingIndex).map(renderDiaryItem)}
 
           <DiaryDrawingCanvas
             ref={drawingCanvasRef}
             isDrawingMode={selectedTool === 'drawing'}
             onDrawingChange={handleDrawingChange}
           />
+
+          <View
+            pointerEvents={selectedTool === 'drawing' ? 'none' : 'box-none'}
+            style={styles.foregroundItems}
+          >
+            {items.slice(drawingIndex).map(renderDiaryItem)}
+          </View>
 
           {selectedTool === 'drawing' ? (
             <Pressable
@@ -1132,6 +1240,17 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
               onSelect={handlePaperSelect}
             />
           ) : null}
+
+          {isLayerPanelVisible ? (
+            <DiaryLayerPanel
+              editorSize={editorSize}
+              items={layerPanelItems}
+              selectedLayerId={selectedLayerId}
+              onSelectLayer={handleSelectLayer}
+              onMoveLayer={handleMoveLayer}
+              onClose={() => setIsLayerPanelVisible(false)}
+            />
+          ) : null}
         </View>
 
         {selectedText?.type === 'text' ? (
@@ -1141,7 +1260,7 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
           />
         ) : selectedTool !== 'sticker' && selectedTool !== 'drawing' ? (
           <DiaryBottomToolbar
-            selectedTool={selectedTool}
+            selectedTool={isLayerPanelVisible ? 'layers' : selectedTool}
             onPressTool={handlePressTool}
           />
         ) : null}
@@ -1214,5 +1333,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.surface,
+  },
+
+  foregroundItems: {
+    ...StyleSheet.absoluteFill,
   },
 });

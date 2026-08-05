@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import {
   ImagePlus,
+  Layers,
   Notebook,
   Pencil,
   Sticker,
@@ -34,6 +35,11 @@ const DIARY_TOOLS = [
     id: 'text',
     label: '텍스트',
     icon: Type,
+  },
+  {
+    id: 'layers',
+    label: '레이어',
+    icon: Layers,
   },
 ] as const;
 

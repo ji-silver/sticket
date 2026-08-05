@@ -128,6 +128,7 @@ export interface TicketDiaryData {
   version: typeof TICKET_DIARY_VERSION;
   paperType: TicketDiaryPaperType;
   items: SavedDiaryItem[];
+  drawingIndex: number;
   drawingPath: string | null;
 }
 
@@ -136,6 +137,7 @@ export function createEmptyTicketDiaryData(): TicketDiaryData {
     version: TICKET_DIARY_VERSION,
     paperType: 'plain',
     items: [],
+    drawingIndex: 0,
     drawingPath: null,
   };
 }
@@ -155,7 +157,30 @@ function parseTicketDiaryData(value: unknown): TicketDiaryData {
     throw new Error('저장된 다이어리 형식을 확인할 수 없습니다.');
   }
 
-  return value as unknown as TicketDiaryData;
+  const savedItems = value.items as SavedDiaryItem[];
+
+  if (
+    typeof value.drawingIndex === 'number' &&
+    Number.isInteger(value.drawingIndex)
+  ) {
+    return {
+      ...(value as unknown as TicketDiaryData),
+      drawingIndex: Math.min(
+        savedItems.length,
+        Math.max(0, value.drawingIndex),
+      ),
+    };
+  }
+
+  // 기존 다이어리가 보여주던 순서(사진 → 드로잉 → 스티커·텍스트)를 유지합니다.
+  const photos = savedItems.filter(item => item.type === 'photo');
+  const foregroundItems = savedItems.filter(item => item.type !== 'photo');
+
+  return {
+    ...(value as unknown as TicketDiaryData),
+    items: [...photos, ...foregroundItems],
+    drawingIndex: photos.length,
+  };
 }
 
 function belongsToTicket(storagePath: string, ticketId: string): boolean {
