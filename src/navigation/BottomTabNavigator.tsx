@@ -70,6 +70,8 @@ function BottomTabNavigator() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
+        tabBarPosition: 'bottom',
+        tabBarLabelPosition: 'below-icon',
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.secondary,
         tabBarStyle: {
