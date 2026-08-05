@@ -1,10 +1,4 @@
-import {
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Plus } from 'lucide-react-native';
 import DiarySection from './components/DiarySection.tsx';
@@ -33,6 +27,13 @@ import {
 } from '../../features/bucket-list/bucketList.service.ts';
 
 type HomeNavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+const SPORT_TITLES: Record<Diary['sport'], string> = {
+  baseball: '야구',
+  soccer: '축구',
+  basketball: '농구',
+  volleyball: '배구',
+};
 
 function HomeScreen() {
   const navigation = useNavigation<HomeNavigationProp>();
@@ -70,8 +71,8 @@ function HomeScreen() {
           const diaries: Diary[] = ticketBooks.map(ticketBook => ({
             id: ticketBook.id,
             sport: ticketBook.sport,
-            title: '야구',
-            recordCount: 0,
+            title: SPORT_TITLES[ticketBook.sport],
+            recordCount: ticketBook.recordCount,
             coverColor: ticketBook.coverColor,
             coverPattern: ticketBook.coverPattern,
             coverPhotoPath: ticketBook.coverPhotoPath,
@@ -174,7 +175,10 @@ function HomeScreen() {
       }));
 
       console.error('버킷리스트 완료 상태를 변경하지 못했습니다.', error);
-      Alert.alert('완료 상태를 변경하지 못했어요', '잠시 후 다시 시도해 주세요.');
+      Alert.alert(
+        '완료 상태를 변경하지 못했어요',
+        '잠시 후 다시 시도해 주세요.',
+      );
       return false;
     }
   };
@@ -231,9 +235,7 @@ function HomeScreen() {
       const restoredBucket = await restoreBucketItem(bucket);
 
       setBucketsByDiaryId(currentBuckets => {
-        const nextBuckets = [
-          ...(currentBuckets[bucket.ticketBookId] ?? []),
-        ];
+        const nextBuckets = [...(currentBuckets[bucket.ticketBookId] ?? [])];
         nextBuckets.splice(index, 0, restoredBucket);
 
         return {

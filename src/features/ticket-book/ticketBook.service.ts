@@ -32,6 +32,7 @@ interface UploadTicketBookCoverParams {
 export interface TicketBook {
   id: string;
   sport: TicketBookSport;
+  recordCount: number;
   coverColor: string;
   coverPattern: TicketBookCoverPattern;
   coverPhotoPath: string | null;
@@ -160,7 +161,15 @@ export async function getTicketBooks(): Promise<TicketBook[]> {
   const { data, error } = await supabase
     .from('ticket_books')
     .select(
-      'id, sport, cover_color, cover_pattern, cover_photo_path, created_at',
+      `
+    id,
+    sport,
+    cover_color,
+    cover_pattern,
+    cover_photo_path,
+    created_at,
+    tickets(count)
+  `,
     )
     .eq('user_id', user.id)
     .order('created_at', { ascending: true });
@@ -189,6 +198,7 @@ export async function getTicketBooks(): Promise<TicketBook[]> {
       return {
         id: ticketBook.id,
         sport: ticketBook.sport,
+        recordCount: ticketBook.tickets[0]?.count ?? 0,
         coverColor: ticketBook.cover_color,
         coverPattern: ticketBook.cover_pattern,
         coverPhotoPath: ticketBook.cover_photo_path,
