@@ -46,9 +46,10 @@ function TicketRecordPage({ ticket }: TicketRecordPageProps) {
   const matchDateText = formatMatchDate(ticket.matchDate);
   const awayScoreText = ticket.awayScore ?? '-';
   const homeScoreText = ticket.homeScore ?? '-';
-  const matchResult = !ticket.isCancelled && favoriteTeamName
-    ? getFavoriteTeamMatchResult(ticket, favoriteTeamName)
-    : null;
+  const matchResult =
+    !ticket.isCancelled && favoriteTeamName
+      ? getFavoriteTeamMatchResult(ticket, favoriteTeamName)
+      : null;
   const matchResultText = matchResult ? matchResultLabels[matchResult] : null;
   const matchResultBadgeStyle =
     matchResult === 'lose'
@@ -62,11 +63,6 @@ function TicketRecordPage({ ticket }: TicketRecordPageProps) {
       : matchResult === 'draw'
       ? styles.matchResultTextDraw
       : null;
-  const showsAwayLineup = favoriteTeamName === ticket.awayTeamName;
-  const lineupTeamName = showsAwayLineup
-    ? ticket.awayTeamName
-    : ticket.homeTeamName;
-  const lineup = showsAwayLineup ? ticket.awayLineup : ticket.homeLineup;
   const [snackbarMessage, setSnackbarMessage] = useState<string | null>(null);
   const snackbarTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -108,9 +104,7 @@ function TicketRecordPage({ ticket }: TicketRecordPageProps) {
             accessibilityLabel={
               ticket.isCancelled
                 ? `원정 ${ticket.awayTeamName} 대 홈 ${ticket.homeTeamName}, 경기 취소`
-                : `원정 ${
-                    ticket.awayTeamName
-                  } ${awayScoreText} 대 홈 ${
+                : `원정 ${ticket.awayTeamName} ${awayScoreText} 대 홈 ${
                     ticket.homeTeamName
                   } ${homeScoreText}${
                     matchResultText && favoriteTeamName
@@ -196,9 +190,15 @@ function TicketRecordPage({ ticket }: TicketRecordPageProps) {
           initialFoods={ticket.foods}
         />
 
-        {lineup.length === 9 ? (
+        {ticket.awayLineup.length === 9 && ticket.homeLineup.length === 9 ? (
           <View style={styles.lineupArea}>
-            <TicketLineupSection teamName={lineupTeamName} lineup={lineup} />
+            <TicketLineupSection
+              awayTeamName={ticket.awayTeamName}
+              homeTeamName={ticket.homeTeamName}
+              awayLineup={ticket.awayLineup}
+              homeLineup={ticket.homeLineup}
+              favoriteTeamName={favoriteTeamName}
+            />
           </View>
         ) : null}
       </ScrollView>
