@@ -10,7 +10,7 @@ import {
   getRemainingSeasonMonths,
   getUpcomingScheduleMonths,
 } from './dateWindow.ts';
-import { syncGameLineups, syncMissingTicketLineups } from './gameLineups.ts';
+import { syncGameLineups, syncMissingGameLineups } from './gameLineups.ts';
 import { upsertGames } from './saveGames.ts';
 
 const KBO_SCHEDULE_URL = 'https://www.koreabaseball.com/Schedule/Schedule.aspx';
@@ -194,8 +194,9 @@ async function main() {
 
         const savedGameCount = await upsertGames(games);
 
-        const savedLineupCount =
-          isBackfill || isScheduleCollection ? 0 : await syncGameLineups(games);
+        const savedLineupCount = isScheduleCollection
+          ? 0
+          : await syncGameLineups(games);
 
         targetSavedGameCount += savedGameCount;
 
@@ -218,7 +219,7 @@ async function main() {
     }
 
     if (isAutomaticCollection) {
-      const backfilledLineupCount = await syncMissingTicketLineups();
+      const backfilledLineupCount = await syncMissingGameLineups();
 
       if (backfilledLineupCount > 0) {
         console.log(`기존 티켓 라인업 저장 완료: ${backfilledLineupCount}경기`);

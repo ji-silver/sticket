@@ -109,48 +109,27 @@ export async function syncGameLineups(games: LineupGame[]): Promise<number> {
   return savedCount;
 }
 
-export async function syncMissingTicketLineups(): Promise<number> {
+export async function syncMissingGameLineups(): Promise<number> {
   const { supabaseAdmin } = await import('./supabaseAdmin.ts');
-  const { data: tickets, error: ticketError } = await supabaseAdmin
-    .from('tickets')
-    .select('game_key');
-
-  if (ticketError) {
-    throw new Error(`티켓 경기 조회에 실패했습니다: ${ticketError.message}`);
-  }
-
-  const gameKeys = Array.from(
-    new Set((tickets ?? []).map(ticket => ticket.game_key)),
-  );
-
-  if (gameKeys.length === 0) {
-    return 0;
-  }
-
   const { data: games, error: gameError } = await supabaseAdmin
     .from('games')
-    .select(
-      'game_key, source_game_id, season, game_date, status, away_lineup, home_lineup',
-    )
-    .in('game_key', gameKeys);
+    .select('game_key, source_game_id, season, game_date, status')
+    .in('status', ['IN_PROGRESS', 'FINISHED'])
+    .is('lineup_collected_at', null)
+    .order('game_date', { ascending: false })
+    .limit(50);
 
   if (gameError) {
     throw new Error(`라인업 경기 조회에 실패했습니다: ${gameError.message}`);
   }
 
-  const targets: LineupGame[] = (games ?? [])
-    .filter(
-      game =>
-        !hasCompleteLineup(game.away_lineup) ||
-        !hasCompleteLineup(game.home_lineup),
-    )
-    .map(game => ({
-      gameKey: game.game_key,
-      sourceGameId: game.source_game_id,
-      season: game.season,
-      gameDate: game.game_date,
-      status: game.status as KboGame['status'],
-    }));
+  const targets: LineupGame[] = (games ?? []).map(game => ({
+    gameKey: game.game_key,
+    sourceGameId: game.source_game_id,
+    season: game.season,
+    gameDate: game.game_date,
+    status: game.status as KboGame['status'],
+  }));
 
   return syncGameLineups(targets);
 }
@@ -265,10 +244,6 @@ function readCellText(value: unknown) {
   return isRecord(value) && typeof value.Text === 'string'
     ? value.Text.trim()
     : '';
-}
-
-function hasCompleteLineup(value: unknown) {
-  return Array.isArray(value) && value.length === 9;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
