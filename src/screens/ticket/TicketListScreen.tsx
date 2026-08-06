@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -13,15 +13,13 @@ import { useNavigation } from '@react-navigation/core';
 import { fonts } from '../../styles/fonts.ts';
 import AppText from '../../components/common/AppText.tsx';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
 import { colors } from '../../styles/colors.ts';
 import FilterChip from '../../components/common/FilterChip.tsx';
 import InlineActionButton from '../../components/common/InlineActionButton.tsx';
 import ScreenHeader from '../../components/common/ScreenHeader.tsx';
 import ResponsiveContent from '../../components/common/ResponsiveContent.tsx';
-import { Ticket } from './types.ts';
-import { getTickets } from '../../features/ticket/ticket.service.ts';
+import { useTickets } from '../../features/ticket/api/useTickets';
 import TicketCard from './components/TicketCard.tsx';
 
 function TicketListScreen() {
@@ -29,51 +27,20 @@ function TicketListScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const { data: tickets = [], isLoading, error } = useTickets();
   const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
   const diaryTitle = '야구';
   const ticketCount = tickets.length;
   const hasTickets = ticketCount > 0;
 
-  // useEffect는 컴포넌트 생성 기준, useFocusEffect는 화면이 사용장게 다시 보일때마다 실행
-  useFocusEffect(
-    useCallback(() => {
-      let isActive = true;
-
-      const loadTickets = async () => {
-        setIsLoading(true);
-
-        try {
-          const loadedTickets = await getTickets();
-
-          if (isActive) {
-            setTickets(loadedTickets);
-          }
-        } catch (error) {
-          console.error('티켓 목록을 불러오지 못했습니다.', error);
-
-          if (isActive) {
-            Alert.alert(
-              '티켓 목록을 불러오지 못했어요',
-              '잠시 후 다시 시도해 주세요.',
-            );
-          }
-        } finally {
-          if (isActive) {
-            setIsLoading(false);
-          }
-        }
-      };
-
-      loadTickets();
-
-      return () => {
-        isActive = false;
-      };
-    }, []),
-  );
+  if (error) {
+    console.error('티켓 목록을 불러오지 못했습니다.', error);
+    Alert.alert(
+      '티켓 목록을 불러오지 못했어요',
+      '잠시 후 다시 시도해 주세요.',
+    );
+  }
 
   const seasons = Array.from(
     new Set(tickets.map(ticket => new Date(ticket.matchDate).getFullYear())),

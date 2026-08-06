@@ -26,10 +26,10 @@ import OriginalTicketImageField, {
 } from './components/OriginalTicketImageField.tsx';
 import { getGamesByDate, KboGame } from '../../features/game/game.service.ts';
 import EmptyCard from '../../components/common/EmptyCard.tsx';
-import { createTicket } from '../../features/ticket/ticket.service.ts';
 import { useAuth } from '../../features/auth/AuthProvider.tsx';
 import { getTodayInKorea } from '../../lib/date.ts';
 import type { RouteProp } from '@react-navigation/native';
+import { useAddTicket } from '../../features/ticket/api/useAddTicket';
 
 type AddTicketRouteProp = RouteProp<RootStackParamList, 'AddTicket'>;
 
@@ -108,7 +108,7 @@ function AddTicketScreen() {
   const [originalTicketImage, setOriginalTicketImage] =
     useState<SelectedOriginalTicketImage | null>(null);
 
-  const [isSaving, setIsSaving] = useState(false);
+  const { mutateAsync: addTicket, isPending: isSaving } = useAddTicket();
 
   const canSaveTicket = selectedDate.length > 0 && selectedGameId !== null;
   const isSaveDisabled = !canSaveTicket || isSaving;
@@ -154,10 +154,8 @@ function AddTicketScreen() {
       return;
     }
 
-    setIsSaving(true);
-
     try {
-      await createTicket({
+      await addTicket({
         gameKey: selectedGameId,
         seatName,
         originalPhotoBase64: originalTicketImage?.base64,
@@ -180,8 +178,6 @@ function AddTicketScreen() {
       } else {
         Alert.alert('티켓을 추가하지 못했어요', '잠시 후 다시 시도해 주세요.');
       }
-    } finally {
-      setIsSaving(false);
     }
   };
 
