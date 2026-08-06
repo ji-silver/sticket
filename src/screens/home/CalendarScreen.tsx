@@ -12,25 +12,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
 import AppCalendar from '../../components/common/AppCalendar.tsx';
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import type { CalendarProps, DateData } from 'react-native-calendars';
 import { useNavigation } from '@react-navigation/core';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
 import { getTodayInKorea } from '../../lib/date.ts';
-import { Ticket } from '../ticket/types.ts';
-import { useFocusEffect } from '@react-navigation/native';
-import { getTickets } from '../../features/ticket/ticket.service.ts';
+
+import { useTickets } from '../../features/ticket/api/useTickets';
+import { useTeamGamesByMonth, useLeagueGameDatesByMonth } from '../../features/game/api/useGames';
 import TicketCard from '../ticket/components/TicketCard.tsx';
 import EmptyCard from '../../components/common/EmptyCard.tsx';
 import { Plus } from 'lucide-react-native';
-import {
-  getLeagueGameDatesByMonth,
-  getTeamGamesByMonth,
-  TeamCalendarGame,
-} from '../../features/game/game.service.ts';
 import { useAuth } from '../../features/auth/AuthProvider.tsx';
 import { getTicketBooks } from '../../features/ticket-book/ticketBook.service.ts';
+import { TeamCalendarGame } from '../../features/game/game.service.ts';
 
 type CalendarNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type CalendarDayProps = {
@@ -143,13 +139,13 @@ function CalendarScreen() {
   const today = getTodayInKorea();
 
   const [visibleMonth, setVisibleMonth] = useState(today.slice(0, 7));
-  const [teamGames, setTeamGames] = useState<TeamCalendarGame[]>([]);
-  const [leagueGameDates, setLeagueGameDates] = useState<string[]>([]);
-  const [isLoadingTeamGames, setIsLoadingTeamGames] = useState(false);
-
   const [selectedDate, setSelectedDate] = useState(today);
-  const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+
+  const { data: tickets = [], isLoading: isLoadingTickets } = useTickets();
+  const { data: teamGames = [], isLoading: isLoadingTeamGames } = useTeamGamesByMonth(profile?.favorite_team_id, visibleMonth);
+  const { data: leagueGameDates = [] } = useLeagueGameDatesByMonth(visibleMonth);
+
+  const isLoading = isLoadingTickets;
 
   const handlePressAddTicket = async () => {
     try {
@@ -181,98 +177,8 @@ function CalendarScreen() {
   };
 
   /*
-   * useEffect와 다른 점은 useEffect는 컴포넌트가 생성될 때만 실행되지만, useFocusEffect는 화면이 다시 포커스될 때마다 실행된다는 점
-   * 즉 캘린더 화면에서 다른 화면으로 이동했다가 다시 돌아오면, useFocusEffect 안의 콜백이 다시 실행되어 티켓 데이터를 새로 불러오게 된다.
+   * 캘린더 관련 React Query 훅이 상단에 선언되어 데이터 패칭을 자동으로 처리합니다.
    * */
-  useFocusEffect(
-    useCallback(() => {
-      let isActive = true;
-
-      const loadTickets = async () => {
-        setIsLoading(true);
-
-        try {
-          const loadedTickets = await getTickets();
-
-          if (isActive) {
-            setTickets(loadedTickets);
-          }
-        } catch (error) {
-          console.error('티켓을 불러오지 못했습니다.', error);
-
-          if (isActive) {
-            Alert.alert(
-              '직관 기록을 불러오지 못했어요',
-              '잠시 후 다시 시도해 주세요.',
-            );
-          }
-        } finally {
-          if (isActive) {
-            setIsLoading(false);
-          }
-        }
-      };
-
-      loadTickets();
-
-      return () => {
-        isActive = false;
-      };
-    }, []),
-  );
-
-  useFocusEffect(
-    useCallback(() => {
-      const favoriteTeamId = profile?.favorite_team_id;
-
-      if (!favoriteTeamId) {
-        setTeamGames([]);
-        setLeagueGameDates([]);
-        return;
-      }
-
-      let isActive = true;
-
-      const loadTeamGames = async () => {
-        const [year, month] = visibleMonth.split('-').map(Number);
-
-        setTeamGames([]);
-        setLeagueGameDates([]);
-        setIsLoadingTeamGames(true);
-
-        try {
-          const [loadedGames, loadedGameDates] = await Promise.all([
-            getTeamGamesByMonth(favoriteTeamId, year, month),
-            getLeagueGameDatesByMonth(year, month),
-          ]);
-
-          if (isActive) {
-            setTeamGames(loadedGames);
-            setLeagueGameDates(loadedGameDates);
-          }
-        } catch (error) {
-          console.error('응원 구단 경기 일정을 불러오지 못했습니다.', error);
-
-          if (isActive) {
-            Alert.alert(
-              '경기 일정을 불러오지 못했어요',
-              '잠시 후 다시 시도해 주세요.',
-            );
-          }
-        } finally {
-          if (isActive) {
-            setIsLoadingTeamGames(false);
-          }
-        }
-      };
-
-      loadTeamGames();
-
-      return () => {
-        isActive = false;
-      };
-    }, [profile?.favorite_team_id, visibleMonth]),
-  );
 
   const gamesByDate = teamGames.reduce<Record<string, TeamCalendarGame[]>>(
     (result, game) => {
