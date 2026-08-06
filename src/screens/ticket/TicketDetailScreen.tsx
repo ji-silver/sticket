@@ -13,7 +13,7 @@ import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
 import TicketDiaryPage from './components/diary/TicketDiaryPage.tsx';
 import TicketRecordPage from './components/TicketRecordPage.tsx';
-import { deleteTicket } from '../../features/ticket/ticket.service.ts';
+import { useDeleteTicket } from '../../features/ticket/api/useDeleteTicket';
 
 type TicketDetailNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type TicketDetailRouteProp = RouteProp<RootStackParamList, 'TicketDetail'>;
@@ -27,7 +27,8 @@ function TicketDetailScreen() {
   const [activeTab, setActiveTab] = useState<DetailTab>('record');
   const [hasOpenedDiary, setHasOpenedDiary] = useState(false);
   const [isDeleteDialogVisible, setIsDeleteDialogVisible] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false); // 삭제 진행 중
+  const { mutateAsync: removeTicket, isPending: isDeleting } =
+    useDeleteTicket();
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -50,18 +51,14 @@ function TicketDetailScreen() {
       return;
     }
 
-    setIsDeleting(true);
-
     try {
-      await deleteTicket(ticket.id);
+      await removeTicket(ticket.id);
 
       setIsDeleteDialogVisible(false);
       navigation.goBack();
     } catch (error) {
       console.error('티켓을 삭제하지 못했습니다.', error);
       Alert.alert('티켓을 삭제하지 못했어요', '잠시 후 다시 시도해 주세요.');
-    } finally {
-      setIsDeleting(false);
     }
   };
 
