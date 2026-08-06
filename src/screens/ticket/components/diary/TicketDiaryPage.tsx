@@ -459,7 +459,9 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
       }
     }
 
-    let drawingPath = drawingStoragePathRef.current;
+    let drawingPath = snapshot.drawingBase64
+      ? drawingStoragePathRef.current
+      : null;
 
     if (
       snapshot.drawingRevision > uploadedDrawingRevisionRef.current &&
@@ -604,11 +606,6 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
           managedStoragePathsRef.current.add(diaryData.drawingPath);
         }
 
-        drawingBase64Ref.current = drawingBase64;
-        drawingStoragePathRef.current = diaryData.drawingPath;
-        drawingCaptureVersionRef.current = 0;
-        setDrawingRevision(0);
-
         setPaperType(diaryData.paperType);
         setItems(restoredItems);
         setDrawingIndex(diaryData.drawingIndex);
@@ -624,9 +621,14 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
         isRestoringDrawingRef.current = true;
 
         try {
+          drawingCanvasRef.current.clear();
+
+          let hasStoredDrawing = false;
+
           if (drawingBase64) {
             try {
               await drawingCanvasRef.current.loadBase64Data(drawingBase64);
+              hasStoredDrawing = await drawingCanvasRef.current.hasDrawing();
             } catch (drawingError) {
               console.error(
                 '저장된 드로잉을 불러오지 못했습니다.',
@@ -635,9 +637,14 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
               drawingCanvasRef.current.clear();
               showSnackbarRef.current('드로잉을 불러오지 못했어요');
             }
-          } else {
-            drawingCanvasRef.current.clear();
           }
+
+          drawingBase64Ref.current = hasStoredDrawing ? drawingBase64 : null;
+          drawingStoragePathRef.current = hasStoredDrawing
+            ? diaryData.drawingPath
+            : null;
+          drawingCaptureVersionRef.current = 0;
+          setDrawingRevision(0);
         } finally {
           isRestoringDrawingRef.current = false;
         }
@@ -1118,6 +1125,7 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
   const handleSelectLayer = (layerId: string) => {
     if (layerId === DRAWING_LAYER_ID) {
       finishCurrentTextEditing();
+      setIsLayerPanelVisible(false);
       setSelectedItem(null);
       setSelectedTool('drawing');
       return;
@@ -1181,6 +1189,19 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
     drawingCaptureVersionRef.current = captureVersion;
 
     try {
+      const hasCanvasDrawing = await drawingCanvasRef.current.hasDrawing();
+
+      if (captureVersion !== drawingCaptureVersionRef.current) {
+        return;
+      }
+
+      if (!hasCanvasDrawing) {
+        drawingBase64Ref.current = null;
+        drawingStoragePathRef.current = null;
+        setDrawingRevision(currentRevision => currentRevision + 1);
+        return;
+      }
+
       const drawingBase64 = await drawingCanvasRef.current.getBase64Data();
 
       if (captureVersion !== drawingCaptureVersionRef.current) {

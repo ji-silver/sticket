@@ -5,6 +5,7 @@ import { type EditorSize } from './photoTransform.ts';
 
 export interface DiaryDrawingCanvasRef {
   clear: () => void;
+  hasDrawing: () => Promise<boolean>;
   getBase64Data: () => Promise<string>;
   loadBase64Data: (base64: string) => Promise<void>;
 }
@@ -25,6 +26,31 @@ const DiaryDrawingCanvas = forwardRef<
   forwardedRef,
 ) {
   const drawingCanvasRef = useRef<PencilKitRef>(null);
+  const emptyDrawingBase64Ref = useRef<string | null>(null);
+
+  useEffect(() => {
+    let isActive = true;
+    const canvas = drawingCanvasRef.current;
+
+    if (!canvas) {
+      return () => {
+        isActive = false;
+      };
+    }
+
+    canvas
+      .getBase64Data()
+      .then(base64 => {
+        if (isActive) {
+          emptyDrawingBase64Ref.current = base64;
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (isDrawingMode) {
@@ -38,7 +64,46 @@ const DiaryDrawingCanvas = forwardRef<
     forwardedRef,
     () => ({
       clear: () => {
-        drawingCanvasRef.current?.clear();
+        const canvas = drawingCanvasRef.current;
+
+        canvas?.clear();
+        canvas
+          ?.getBase64Data()
+          .then(base64 => {
+            emptyDrawingBase64Ref.current = base64;
+          })
+          .catch(() => undefined);
+      },
+
+      hasDrawing: async () => {
+        const canvas = drawingCanvasRef.current;
+
+        if (!canvas) {
+          throw new Error('그림 캔버스를 불러올 수 없습니다.');
+        }
+
+        const nativeHasDrawing = canvas.hasDrawing as
+          | (() => Promise<boolean>)
+          | undefined;
+
+        if (typeof nativeHasDrawing === 'function') {
+          try {
+            return await nativeHasDrawing();
+          } catch {
+            // 이전 네이티브 바이너리에서는 hasDrawing 메서드가 없을 수 있습니다.
+          }
+        }
+
+        const base64 = await canvas.getBase64Data();
+
+        if (emptyDrawingBase64Ref.current === null) {
+          emptyDrawingBase64Ref.current = base64;
+          return false;
+        }
+
+        return (
+          base64.trim().length > 0 && base64 !== emptyDrawingBase64Ref.current
+        );
       },
 
       getBase64Data: async () => {
@@ -50,11 +115,17 @@ const DiaryDrawingCanvas = forwardRef<
       },
 
       loadBase64Data: async (base64: string) => {
-        if (!drawingCanvasRef.current) {
+        const canvas = drawingCanvasRef.current;
+
+        if (!canvas) {
           throw new Error('그림 캔버스를 불러올 수 없습니다.');
         }
 
-        await drawingCanvasRef.current.loadBase64Data(base64);
+        if (emptyDrawingBase64Ref.current === null) {
+          emptyDrawingBase64Ref.current = await canvas.getBase64Data();
+        }
+
+        await canvas.loadBase64Data(base64);
       },
     }),
     [],

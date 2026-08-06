@@ -259,13 +259,7 @@ function DiaryLayerPanel({
         </Pressable>
       </View>
 
-      {items.length === 0 ? (
-        <View style={styles.emptyState}>
-          <AppText size={13} color={colors.textSecondary}>
-            추가된 레이어가 없어요
-          </AppText>
-        </View>
-      ) : (
+      {items.length > 0 ? (
         <ScrollView
           bounces={false}
           showsVerticalScrollIndicator={false}
@@ -283,7 +277,7 @@ function DiaryLayerPanel({
             />
           ))}
         </ScrollView>
-      )}
+      ) : null}
     </View>
   );
 }
@@ -393,12 +387,6 @@ const styles = StyleSheet.create({
   dragHandle: {
     width: 34,
     height: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  emptyState: {
-    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
