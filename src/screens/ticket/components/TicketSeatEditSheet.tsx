@@ -3,7 +3,7 @@ import { Alert, Pressable, StyleSheet, TextInput } from 'react-native';
 
 import AppBottomSheet from '../../../components/common/AppBottomSheet.tsx';
 import AppText from '../../../components/common/AppText.tsx';
-import { updateTicketSeat } from '../../../features/ticket/ticket.service.ts';
+import { useUpdateTicketSeat } from '../../../features/ticket/api/useUpdateTicketSeat.ts';
 import { colors } from '../../../styles/colors.ts';
 import { fonts } from '../../../styles/fonts.ts';
 
@@ -23,7 +23,7 @@ function TicketSeatEditSheet({
   onClose,
 }: TicketSeatEditSheetProps) {
   const [seatDraft, setSeatDraft] = useState(seatName ?? '');
-  const [isSaving, setIsSaving] = useState(false);
+  const updateTicketSeatMutation = useUpdateTicketSeat();
 
   useEffect(() => {
     if (visible) {
@@ -32,14 +32,15 @@ function TicketSeatEditSheet({
   }, [seatName, visible]);
 
   const handleSave = async () => {
-    if (isSaving) {
+    if (updateTicketSeatMutation.isPending) {
       return;
     }
 
-    setIsSaving(true);
-
     try {
-      const savedSeatName = await updateTicketSeat(ticketId, seatDraft);
+      const savedSeatName = await updateTicketSeatMutation.mutateAsync({
+        ticketId,
+        seatName: seatDraft,
+      });
 
       onSaved(savedSeatName);
       onClose();
@@ -50,8 +51,6 @@ function TicketSeatEditSheet({
         '좌석 정보를 저장하지 못했어요',
         '잠시 후 다시 시도해 주세요.',
       );
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -73,7 +72,7 @@ function TicketSeatEditSheet({
         maxLength={100}
         returnKeyType="done"
         onSubmitEditing={handleSave}
-        editable={!isSaving}
+        editable={!updateTicketSeatMutation.isPending}
         autoFocus
         accessibilityLabel="좌석 정보"
       />
@@ -81,20 +80,22 @@ function TicketSeatEditSheet({
       <Pressable
         style={({ pressed }) => [
           styles.saveButton,
-          isSaving && styles.saveButtonDisabled,
-          pressed && !isSaving && styles.saveButtonPressed,
+          updateTicketSeatMutation.isPending && styles.saveButtonDisabled,
+          pressed &&
+            !updateTicketSeatMutation.isPending &&
+            styles.saveButtonPressed,
         ]}
         onPress={handleSave}
-        disabled={isSaving}
+        disabled={updateTicketSeatMutation.isPending}
         accessibilityRole="button"
         accessibilityLabel="좌석 정보 저장"
         accessibilityState={{
-          disabled: isSaving,
-          busy: isSaving,
+          disabled: updateTicketSeatMutation.isPending,
+          busy: updateTicketSeatMutation.isPending,
         }}
       >
         <AppText style={styles.saveButtonText}>
-          {isSaving ? '저장 중' : '저장'}
+          {updateTicketSeatMutation.isPending ? '저장 중' : '저장'}
         </AppText>
       </Pressable>
     </AppBottomSheet>

@@ -12,10 +12,8 @@ import ScreenHeader from '../../components/common/ScreenHeader.tsx';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
-import {
-  createTicketBook,
-  updateTicketBook,
-} from '../../features/ticket-book/ticketBook.service.ts';
+import { useCreateTicketBook } from '../../features/ticket-book/api/useCreateTicketBook.ts';
+import { useUpdateTicketBook } from '../../features/ticket-book/api/useUpdateTicketBook.ts';
 
 type SportId = 'baseball' | 'soccer' | 'basketball' | 'volleyball';
 
@@ -134,7 +132,6 @@ function AddDiaryScreen() {
   const [coverPhoto, setCoverPhoto] = useState<SelectedCoverPhoto | null>(
     ticketBook?.photoUri ? { uri: ticketBook.photoUri } : null,
   );
-  const [isSaving, setIsSaving] = useState(false);
 
   const selectSport = SPORTS.find(sport => sport.id === selectedSportId);
   const isSelectedSportReady = selectSport?.isReady ?? false;
@@ -179,23 +176,29 @@ function AddDiaryScreen() {
     }
   };
 
+  const createTicketBookMutation = useCreateTicketBook();
+  const updateTicketBookMutation = useUpdateTicketBook();
+
   const handleSaveTicketBook = async () => {
-    if (!isSelectedSportReady || selectedSportId !== 'baseball' || isSaving) {
+    if (
+      !isSelectedSportReady ||
+      selectedSportId !== 'baseball' ||
+      createTicketBookMutation.isPending ||
+      updateTicketBookMutation.isPending
+    ) {
       return;
     }
 
-    setIsSaving(true);
-
     try {
       if (ticketBook) {
-        await updateTicketBook({
+        await updateTicketBookMutation.mutateAsync({
           ticketBookId: ticketBook.id,
           coverColor: selectedCoverColor.color,
           coverPattern: selectedCoverColor.type,
           coverImageBase64: coverPhoto?.base64,
         });
       } else {
-        await createTicketBook({
+        await createTicketBookMutation.mutateAsync({
           sport: selectedSportId,
           coverColor: selectedCoverColor.color,
           coverPattern: selectedCoverColor.type,
@@ -226,8 +229,6 @@ function AddDiaryScreen() {
           '잠시 후 다시 시도해 주세요.',
         );
       }
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -337,23 +338,40 @@ function AddDiaryScreen() {
         <Pressable
           style={[
             styles.createButton,
-            (!isSelectedSportReady || isSaving) && styles.createButtonDisabled,
+            (!isSelectedSportReady ||
+              createTicketBookMutation.isPending ||
+              updateTicketBookMutation.isPending) &&
+              styles.createButtonDisabled,
           ]}
-          disabled={!isSelectedSportReady || isSaving}
+          disabled={
+            !isSelectedSportReady ||
+            createTicketBookMutation.isPending ||
+            updateTicketBookMutation.isPending
+          }
           onPress={handleSaveTicketBook}
           accessibilityRole="button"
           accessibilityState={{
-            disabled: !isSelectedSportReady || isSaving,
+            disabled:
+              !isSelectedSportReady ||
+              createTicketBookMutation.isPending ||
+              updateTicketBookMutation.isPending,
           }}
         >
           <AppText
             style={[
               styles.createButtonText,
-              (!isSelectedSportReady || isSaving) &&
+              (!isSelectedSportReady ||
+                createTicketBookMutation.isPending ||
+                updateTicketBookMutation.isPending) &&
                 styles.createButtonTextDisabled,
             ]}
           >
-            {isSaving ? '저장 중' : isEditing ? '수정하기' : '티켓북 만들기'}
+            {createTicketBookMutation.isPending ||
+            updateTicketBookMutation.isPending
+              ? '저장 중'
+              : isEditing
+              ? '수정하기'
+              : '티켓북 만들기'}
           </AppText>
         </Pressable>
       </View>

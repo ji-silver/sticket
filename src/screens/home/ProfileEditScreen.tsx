@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AppText from '../../components/common/AppText.tsx';
 import ScreenHeader from '../../components/common/ScreenHeader.tsx';
 import { useAuth } from '../../features/auth/AuthProvider.tsx';
-import { saveProfile } from '../../features/profile/profile.service.ts';
+import { useUpdateProfile } from '../../features/profile/api/useUpdateProfile.ts';
 import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
 import TeamSelectSheet from './components/TeamSelectSheet.tsx';
@@ -28,7 +28,6 @@ function ProfileEditScreen() {
     profile?.favorite_team?.name ?? '',
   );
   const [isTeamSheetOpen, setIsTeamSheetOpen] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
 
   const trimmedNickname = nickname.trim();
   const isNicknameValid =
@@ -40,27 +39,32 @@ function ProfileEditScreen() {
     setIsTeamSheetOpen(false);
   };
 
+  const updateProfileMutation = useUpdateProfile();
+
   const handleSave = async () => {
-    if (!isFormValid || isSaving) {
+    if (!isFormValid || updateProfileMutation.isPending) {
       return;
     }
 
-    setIsSaving(true);
-
-    try {
-      const nextProfile = await saveProfile({
+    updateProfileMutation.mutate(
+      {
         nickname: trimmedNickname,
         favoriteTeamName: favoriteTeam,
-      });
-
-      completeProfile(nextProfile);
-      navigation.goBack();
-    } catch (error) {
-      console.error('프로필 수정에 실패했습니다.', error);
-      Alert.alert('프로필을 수정하지 못했어요', '잠시 후 다시 시도해 주세요.');
-    } finally {
-      setIsSaving(false);
-    }
+      },
+      {
+        onSuccess: nextProfile => {
+          completeProfile(nextProfile);
+          navigation.goBack();
+        },
+        onError: error => {
+          console.error('프로필 수정에 실패했습니다.', error);
+          Alert.alert(
+            '프로필을 수정하지 못했어요',
+            '잠시 후 다시 시도해 주세요.',
+          );
+        },
+      },
+    );
   };
 
   return (
@@ -131,23 +135,28 @@ function ProfileEditScreen() {
           <Pressable
             style={({ pressed }) => [
               styles.saveButton,
-              (!isFormValid || isSaving) && styles.saveButtonDisabled,
-              pressed && isFormValid && !isSaving && styles.saveButtonPressed,
+              (!isFormValid || updateProfileMutation.isPending) &&
+                styles.saveButtonDisabled,
+              pressed &&
+                isFormValid &&
+                !updateProfileMutation.isPending &&
+                styles.saveButtonPressed,
             ]}
             onPress={handleSave}
-            disabled={!isFormValid || isSaving}
+            disabled={!isFormValid || updateProfileMutation.isPending}
             accessibilityRole="button"
             accessibilityState={{
-              disabled: !isFormValid || isSaving,
+              disabled: !isFormValid || updateProfileMutation.isPending,
             }}
           >
             <AppText
               style={[
                 styles.saveButtonText,
-                (!isFormValid || isSaving) && styles.saveButtonTextDisabled,
+                (!isFormValid || updateProfileMutation.isPending) &&
+                  styles.saveButtonTextDisabled,
               ]}
             >
-              {isSaving ? '저장 중' : '저장'}
+              {updateProfileMutation.isPending ? '저장 중' : '저장'}
             </AppText>
           </Pressable>
         </View>

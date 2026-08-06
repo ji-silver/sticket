@@ -24,12 +24,12 @@ import type { RootStackParamList } from '../../navigation/RootStackNavigator.tsx
 import OriginalTicketImageField, {
   SelectedOriginalTicketImage,
 } from './components/OriginalTicketImageField.tsx';
-import { useGamesByDate } from '../../features/game/api/useGames';
+import { useGetGamesByDate } from '../../features/game/api/useGetGamesByDate';
 import EmptyCard from '../../components/common/EmptyCard.tsx';
 import { useAuth } from '../../features/auth/AuthProvider.tsx';
 import { getTodayInKorea } from '../../lib/date.ts';
 import type { RouteProp } from '@react-navigation/native';
-import { useAddTicket } from '../../features/ticket/api/useAddTicket';
+import { useCreateTicket } from '../../features/ticket/api/useCreateTicket';
 
 type AddTicketRouteProp = RouteProp<RootStackParamList, 'AddTicket'>;
 
@@ -49,8 +49,12 @@ function AddTicketScreen() {
   const [selectedDate, setSelectedDate] = useState(initialDate);
   const [isCalendarOpen, setIsCalendarOpen] = useState(!initialDate);
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
-  const queryDate = (!isCalendarOpen && selectedDate) ? selectedDate : '';
-  const { data: games = [], isLoading: isLoadingGames, isError } = useGamesByDate(queryDate);
+  const queryDate = !isCalendarOpen && selectedDate ? selectedDate : '';
+  const {
+    data: games = [],
+    isLoading: isLoadingGames,
+    isError,
+  } = useGetGamesByDate(queryDate);
   const gameLoadError = isError ? '날짜를 다시 선택해 재시도해 주세요.' : null;
 
   useEffect(() => {
@@ -70,10 +74,10 @@ function AddTicketScreen() {
   const [originalTicketImage, setOriginalTicketImage] =
     useState<SelectedOriginalTicketImage | null>(null);
 
-  const { mutateAsync: addTicket, isPending: isSaving } = useAddTicket();
+  const createTicketMutation = useCreateTicket();
 
   const canSaveTicket = selectedDate.length > 0 && selectedGameId !== null;
-  const isSaveDisabled = !canSaveTicket || isSaving;
+  const isSaveDisabled = !canSaveTicket || createTicketMutation.isPending;
 
   const selectedDateText = selectedDate ? formatDateText(selectedDate) : '';
 
@@ -112,12 +116,12 @@ function AddTicketScreen() {
   };
 
   const handleAddTicket = async () => {
-    if (!selectedGameId || isSaving) {
+    if (!selectedGameId || createTicketMutation.isPending) {
       return;
     }
 
     try {
-      await addTicket({
+      await createTicketMutation.mutateAsync({
         gameKey: selectedGameId,
         seatName,
         originalPhotoBase64: originalTicketImage?.base64,
@@ -331,10 +335,10 @@ function AddTicketScreen() {
               accessibilityRole="button"
               accessibilityState={{
                 disabled: isSaveDisabled,
-                busy: isSaving,
+                busy: createTicketMutation.isPending,
               }}
             >
-              {isSaving ? (
+              {createTicketMutation.isPending ? (
                 <ActivityIndicator size="small" color={colors.onPrimary} />
               ) : (
                 <AppText

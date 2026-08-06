@@ -14,10 +14,8 @@ import AppBottomSheet from '../../../components/common/AppBottomSheet.tsx';
 import AppText from '../../../components/common/AppText.tsx';
 import ConfirmDialog from '../../../components/common/ConfirmDialog.tsx';
 import InlineActionButton from '../../../components/common/InlineActionButton.tsx';
-import {
-  deleteTicketOriginalPhoto,
-  updateTicketOriginalPhoto,
-} from '../../../features/ticket/ticket.service.ts';
+import { useDeleteTicketOriginalPhoto } from '../../../features/ticket/api/useDeleteTicketOriginalPhoto.ts';
+import { useUpdateTicketOriginalPhoto } from '../../../features/ticket/api/useUpdateTicketOriginalPhoto.ts';
 import { colors } from '../../../styles/colors.ts';
 import { fonts } from '../../../styles/fonts.ts';
 import {
@@ -59,6 +57,9 @@ function TicketVisitInfoSection({
     setIsOriginalTicketDeleteDialogVisible,
   ] = useState(false);
   const [isSavingOriginalTicket, setIsSavingOriginalTicket] = useState(false);
+
+  const updatePhotoMutation = useUpdateTicketOriginalPhoto();
+  const deletePhotoMutation = useDeleteTicketOriginalPhoto();
   const pendingOriginalTicketEditAction = useRef<'change' | 'delete' | null>(
     null,
   );
@@ -117,24 +118,25 @@ function TicketVisitInfoSection({
 
     if (!source) return;
 
-    const selectedImage = await pickOriginalTicketImage(source);
-
-    if (!selectedImage) return;
-
-    setIsSavingOriginalTicket(true);
-
     try {
-      const signedUrl = await updateTicketOriginalPhoto(
-        ticketId,
-        selectedImage.base64,
-      );
+      const result = await pickOriginalTicketImage(source);
 
-      setOriginalTicketImageUri(signedUrl);
-      onFeedback('원본 티켓 사진을 저장했어요');
+      if (result) {
+        setIsSavingOriginalTicket(true);
+
+        const savedPhotoUri = await updatePhotoMutation.mutateAsync({
+          ticketId,
+          photoBase64: result.base64,
+        } as any);
+
+        setOriginalTicketImageUri(savedPhotoUri as unknown as string);
+        onFeedback('티켓 사진을 변경했어요.');
+        setIsOriginalTicketSourceSheetVisible(false);
+      }
     } catch (error) {
-      console.error('원본 티켓 사진을 저장하지 못했습니다.', error);
+      console.error('티켓 사진을 변경하지 못했습니다.', error);
       Alert.alert(
-        '원본 티켓 사진을 저장하지 못했어요',
+        '티켓 사진을 변경하지 못했어요',
         '잠시 후 다시 시도해 주세요.',
       );
     } finally {
@@ -143,21 +145,20 @@ function TicketVisitInfoSection({
   };
 
   const handleDeleteOriginalTicket = async () => {
-    if (isSavingOriginalTicket) return;
-
     setIsSavingOriginalTicket(true);
 
     try {
-      await deleteTicketOriginalPhoto(ticketId);
+      await deletePhotoMutation.mutateAsync(ticketId);
 
+      setOriginalTicketImageUri(undefined);
       setIsOriginalTicketDeleteDialogVisible(false);
       setIsOriginalTicketVisible(false);
-      setOriginalTicketImageUri(undefined);
-      onFeedback('원본 티켓 사진을 삭제했어요');
+
+      onFeedback('티켓 사진을 삭제했어요.');
     } catch (error) {
-      console.error('원본 티켓 사진을 삭제하지 못했습니다.', error);
+      console.error('티켓 사진을 삭제하지 못했습니다.', error);
       Alert.alert(
-        '원본 티켓 사진을 삭제하지 못했어요',
+        '티켓 사진을 삭제하지 못했어요',
         '잠시 후 다시 시도해 주세요.',
       );
     } finally {

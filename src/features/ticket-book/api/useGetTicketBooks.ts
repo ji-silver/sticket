@@ -3,7 +3,7 @@ import { getTicketBooks } from '../ticketBook.service';
 
 export const TICKET_BOOKS_QUERY_KEY = ['ticketBooks'];
 
-export function useTicketBooks() {
+export function useGetTicketBooks() {
   return useQuery({
     queryKey: TICKET_BOOKS_QUERY_KEY,
     queryFn: getTicketBooks,

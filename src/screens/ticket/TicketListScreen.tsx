@@ -19,7 +19,7 @@ import FilterChip from '../../components/common/FilterChip.tsx';
 import InlineActionButton from '../../components/common/InlineActionButton.tsx';
 import ScreenHeader from '../../components/common/ScreenHeader.tsx';
 import ResponsiveContent from '../../components/common/ResponsiveContent.tsx';
-import { useTickets } from '../../features/ticket/api/useTickets';
+import { useGetTickets } from '../../features/ticket/api/useGetTickets';
 import TicketCard from './components/TicketCard.tsx';
 
 function TicketListScreen() {
@@ -27,7 +27,11 @@ function TicketListScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-  const { data: tickets = [], isLoading, error } = useTickets();
+  const {
+    data: tickets = [],
+    isLoading: isLoadingTickets,
+    error,
+  } = useGetTickets();
   const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
 
   const diaryTitle = '야구';
@@ -36,10 +40,7 @@ function TicketListScreen() {
 
   if (error) {
     console.error('티켓 목록을 불러오지 못했습니다.', error);
-    Alert.alert(
-      '티켓 목록을 불러오지 못했어요',
-      '잠시 후 다시 시도해 주세요.',
-    );
+    Alert.alert('티켓 목록을 불러오지 못했어요', '잠시 후 다시 시도해 주세요.');
   }
 
   const seasons = Array.from(
@@ -137,7 +138,7 @@ function TicketListScreen() {
           ]}
         >
           <View style={styles.contentContainer}>
-            {isLoading ? (
+            {isLoadingTickets ? (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size={'small'} color={colors.primary} />
               </View>

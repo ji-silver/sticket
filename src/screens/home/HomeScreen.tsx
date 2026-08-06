@@ -5,27 +5,21 @@ import DiarySection from './components/DiarySection.tsx';
 import { Bucket, Diary } from './types.ts';
 import BucketListSection from './components/BucketListSection.tsx';
 import { useNavigation } from '@react-navigation/core';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import DiaryActionSheet from './components/DiaryActionSheet.tsx';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
 import { fonts } from '../../styles/fonts.ts';
 import AppText from '../../components/common/AppText.tsx';
 import { colors } from '../../styles/colors.ts';
-import { useTicketBooks } from '../../features/ticket-book/api/useTicketBooks';
-import { useBucketList } from '../../features/bucket-list/api/useBucketList';
-import { useQueryClient } from '@tanstack/react-query';
-import { BUCKET_LIST_QUERY_KEY } from '../../features/bucket-list/api/useBucketList';
-import { TICKET_BOOKS_QUERY_KEY } from '../../features/ticket-book/api/useTicketBooks';
-
-import { deleteTicketBook } from '../../features/ticket-book/ticketBook.service.ts';
-import {
-  createBucketItem,
-  deleteBucketItem,
-  restoreBucketItem,
-  updateBucketItemCompleted,
-  updateBucketItemTitle,
-} from '../../features/bucket-list/bucketList.service.ts';
+import { useGetTicketBooks } from '../../features/ticket-book/api/useGetTicketBooks';
+import { useGetBucketList } from '../../features/bucket-list/api/useGetBucketList';
+import { useDeleteTicketBook } from '../../features/ticket-book/api/useDeleteTicketBook.ts';
+import { useCreateBucketItem } from '../../features/bucket-list/api/useCreateBucketItem.ts';
+import { useDeleteBucketItem } from '../../features/bucket-list/api/useDeleteBucketItem.ts';
+import { useRestoreBucketItem } from '../../features/bucket-list/api/useRestoreBucketItem.ts';
+import { useUpdateBucketItemCompleted } from '../../features/bucket-list/api/useUpdateBucketItemCompleted.ts';
+import { useUpdateBucketItemTitle } from '../../features/bucket-list/api/useUpdateBucketItemTitle.ts';
 
 type HomeNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -38,16 +32,15 @@ const SPORT_TITLES: Record<Diary['sport'], string> = {
 
 function HomeScreen() {
   const navigation = useNavigation<HomeNavigationProp>();
-  const queryClient = useQueryClient();
 
   const [selectedDiaryIndex, setSelectedDiaryIndex] = useState(0);
   const [menuDiary, setMenuDiary] = useState<Diary | null>(null);
 
-  const { data: ticketBooks = [], isLoading: isBooksLoading } = useTicketBooks();
-  const ticketBookIds = ticketBooks.map(b => b.id);
-  const { data: bucketItems = [], isLoading: isBucketsLoading } = useBucketList(ticketBookIds);
-
-  const isLoadingTicketBooks = isBooksLoading || (ticketBookIds.length > 0 && isBucketsLoading);
+  const { data: ticketBooks = [], isLoading: isLoadingTicketBooks } =
+    useGetTicketBooks();
+  const { data: bucketList = [] } = useGetBucketList(
+    ticketBooks.map(b => b.id),
+  );
 
   const diaryList = ticketBooks.map(ticketBook => ({
     id: ticketBook.id,
@@ -66,7 +59,7 @@ function HomeScreen() {
   ticketBooks.forEach(b => {
     bucketsByDiaryId[b.id] = [];
   });
-  bucketItems.forEach(item => {
+  bucketList.forEach(item => {
     if (bucketsByDiaryId[item.ticketBookId]) {
       bucketsByDiaryId[item.ticketBookId].push(item);
     }
@@ -80,7 +73,7 @@ function HomeScreen() {
   useEffect(() => {
     if (diaryList.length > 0) {
       setSelectedDiaryIndex(current =>
-        Math.min(current, Math.max(diaryList.length - 1, 0))
+        Math.min(current, Math.max(diaryList.length - 1, 0)),
       );
     }
   }, [diaryList.length]);
@@ -93,10 +86,15 @@ function HomeScreen() {
     navigation.navigate('TicketList');
   };
 
+  const createBucketMutation = useCreateBucketItem();
+  const updateBucketCompletedMutation = useUpdateBucketItemCompleted();
+  const updateBucketTitleMutation = useUpdateBucketItemTitle();
+  const deleteBucketMutation = useDeleteBucketItem();
+  const restoreBucketMutation = useRestoreBucketItem();
+
   const handleAddBucket = async (ticketBookId: string, title: string) => {
     try {
-      await createBucketItem(ticketBookId, title);
-      queryClient.invalidateQueries({ queryKey: BUCKET_LIST_QUERY_KEY(ticketBookIds) });
+      await createBucketMutation.mutateAsync({ ticketBookId, title });
       return true;
     } catch (error) {
       console.error('버킷리스트를 추가하지 못했습니다.', error);
@@ -111,8 +109,10 @@ function HomeScreen() {
   const handleToggleBucket = async (bucket: Bucket) => {
     const nextIsCompleted = !bucket.isCompleted;
     try {
-      await updateBucketItemCompleted(bucket.id, nextIsCompleted);
-      queryClient.invalidateQueries({ queryKey: BUCKET_LIST_QUERY_KEY(ticketBookIds) });
+      await updateBucketCompletedMutation.mutateAsync({
+        bucketItemId: bucket.id,
+        isCompleted: nextIsCompleted,
+      });
       return true;
     } catch (error) {
       console.error('버킷리스트 완료 상태를 변경하지 못했습니다.', error);
@@ -126,8 +126,10 @@ function HomeScreen() {
 
   const handleUpdateBucketTitle = async (bucket: Bucket, title: string) => {
     try {
-      await updateBucketItemTitle(bucket.id, title);
-      queryClient.invalidateQueries({ queryKey: BUCKET_LIST_QUERY_KEY(ticketBookIds) });
+      await updateBucketTitleMutation.mutateAsync({
+        bucketItemId: bucket.id,
+        title,
+      });
       return true;
     } catch (error) {
       console.error('버킷리스트 내용을 수정하지 못했습니다.', error);
@@ -141,8 +143,7 @@ function HomeScreen() {
 
   const handleDeleteBucket = async (bucket: Bucket) => {
     try {
-      await deleteBucketItem(bucket.id);
-      queryClient.invalidateQueries({ queryKey: BUCKET_LIST_QUERY_KEY(ticketBookIds) });
+      await deleteBucketMutation.mutateAsync(bucket.id);
       return true;
     } catch (error) {
       console.error('버킷리스트를 삭제하지 못했습니다.', error);
@@ -156,8 +157,7 @@ function HomeScreen() {
 
   const handleRestoreBucket = async (bucket: Bucket, _index: number) => {
     try {
-      await restoreBucketItem(bucket);
-      queryClient.invalidateQueries({ queryKey: BUCKET_LIST_QUERY_KEY(ticketBookIds) });
+      await restoreBucketMutation.mutateAsync(bucket);
       return true;
     } catch (error) {
       console.error('삭제한 버킷리스트를 복원하지 못했습니다.', error);
@@ -170,11 +170,11 @@ function HomeScreen() {
   };
 
   // 티켓북, 버킷리스트 같이 삭제
+  const deleteTicketBookMutation = useDeleteTicketBook();
+
   const handleDeleteDiary = async (diaryId: string) => {
     try {
-      await deleteTicketBook(diaryId);
-      queryClient.invalidateQueries({ queryKey: TICKET_BOOKS_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: BUCKET_LIST_QUERY_KEY(ticketBookIds) });
+      await deleteTicketBookMutation.mutateAsync(diaryId);
     } catch (error) {
       console.error('티켓북을 삭제하지 못했습니다.', error);
       Alert.alert('티켓북을 삭제하지 못했어요', '잠시 후 다시 시도해 주세요.');

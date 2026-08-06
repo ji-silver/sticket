@@ -3,11 +3,9 @@ import { Alert, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Plus, X } from 'lucide-react-native';
 import AppText from '../../../components/common/AppText.tsx';
 import InlineActionButton from '../../../components/common/InlineActionButton.tsx';
-import {
-  updateTicketFoods,
-  updateTicketMemo,
-  updateTicketRating,
-} from '../../../features/ticket/ticket.service.ts';
+import { useUpdateTicketFoods } from '../../../features/ticket/api/useUpdateTicketFoods.ts';
+import { useUpdateTicketMemo } from '../../../features/ticket/api/useUpdateTicketMemo.ts';
+import { useUpdateTicketRating } from '../../../features/ticket/api/useUpdateTicketRating.ts';
 import { colors } from '../../../styles/colors.ts';
 import { fonts } from '../../../styles/fonts.ts';
 import TicketStarRating from './TicketStarRating.tsx';
@@ -44,18 +42,20 @@ function TicketReviewSection({
     trimmedFoodDraft.length > 0 &&
     !foods.includes(trimmedFoodDraft);
 
+  const updateRatingMutation = useUpdateTicketRating();
+  const updateMemoMutation = useUpdateTicketMemo();
+  const updateFoodsMutation = useUpdateTicketFoods();
+
   const handleChangeRating = async (nextRating: number) => {
     const previousRating = rating;
 
     setRating(nextRating);
 
     try {
-      const savedRating = await updateTicketRating(
+      await updateRatingMutation.mutateAsync({
         ticketId,
-        nextRating === 0 ? null : nextRating,
-      );
-
-      setRating(savedRating ?? 0);
+        rating: nextRating === 0 ? null : nextRating,
+      } as any);
     } catch (error) {
       console.error('별점을 저장하지 못했습니다.', error);
       setRating(previousRating);
@@ -73,10 +73,9 @@ function TicketReviewSection({
     }
 
     try {
-      const savedMemo = await updateTicketMemo(ticketId, recordDraft);
+      await updateMemoMutation.mutateAsync({ ticketId, memo: recordDraft });
 
-      setRecord(savedMemo ?? '');
-      setRecordDraft(savedMemo ?? '');
+      setRecord(recordDraft);
       setIsEditingRecord(false);
       setIsRecordLimitExceeded(false);
     } catch (error) {
@@ -117,9 +116,9 @@ function TicketReviewSection({
     const nextFoods = [...foods, trimmedFoodDraft];
 
     try {
-      const savedFoods = await updateTicketFoods(ticketId, nextFoods);
+      await updateFoodsMutation.mutateAsync({ ticketId, foods: nextFoods });
 
-      setFoods(savedFoods);
+      setFoods(nextFoods);
       setFoodDraft('');
       setIsAddingFood(false);
     } catch (error) {
@@ -135,8 +134,8 @@ function TicketReviewSection({
     const nextFoods = foods.filter(food => food !== foodToRemove);
 
     try {
-      const savedFoods = await updateTicketFoods(ticketId, nextFoods);
-      setFoods(savedFoods);
+      await updateFoodsMutation.mutateAsync({ ticketId, foods: nextFoods });
+      setFoods(nextFoods);
     } catch (error) {
       console.error('야구 푸드를 삭제하지 못했습니다.', error);
       Alert.alert(
@@ -243,9 +242,7 @@ function TicketReviewSection({
 
             {isAddingFood || isEditingFoods || foods.length > 0 ? (
               <InlineActionButton
-                label={
-                  isAddingFood ? '취소' : isEditingFoods ? '완료' : '편집'
-                }
+                label={isAddingFood ? '취소' : isEditingFoods ? '완료' : '편집'}
                 tone="primary"
                 onPress={
                   isAddingFood

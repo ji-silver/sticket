@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { deleteTicket } from '../ticket.service';
-import { TICKETS_QUERY_KEY } from './useTickets';
+import { TICKETS_QUERY_KEY } from './useGetTickets';
 
 export function useDeleteTicket() {
   const queryClient = useQueryClient();

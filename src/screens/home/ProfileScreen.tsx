@@ -10,9 +10,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DeviceInfo from 'react-native-device-info';
 import { ChevronRight, Info, LogOut } from 'lucide-react-native';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useCallback, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import AppText from '../../components/common/AppText.tsx';
 import ConfirmDialog from '../../components/common/ConfirmDialog.tsx';
 import InlineActionButton from '../../components/common/InlineActionButton.tsx';
@@ -21,8 +21,8 @@ import { fonts } from '../../styles/fonts.ts';
 import { getTodayInKorea } from '../../lib/date.ts';
 import type { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
 import { useAuth } from '../../features/auth/AuthProvider.tsx';
-import { getAttendanceSummary } from '../../features/profile/profile.service.ts';
 import { AttendanceSummary } from '../../features/profile/types.ts';
+import { useGetAttendanceSummary } from '../../features/profile/api/useGetAttendanceSummary.ts';
 
 type ProfileNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -57,62 +57,12 @@ function ProfileScreen() {
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [winRateInfoAnchor, setWinRateInfoAnchor] =
     useState<WinRateInfoAnchor | null>(null);
-  const [attendanceSummary, setAttendanceSummary] = useState<AttendanceSummary>(
-    EMPTY_ATTENDANCE_SUMMARY,
-  );
-
-  const [isAttendanceSummaryLoading, setIsAttendanceSummaryLoading] =
-    useState(true);
-
   const favoriteTeamId = profile?.favorite_team_id;
 
-  useFocusEffect(
-    useCallback(() => {
-      let isActive = true;
+  const { data, isLoading: isAttendanceSummaryLoading } =
+    useGetAttendanceSummary(favoriteTeamId, CURRENT_SEASON);
 
-      async function loadAttendanceSummary() {
-        if (!favoriteTeamId) {
-          setAttendanceSummary(EMPTY_ATTENDANCE_SUMMARY);
-          setIsAttendanceSummaryLoading(false);
-          return;
-        }
-
-        setIsAttendanceSummaryLoading(true);
-
-        try {
-          const summary = await getAttendanceSummary(
-            favoriteTeamId,
-            CURRENT_SEASON,
-          );
-
-          if (isActive) {
-            setAttendanceSummary(summary);
-          }
-        } catch (error) {
-          console.error('직관 요약을 불러오지 못했습니다.', error);
-
-          if (isActive) {
-            setAttendanceSummary(EMPTY_ATTENDANCE_SUMMARY);
-
-            Alert.alert(
-              '직관 요약을 불러오지 못했어요',
-              '잠시 후 다시 시도해 주세요.',
-            );
-          }
-        } finally {
-          if (isActive) {
-            setIsAttendanceSummaryLoading(false);
-          }
-        }
-      }
-
-      loadAttendanceSummary();
-
-      return () => {
-        isActive = false;
-      };
-    }, [favoriteTeamId]),
-  );
+  const attendanceSummary = data ?? EMPTY_ATTENDANCE_SUMMARY;
 
   if (!profile) {
     return null;

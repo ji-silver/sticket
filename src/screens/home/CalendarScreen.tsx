@@ -18,11 +18,9 @@ import { useNavigation } from '@react-navigation/core';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
 import { getTodayInKorea } from '../../lib/date.ts';
-import { useTickets } from '../../features/ticket/api/useTickets';
-import {
-  useLeagueGameDatesByMonth,
-  useTeamGamesByMonth,
-} from '../../features/game/api/useGames';
+import { useGetTickets } from '../../features/ticket/api/useGetTickets';
+import { useGetLeagueGameDatesByMonth } from '../../features/game/api/useGetLeagueGameDatesByMonth';
+import { useGetTeamGamesByMonth } from '../../features/game/api/useGetTeamGamesByMonth';
 import TicketCard from '../ticket/components/TicketCard.tsx';
 import EmptyCard from '../../components/common/EmptyCard.tsx';
 import { Plus } from 'lucide-react-native';
@@ -143,11 +141,11 @@ function CalendarScreen() {
   const [visibleMonth, setVisibleMonth] = useState(today.slice(0, 7));
   const [selectedDate, setSelectedDate] = useState(today);
 
-  const { data: tickets = [], isLoading: isLoadingTickets } = useTickets();
+  const { data: tickets = [], isLoading: isLoadingTickets } = useGetTickets();
   const { data: teamGames = [], isLoading: isLoadingTeamGames } =
-    useTeamGamesByMonth(profile?.favorite_team_id, visibleMonth);
+    useGetTeamGamesByMonth(profile?.favorite_team_id, visibleMonth);
   const { data: leagueGameDates = [] } =
-    useLeagueGameDatesByMonth(visibleMonth);
+    useGetLeagueGameDatesByMonth(visibleMonth);
 
   const isLoading = isLoadingTickets;
 
@@ -179,10 +177,6 @@ function CalendarScreen() {
       );
     }
   };
-
-  /*
-   * 캘린더 관련 React Query 훅이 상단에 선언되어 데이터 패칭을 자동으로 처리합니다.
-   * */
 
   const gamesByDate = teamGames.reduce<Record<string, TeamCalendarGame[]>>(
     (result, game) => {
