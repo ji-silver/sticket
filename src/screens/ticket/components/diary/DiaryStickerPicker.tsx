@@ -14,6 +14,8 @@ import {
 } from './diaryStickerPacks.ts';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+export const DIARY_STICKER_PICKER_HEIGHT = 300;
+
 interface DiaryStickerPickerProps {
   selectedPackId: string;
   onSelectPack: (packId: string) => void;
@@ -141,7 +143,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     left: 0,
-    height: '48%',
+    height: DIARY_STICKER_PICKER_HEIGHT,
     paddingTop: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,

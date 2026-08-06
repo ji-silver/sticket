@@ -18,7 +18,9 @@ import GridPaper from './GridPaper.tsx';
 import DiaryPhotoItem from './DiaryPhotoItem.tsx';
 import { type DiaryPhoto, type EditorSize } from './photoTransform.ts';
 import { selectDiaryPhoto } from './selectDiaryPhoto.ts';
-import DiaryStickerPicker from './DiaryStickerPicker.tsx';
+import DiaryStickerPicker, {
+  DIARY_STICKER_PICKER_HEIGHT,
+} from './DiaryStickerPicker.tsx';
 import DiaryStickerItem, {
   createDiarySticker,
   type DiarySticker,
@@ -34,7 +36,10 @@ import DiaryBottomToolbar, { type DiaryToolId } from './DiaryBottomToolbar.tsx';
 import DiaryLayerPanel, {
   type DiaryLayerPanelItem,
 } from './DiaryLayerPanel.tsx';
-import DiaryPaperSelector, { type PaperType } from './DiaryPaperSelector.tsx';
+import DiaryPaperSelector, {
+  DIARY_PAPER_SELECTOR_HEIGHT,
+  type PaperType,
+} from './DiaryPaperSelector.tsx';
 import DiaryTextItem from './DiaryTextItem.tsx';
 import DiaryTextToolbar from './DiaryTextToolbar.tsx';
 import {
@@ -59,6 +64,9 @@ const MAXIMUM_DIARY_PHOTO_COUNT = 2;
 const AUTOSAVE_DELAY_MS = 800;
 const AUTOSAVE_ERROR_MESSAGE = '변경 내용을 저장하지 못했어요';
 const DRAWING_LAYER_ID = '__drawing__';
+const MAX_DIARY_PAGE_WIDTH = 640;
+const DIARY_PAGE_HORIZONTAL_INSET = 32;
+const PHONE_LAYOUT_MAX_DIMENSION = 500;
 
 interface TicketDiaryPageProps {
   ticketId: string;
@@ -304,11 +312,14 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
     DIARY_STICKER_PACKS[0]?.id ?? '',
   );
 
-  const [editorScale, setEditorScale] = useState(1);
+  const [editorWrapperSize, setEditorWrapperSize] = useState({
+    width: 0,
+    height: 0,
+  });
 
   // 다이어리 영역 (사진 배치 시 넘어가지 않게)
   // 아이폰과 아이패드 등 기기 해상도 차이로 인한 위치 틀어짐 방지를 위해 고정 논리 해상도를 사용합니다.
-  const [editorSize, setEditorSize] = useState<EditorSize>({
+  const [editorSize] = useState<EditorSize>({
     width: 393,
     height: 524,
   });
@@ -319,6 +330,31 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
   const [drawingIndex, setDrawingIndex] = useState(0);
   const [selectedItem, setSelectedItem] = useState<SelectedDiaryItem>(null);
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
+
+  const isLandscape = editorWrapperSize.width > editorWrapperSize.height;
+  const isPhoneLayout =
+    Math.min(editorWrapperSize.width, editorWrapperSize.height) <=
+    PHONE_LAYOUT_MAX_DIMENSION;
+  const pageHorizontalInset = isPhoneLayout ? 0 : DIARY_PAGE_HORIZONTAL_INSET;
+  const reservedBottomPanelHeight =
+    selectedTool === 'sticker'
+      ? DIARY_STICKER_PICKER_HEIGHT
+      : selectedTool === 'paper'
+      ? DIARY_PAPER_SELECTOR_HEIGHT
+      : 0;
+  const availableEditorHeight = Math.max(
+    0,
+    editorWrapperSize.height - reservedBottomPanelHeight,
+  );
+  const pageWidth = Math.min(
+    Math.max(0, editorWrapperSize.width - pageHorizontalInset),
+    MAX_DIARY_PAGE_WIDTH,
+    availableEditorHeight * (editorSize.width / editorSize.height),
+  );
+  const editorScale = Math.max(0.01, pageWidth / editorSize.width);
+  const displayedEditorHeight = isPhoneLayout
+    ? Math.max(editorSize.height, availableEditorHeight / editorScale)
+    : editorSize.height;
 
   const selectedText =
     selectedItem?.type === 'text'
@@ -667,9 +703,7 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
 
   const handleEditorWrapperLayout = ({ nativeEvent }: LayoutChangeEvent) => {
     const { width, height } = nativeEvent.layout;
-
-    const scale = Math.min(width / 393, height / 524);
-    setEditorScale(scale);
+    setEditorWrapperSize({ width, height });
   };
 
   const handlePaperSelect = (next: PaperType) => {
@@ -1144,6 +1178,7 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
           key={`sticker-${sticker.id}`}
           sticker={sticker}
           editorSize={editorSize}
+          editorScale={editorScale}
           isSelected={
             selectedItem?.type === 'sticker' && selectedItem.id === sticker.id
           }
@@ -1188,53 +1223,116 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
         <View style={styles.editorWrapper} onLayout={handleEditorWrapperLayout}>
           <View
             style={[
-              styles.editorArea,
+              styles.editorCanvasRegion,
+              isPhoneLayout && styles.phoneCanvasRegion,
               {
-                width: editorSize.width,
-                height: editorSize.height,
-                transform: [{ scale: editorScale }],
+                paddingBottom: reservedBottomPanelHeight,
               },
             ]}
           >
-          <Pressable
-            accessible={false}
-            style={styles.editorBackground}
-            onPress={handleDeselectDiaryItem}
-          >
-            {paperType === 'grid' ? <GridPaper /> : null}
-          </Pressable>
-
-          {items.slice(0, drawingIndex).map(renderDiaryItem)}
-
-          <DiaryDrawingCanvas
-            ref={drawingCanvasRef}
-            isDrawingMode={selectedTool === 'drawing'}
-            onDrawingChange={handleDrawingChange}
-          />
-
-          <View
-            pointerEvents={selectedTool === 'drawing' ? 'none' : 'box-none'}
-            style={styles.foregroundItems}
-          >
-            {items.slice(drawingIndex).map(renderDiaryItem)}
-          </View>
-
-          {selectedTool === 'drawing' ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="드로잉 완료"
-              hitSlop={8}
-              onPress={handleFinishDrawing}
-              style={({ pressed }) => [
-                styles.drawingDoneButton,
-                pressed && styles.pressedDrawingDoneButton,
+            <View
+              style={[
+                styles.editorWorkspace,
+                {
+                  width: editorSize.width * editorScale,
+                  height: displayedEditorHeight * editorScale,
+                },
               ]}
             >
-              <AppText size={14} weight="semiBold" color={colors.primary}>
-                완료
-              </AppText>
-            </Pressable>
-          ) : null}
+              <View
+                style={[
+                  styles.editorCanvasSlot,
+                  {
+                    width: editorSize.width * editorScale,
+                    height: displayedEditorHeight * editorScale,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.editorArea,
+                    {
+                      width: editorSize.width,
+                      height: displayedEditorHeight,
+                      transform: [{ scale: editorScale }],
+                    },
+                  ]}
+                >
+                  <Pressable
+                    accessible={false}
+                    style={styles.editorBackground}
+                    onPress={handleDeselectDiaryItem}
+                  >
+                    {paperType === 'grid' ? <GridPaper /> : null}
+                  </Pressable>
+
+                  {items.slice(0, drawingIndex).map(renderDiaryItem)}
+
+                  <DiaryDrawingCanvas
+                    ref={drawingCanvasRef}
+                    isDrawingMode={selectedTool === 'drawing'}
+                    onDrawingChange={handleDrawingChange}
+                  />
+
+                  <View
+                    pointerEvents={
+                      selectedTool === 'drawing' ? 'none' : 'box-none'
+                    }
+                    style={styles.foregroundItems}
+                  >
+                    {items.slice(drawingIndex).map(renderDiaryItem)}
+                  </View>
+
+                  {selectedTool === 'drawing' ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="드로잉 완료"
+                      hitSlop={8}
+                      onPress={handleFinishDrawing}
+                      style={({ pressed }) => [
+                        styles.drawingDoneButton,
+                        pressed && styles.pressedDrawingDoneButton,
+                      ]}
+                    >
+                      <AppText
+                        size={14}
+                        weight="semiBold"
+                        color={colors.primary}
+                      >
+                        완료
+                      </AppText>
+                    </Pressable>
+                  ) : null}
+                </View>
+              </View>
+
+              {!isLandscape && isLayerPanelVisible ? (
+                <DiaryLayerPanel
+                  editorSize={editorSize}
+                  editorScale={editorScale}
+                  placement="overlay"
+                  items={layerPanelItems}
+                  selectedLayerId={selectedLayerId}
+                  onSelectLayer={handleSelectLayer}
+                  onMoveLayer={handleMoveLayer}
+                  onClose={() => setIsLayerPanelVisible(false)}
+                />
+              ) : null}
+            </View>
+
+            {isLandscape && isLayerPanelVisible ? (
+              <DiaryLayerPanel
+                editorSize={editorSize}
+                editorScale={editorScale}
+                placement="side"
+                items={layerPanelItems}
+                selectedLayerId={selectedLayerId}
+                onSelectLayer={handleSelectLayer}
+                onMoveLayer={handleMoveLayer}
+                onClose={() => setIsLayerPanelVisible(false)}
+              />
+            ) : null}
+          </View>
 
           {selectedTool === 'sticker' ? (
             <DiaryStickerPicker
@@ -1251,18 +1349,6 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
               onSelect={handlePaperSelect}
             />
           ) : null}
-
-          {isLayerPanelVisible ? (
-            <DiaryLayerPanel
-              editorSize={editorSize}
-              items={layerPanelItems}
-              selectedLayerId={selectedLayerId}
-              onSelectLayer={handleSelectLayer}
-              onMoveLayer={handleMoveLayer}
-              onClose={() => setIsLayerPanelVisible(false)}
-            />
-          ) : null}
-          </View>
         </View>
 
         {selectedText?.type === 'text' ? (
@@ -1305,16 +1391,41 @@ const styles = StyleSheet.create({
 
   editorWrapper: {
     flex: 1,
+    backgroundColor: colors.background,
+    overflow: 'hidden',
+  },
+
+  editorCanvasRegion: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surface,
-    overflow: 'hidden',
+    width: '100%',
+  },
+
+  phoneCanvasRegion: {
+    justifyContent: 'flex-start',
+  },
+
+  editorWorkspace: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  editorCanvasSlot: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   editorArea: {
     position: 'relative',
     overflow: 'hidden',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
     backgroundColor: colors.surface,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
   },
 
   editorBackground: {

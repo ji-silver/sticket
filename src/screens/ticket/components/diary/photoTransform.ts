@@ -127,11 +127,12 @@ export function getMaximumPhotoScale(
   photoHeight: number,
   rotation: number,
   editorSize: EditorSize,
+  maximumScale = MAXIMUM_PHOTO_SCALE,
 ) {
   'worklet';
 
   if (editorSize.width <= 0 || editorSize.height <= 0) {
-    return MAXIMUM_PHOTO_SCALE;
+    return maximumScale;
   }
 
   const cosine = Math.cos(rotation);
@@ -144,7 +145,7 @@ export function getMaximumPhotoScale(
   return Math.min(
     editorSize.width / rotatedWidth,
     editorSize.height / rotatedHeight,
-    MAXIMUM_PHOTO_SCALE,
+    maximumScale,
   );
 }
 
@@ -153,6 +154,7 @@ export function constrainPhotoPosition(
   photoWidth: number,
   photoHeight: number,
   editorSize: EditorSize,
+  maximumScale = MAXIMUM_PHOTO_SCALE,
 ): Matrix3 {
   'worklet';
 
@@ -173,6 +175,7 @@ export function constrainPhotoPosition(
     photoHeight,
     rotation,
     editorSize,
+    maximumScale,
   );
   const constrainedScale = Math.min(currentScale, maximumScaleThatFits);
   const boundingWidth = rotatedWidth * constrainedScale;

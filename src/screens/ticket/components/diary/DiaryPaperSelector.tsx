@@ -3,6 +3,8 @@ import AppText from '../../../../components/common/AppText.tsx';
 import { colors } from '../../../../styles/colors.ts';
 import GridPaper from './GridPaper.tsx';
 
+export const DIARY_PAPER_SELECTOR_HEIGHT = 140;
+
 export type PaperType = 'plain' | 'grid';
 
 interface DiaryPaperSelectorProps {
@@ -90,6 +92,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     left: 0,
+    height: DIARY_PAPER_SELECTOR_HEIGHT,
     paddingHorizontal: 24,
     paddingTop: 12,
     paddingBottom: 14,

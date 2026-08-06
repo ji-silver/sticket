@@ -1,6 +1,11 @@
 import DiaryImageItem from './DiaryImageItem.tsx';
 import { type EditorSize, type Matrix3, translate3 } from './photoTransform.ts';
-import { Alert, Image, type ImageRequireSource } from 'react-native';
+import {
+  Alert,
+  Image,
+  PixelRatio,
+  type ImageRequireSource,
+} from 'react-native';
 import { type DiaryStickerDefinition } from './diaryStickerPacks.ts';
 
 const MINIMUM_INITIAL_STICKER_SIZE = 112;
@@ -19,6 +24,7 @@ export interface DiarySticker {
 interface DiaryStickerItemProps {
   sticker: DiarySticker;
   editorSize: EditorSize;
+  editorScale: number;
   isSelected: boolean;
   onSelect: () => void;
   onChange: (sticker: DiarySticker) => void;
@@ -83,11 +89,18 @@ export function createDiarySticker(
 function DiaryStickerItem({
   sticker,
   editorSize,
+  editorScale,
   isSelected,
   onSelect,
   onChange,
   onDelete,
 }: DiaryStickerItemProps) {
+  const sourceSize = Image.resolveAssetSource(sticker.source);
+  const maximumScale = Math.min(
+    sourceSize.width / (sticker.width * editorScale * PixelRatio.get()),
+    sourceSize.height / (sticker.height * editorScale * PixelRatio.get()),
+  );
+
   return (
     <DiaryImageItem
       source={sticker.source}
@@ -95,6 +108,7 @@ function DiaryStickerItem({
       height={sticker.height}
       initialMatrix={sticker.matrix}
       editorSize={editorSize}
+      maximumScale={Math.max(0.25, maximumScale)}
       isSelected={isSelected}
       itemLabel="스티커"
       accessibilityLabel="다이어리 스티커"

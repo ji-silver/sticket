@@ -56,44 +56,46 @@ function DiaryBottomToolbar({
 }: DiaryBottomToolbarProps) {
   return (
     <View style={styles.toolbar}>
-      {DIARY_TOOLS.map(tool => {
-        const Icon = tool.icon;
-        const isSelected = selectedTool === tool.id;
+      <View style={styles.toolbarContent}>
+        {DIARY_TOOLS.map(tool => {
+          const Icon = tool.icon;
+          const isSelected = selectedTool === tool.id;
 
-        return (
-          <Pressable
-            key={tool.id}
-            accessibilityRole="button"
-            accessibilityLabel={`${tool.label} 도구`}
-            onPress={() => onPressTool(tool.id)}
-            style={({ pressed }) => [
-              styles.toolButton,
-              pressed && styles.pressedToolButton,
-            ]}
-          >
-            <View
-              style={[
-                styles.iconContainer,
-                isSelected && styles.selectedIconContainer,
+          return (
+            <Pressable
+              key={tool.id}
+              accessibilityRole="button"
+              accessibilityLabel={`${tool.label} 도구`}
+              onPress={() => onPressTool(tool.id)}
+              style={({ pressed }) => [
+                styles.toolButton,
+                pressed && styles.pressedToolButton,
               ]}
             >
-              <Icon
-                size={22}
-                strokeWidth={2}
-                color={isSelected ? colors.primary : colors.textSecondary}
-              />
-            </View>
+              <View
+                style={[
+                  styles.iconContainer,
+                  isSelected && styles.selectedIconContainer,
+                ]}
+              >
+                <Icon
+                  size={22}
+                  strokeWidth={2}
+                  color={isSelected ? colors.primary : colors.textSecondary}
+                />
+              </View>
 
-            <AppText
-              size={12}
-              weight={isSelected ? 'semiBold' : 'regular'}
-              color={isSelected ? colors.primary : colors.textSecondary}
-            >
-              {tool.label}
-            </AppText>
-          </Pressable>
-        );
-      })}
+              <AppText
+                size={12}
+                weight={isSelected ? 'semiBold' : 'regular'}
+                color={isSelected ? colors.primary : colors.textSecondary}
+              >
+                {tool.label}
+              </AppText>
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 }
@@ -108,6 +110,13 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
     backgroundColor: colors.surface,
+  },
+
+  toolbarContent: {
+    width: '100%',
+    maxWidth: 393,
+    alignSelf: 'center',
+    flexDirection: 'row',
   },
 
   toolButton: {

@@ -27,6 +27,7 @@ import {
   getTransformedPhotoPoint,
   type Matrix3,
   MINIMUM_PHOTO_SCALE,
+  MAXIMUM_PHOTO_SCALE,
   type Point,
   snapRotationToZero,
 } from './photoTransform.ts';
@@ -47,6 +48,7 @@ interface DiaryImageItemProps {
   onSelect: () => void;
   onChangeMatrix: (matrix: Matrix3) => void;
   onDelete: () => void;
+  maximumScale?: number;
 }
 
 function DiaryImageItem({
@@ -61,6 +63,7 @@ function DiaryImageItem({
   onSelect,
   onChangeMatrix,
   onDelete,
+  maximumScale = MAXIMUM_PHOTO_SCALE,
 }: DiaryImageItemProps) {
   const matrix = useSharedValue<Matrix3>(initialMatrix);
   const translation = useSharedValue<Point>({
@@ -99,6 +102,7 @@ function DiaryImageItem({
       width,
       height,
       editorSize,
+      maximumScale,
     );
 
     matrix.value = constrainedMatrix;
@@ -153,17 +157,18 @@ function DiaryImageItem({
         startVector.y + event.translationY,
       );
       const savedRotation = Math.atan2(matrix.value[1], matrix.value[0]);
-      const maximumScale = getMaximumPhotoScale(
+      const maximumScaleForResize = getMaximumPhotoScale(
         width,
         height,
         savedRotation,
         editorSize,
+        maximumScale,
       );
-      const minimumScale = Math.min(MINIMUM_PHOTO_SCALE, maximumScale);
+      const minimumScale = Math.min(MINIMUM_PHOTO_SCALE, maximumScaleForResize);
       const nextScale = clamp(
         resizeStartScale.value * (currentDistance / startDistance),
         minimumScale,
-        maximumScale,
+        maximumScaleForResize,
       );
 
       scale.value = nextScale / resizeStartScale.value;
@@ -257,6 +262,7 @@ function DiaryImageItem({
       width,
       height,
       editorSize,
+      maximumScale,
     ),
   );
 
@@ -461,18 +467,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     left: 0,
-    // iOS GPU 스케일링 화질 저하 완화 트릭 (그림자 렌더링 강제)
-    shadowColor: 'transparent',
-    shadowOpacity: 1,
-    shadowOffset: { width: 0, height: 0 },
-    shadowRadius: 0,
   },
   image: {
     width: '100%',
     height: '100%',
-    // iOS 확대/축소 시 테두리 계단 현상 방지 트릭
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255, 255, 255, 0.01)',
   },
   selectionBorder: {
     position: 'absolute',

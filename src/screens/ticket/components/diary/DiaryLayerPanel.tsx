@@ -31,6 +31,7 @@ const PHONE_PANEL_WIDTH = 104;
 const TABLET_PANEL_WIDTH = 112;
 const PANEL_HEADER_HEIGHT = 52;
 const LAYER_ROW_HEIGHT = 58;
+const PANEL_MAX_HEIGHT = 500;
 
 export interface DiaryLayerPanelItem {
   id: string;
@@ -41,6 +42,8 @@ export interface DiaryLayerPanelItem {
 
 interface DiaryLayerPanelProps {
   editorSize: EditorSize;
+  editorScale: number;
+  placement: 'overlay' | 'side';
   items: DiaryLayerPanelItem[];
   selectedLayerId: string | null;
   onSelectLayer: (layerId: string) => void;
@@ -191,6 +194,8 @@ function DiaryLayerRow({
 
 function DiaryLayerPanel({
   editorSize,
+  editorScale,
+  placement,
   items,
   selectedLayerId,
   onSelectLayer,
@@ -199,18 +204,43 @@ function DiaryLayerPanel({
 }: DiaryLayerPanelProps) {
   const preferredPanelWidth =
     editorSize.width >= 600 ? TABLET_PANEL_WIDTH : PHONE_PANEL_WIDTH;
+  const safeEditorScale = Math.max(editorScale, 0.0001);
+  const physicalEditorWidth = editorSize.width * safeEditorScale;
+  const physicalEditorHeight = editorSize.height * safeEditorScale;
   const panelWidth = Math.min(
     preferredPanelWidth,
-    Math.max(0, editorSize.width - PANEL_HORIZONTAL_INSET * 2),
+    Math.max(0, physicalEditorWidth - PANEL_HORIZONTAL_INSET * 2),
   );
-  const panelHeight = Math.max(0, editorSize.height - PANEL_TOP_INSET * 2);
+  const panelHeight = Math.max(
+    0,
+    Math.min(PANEL_MAX_HEIGHT, physicalEditorHeight - PANEL_TOP_INSET * 2),
+  );
 
   if (panelWidth === 0 || panelHeight === 0) {
     return null;
   }
 
+  const isOverlay = placement === 'overlay';
+
   return (
-    <View style={[styles.panel, { width: panelWidth, height: panelHeight }]}>
+    <View
+      style={[
+        styles.panel,
+        isOverlay ? styles.overlayPanel : styles.sidePanel,
+        {
+          width: panelWidth,
+          height: panelHeight,
+          ...(isOverlay
+            ? {
+                top: PANEL_TOP_INSET / safeEditorScale,
+                right: PANEL_HORIZONTAL_INSET / safeEditorScale,
+                transform: [{ scale: 1 / safeEditorScale }],
+              }
+            : null),
+        },
+        isOverlay && styles.panelTransformOrigin,
+      ]}
+    >
       <View style={styles.header}>
         <AppText size={14} weight="semiBold">
           {items.length}개
@@ -263,10 +293,6 @@ export default DiaryLayerPanel;
 
 const styles = StyleSheet.create({
   panel: {
-    position: 'absolute',
-    top: PANEL_TOP_INSET,
-    right: PANEL_HORIZONTAL_INSET,
-    zIndex: 50,
     overflow: 'hidden',
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
@@ -277,6 +303,22 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.14,
     shadowRadius: 18,
+  },
+
+  overlayPanel: {
+    position: 'absolute',
+    zIndex: 50,
+  },
+
+  sidePanel: {
+    position: 'absolute',
+    top: PANEL_TOP_INSET,
+    right: 24,
+    zIndex: 50,
+  },
+
+  panelTransformOrigin: {
+    transformOrigin: 'top right',
   },
 
   header: {
