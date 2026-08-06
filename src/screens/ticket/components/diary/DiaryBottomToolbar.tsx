@@ -104,6 +104,7 @@ export default DiaryBottomToolbar;
 
 const styles = StyleSheet.create({
   toolbar: {
+    width: '100%',
     flexDirection: 'row',
     height: 72,
     paddingHorizontal: 8,
@@ -114,7 +115,6 @@ const styles = StyleSheet.create({
 
   toolbarContent: {
     width: '100%',
-    maxWidth: 393,
     alignSelf: 'center',
     flexDirection: 'row',
   },
