@@ -304,10 +304,13 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
     DIARY_STICKER_PACKS[0]?.id ?? '',
   );
 
+  const [editorScale, setEditorScale] = useState(1);
+
   // 다이어리 영역 (사진 배치 시 넘어가지 않게)
+  // 아이폰과 아이패드 등 기기 해상도 차이로 인한 위치 틀어짐 방지를 위해 고정 논리 해상도를 사용합니다.
   const [editorSize, setEditorSize] = useState<EditorSize>({
-    width: 0,
-    height: 0,
+    width: 393,
+    height: 524,
   });
 
   // 사진, 스티커, 텍스트를 하나의 배열로 관리합니다.
@@ -662,13 +665,11 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
     [],
   );
 
-  const handleEditorLayout = ({ nativeEvent }: LayoutChangeEvent) => {
+  const handleEditorWrapperLayout = ({ nativeEvent }: LayoutChangeEvent) => {
     const { width, height } = nativeEvent.layout;
 
-    setEditorSize({
-      width,
-      height,
-    });
+    const scale = Math.min(width / 393, height / 524);
+    setEditorScale(scale);
   };
 
   const handlePaperSelect = (next: PaperType) => {
@@ -1184,7 +1185,17 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
         behavior="padding"
         style={styles.keyboardAvoidingContainer}
       >
-        <View style={styles.editorArea} onLayout={handleEditorLayout}>
+        <View style={styles.editorWrapper} onLayout={handleEditorWrapperLayout}>
+          <View
+            style={[
+              styles.editorArea,
+              {
+                width: editorSize.width,
+                height: editorSize.height,
+                transform: [{ scale: editorScale }],
+              },
+            ]}
+          >
           <Pressable
             accessible={false}
             style={styles.editorBackground}
@@ -1251,6 +1262,7 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
               onClose={() => setIsLayerPanelVisible(false)}
             />
           ) : null}
+          </View>
         </View>
 
         {selectedText?.type === 'text' ? (
@@ -1291,8 +1303,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  editorArea: {
+  editorWrapper: {
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+    overflow: 'hidden',
+  },
+
+  editorArea: {
     position: 'relative',
     overflow: 'hidden',
     backgroundColor: colors.surface,

@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native';
 import AppText from '../../components/common/AppText.tsx';
+import ResponsiveContent from '../../components/common/ResponsiveContent.tsx';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
@@ -406,24 +407,25 @@ function CalendarScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <AppText style={styles.headerTitle}>캘린더</AppText>
-        </View>
+        <ResponsiveContent maxWidth={720}>
+          <View style={styles.header}>
+            <AppText style={styles.headerTitle}>캘린더</AppText>
+          </View>
 
-        <View style={styles.calendarCard}>
-          <AppCalendar
-            key="team-calendar-rounded-grid-v6"
-            contained={false}
-            current={selectedDate}
-            firstDay={0}
-            dayComponent={renderCalendarDay}
-            onMonthChange={handleMonthChange}
-            displayLoadingIndicator={isLoadingTeamGames}
-            theme={calendarTheme}
-          />
-        </View>
+          <View style={styles.calendarCard}>
+            <AppCalendar
+              key="team-calendar-rounded-grid-v6"
+              contained={false}
+              current={selectedDate}
+              firstDay={0}
+              dayComponent={renderCalendarDay}
+              onMonthChange={handleMonthChange}
+              displayLoadingIndicator={isLoadingTeamGames}
+              theme={calendarTheme}
+            />
+          </View>
 
-        <View style={styles.recordSection}>
+          <View style={styles.recordSection}>
           <View style={styles.recordHeader}>
             <AppText style={styles.selectedDateText}>
               {formatSelectedDate(selectedDate)}
@@ -561,7 +563,8 @@ function CalendarScreen() {
               ) : null}
             </EmptyCard>
           )}
-        </View>
+          </View>
+        </ResponsiveContent>
       </ScrollView>
     </SafeAreaView>
   );

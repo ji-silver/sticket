@@ -19,6 +19,7 @@ import { DateData } from 'react-native-calendars';
 import { colors } from '../../styles/colors.ts';
 import InlineActionButton from '../../components/common/InlineActionButton.tsx';
 import ScreenHeader from '../../components/common/ScreenHeader.tsx';
+import ResponsiveContent from '../../components/common/ResponsiveContent.tsx';
 import type { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
 import OriginalTicketImageField, {
   SelectedOriginalTicketImage,
@@ -195,10 +196,11 @@ function AddTicketScreen() {
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
         >
-          <OriginalTicketImageField
-            value={originalTicketImage}
-            onChange={setOriginalTicketImage}
-          />
+          <ResponsiveContent>
+            <OriginalTicketImageField
+              value={originalTicketImage}
+              onChange={setOriginalTicketImage}
+            />
 
           <View style={styles.sectionHeader}>
             <AppText style={styles.sectionTitle}>직관 날짜</AppText>
@@ -316,8 +318,8 @@ function AddTicketScreen() {
             </View>
           )}
 
-          {selectedDate && !isCalendarOpen && (
-            <View style={styles.seatSection}>
+            {selectedDate && !isCalendarOpen && (
+              <View style={styles.seatSection}>
               <View style={styles.seatSectionHeader}>
                 <AppText style={styles.sectionTitle}>좌석 정보</AppText>
                 <AppText style={styles.optionalLabel}>선택</AppText>
@@ -336,38 +338,41 @@ function AddTicketScreen() {
                   accessibilityLabel="좌석 정보"
                 />
               </View>
-            </View>
-          )}
+              </View>
+            )}
+          </ResponsiveContent>
         </ScrollView>
 
         <View style={styles.footer}>
-          <Pressable
-            disabled={isSaveDisabled}
-            onPress={handleAddTicket}
-            style={({ pressed }) => [
-              styles.saveButton,
-              isSaveDisabled && styles.saveButtonDisabled,
-              pressed && !isSaveDisabled && styles.saveButtonPressed,
-            ]}
-            accessibilityRole="button"
-            accessibilityState={{
-              disabled: isSaveDisabled,
-              busy: isSaving,
-            }}
-          >
-            {isSaving ? (
-              <ActivityIndicator size="small" color={colors.onPrimary} />
-            ) : (
-              <AppText
-                style={[
-                  styles.saveButtonText,
-                  isSaveDisabled && styles.saveButtonTextDisabled,
-                ]}
-              >
-                티켓 추가
-              </AppText>
-            )}
-          </Pressable>
+          <ResponsiveContent style={styles.footerContent}>
+            <Pressable
+              disabled={isSaveDisabled}
+              onPress={handleAddTicket}
+              style={({ pressed }) => [
+                styles.saveButton,
+                isSaveDisabled && styles.saveButtonDisabled,
+                pressed && !isSaveDisabled && styles.saveButtonPressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityState={{
+                disabled: isSaveDisabled,
+                busy: isSaving,
+              }}
+            >
+              {isSaving ? (
+                <ActivityIndicator size="small" color={colors.onPrimary} />
+              ) : (
+                <AppText
+                  style={[
+                    styles.saveButtonText,
+                    isSaveDisabled && styles.saveButtonTextDisabled,
+                  ]}
+                >
+                  티켓 추가
+                </AppText>
+              )}
+            </Pressable>
+          </ResponsiveContent>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -575,10 +580,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   footer: {
-    paddingHorizontal: 24,
     paddingTop: 12,
     paddingBottom: 8,
     backgroundColor: colors.surface,
+  },
+  footerContent: {
+    paddingHorizontal: 24,
   },
   saveButton: {
     height: 54,

@@ -19,6 +19,7 @@ import { colors } from '../../styles/colors.ts';
 import FilterChip from '../../components/common/FilterChip.tsx';
 import InlineActionButton from '../../components/common/InlineActionButton.tsx';
 import ScreenHeader from '../../components/common/ScreenHeader.tsx';
+import ResponsiveContent from '../../components/common/ResponsiveContent.tsx';
 import { Ticket } from './types.ts';
 import { getTickets } from '../../features/ticket/ticket.service.ts';
 import TicketCard from './components/TicketCard.tsx';
@@ -116,60 +117,66 @@ function TicketListScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.hero}>
-          <View style={styles.ticketCountRow}>
-            <AppText style={styles.ticketCountNumber}>{ticketCount}</AppText>
+          <ResponsiveContent style={styles.horizontalContent}>
+            <View style={styles.ticketCountRow}>
+              <AppText style={styles.ticketCountNumber}>{ticketCount}</AppText>
 
-            <View style={styles.ticketCountTextBox}>
-              <AppText style={styles.ticketCountUnit}>개의</AppText>
-              <AppText style={styles.ticketCountTitle}>직관 티켓</AppText>
+              <View style={styles.ticketCountTextBox}>
+                <AppText style={styles.ticketCountUnit}>개의</AppText>
+                <AppText style={styles.ticketCountTitle}>직관 티켓</AppText>
+              </View>
             </View>
-          </View>
+          </ResponsiveContent>
         </View>
 
         {hasTickets && seasons.length > 0 && (
           <View style={styles.seasonBar}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.seasonList}
-            >
-              {seasons.map(season => {
-                const isSelected = activeSeason === season;
+            <ResponsiveContent>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.seasonList}
+              >
+                {seasons.map(season => {
+                  const isSelected = activeSeason === season;
 
-                return (
-                  <FilterChip
-                    key={season}
-                    label={season}
-                    selected={isSelected}
-                    onPress={() => setSelectedSeason(season)}
-                  />
-                );
-              })}
-            </ScrollView>
+                  return (
+                    <FilterChip
+                      key={season}
+                      label={season}
+                      selected={isSelected}
+                      onPress={() => setSelectedSeason(season)}
+                    />
+                  );
+                })}
+              </ScrollView>
+            </ResponsiveContent>
           </View>
         )}
 
-        <View style={styles.contentContainer}>
-          {isLoading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size={'small'} color={colors.primary} />
-            </View>
-          ) : hasTickets ? (
-            <View style={styles.ticketList}>
-              {filteredTickets.map(ticket => (
-                <TicketCard
-                  key={ticket.id}
-                  ticket={ticket}
-                  onPress={() =>
-                    navigation.navigate('TicketDetail', { ticket })
-                  }
-                />
-              ))}
-            </View>
-          ) : (
-            <EmptyTicketState onPressAddTicket={handlePressAddTicket} />
-          )}
-        </View>
+        <ResponsiveContent style={styles.horizontalContent}>
+          <View style={styles.contentContainer}>
+            {isLoading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size={'small'} color={colors.primary} />
+              </View>
+            ) : hasTickets ? (
+              <View style={styles.ticketList}>
+                {filteredTickets.map(ticket => (
+                  <TicketCard
+                    key={ticket.id}
+                    ticket={ticket}
+                    onPress={() =>
+                      navigation.navigate('TicketDetail', { ticket })
+                    }
+                  />
+                ))}
+              </View>
+            ) : (
+              <EmptyTicketState onPressAddTicket={handlePressAddTicket} />
+            )}
+          </View>
+        </ResponsiveContent>
       </ScrollView>
     </SafeAreaView>
   );
@@ -210,7 +217,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   hero: {
-    paddingHorizontal: 24,
     paddingTop: 22,
     paddingBottom: 18,
     backgroundColor: colors.surface,
@@ -260,9 +266,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   contentContainer: {
-    paddingHorizontal: 24,
     paddingTop: 28,
     paddingBottom: 32,
+  },
+  horizontalContent: {
+    paddingHorizontal: 24,
   },
   loadingContainer: {
     minHeight: 214,

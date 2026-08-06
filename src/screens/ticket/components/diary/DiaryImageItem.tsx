@@ -461,10 +461,18 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     left: 0,
+    // iOS GPU 스케일링 화질 저하 완화 트릭 (그림자 렌더링 강제)
+    shadowColor: 'transparent',
+    shadowOpacity: 1,
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 0,
   },
   image: {
     width: '100%',
     height: '100%',
+    // iOS 확대/축소 시 테두리 계단 현상 방지 트릭
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.01)',
   },
   selectionBorder: {
     position: 'absolute',
