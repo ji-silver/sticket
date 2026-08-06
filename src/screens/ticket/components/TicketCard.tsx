@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useState } from 'react';
 import AppText from '../../../components/common/AppText.tsx';
 import { colors } from '../../../styles/colors.ts';
 import { fonts } from '../../../styles/fonts.ts';
@@ -13,7 +14,8 @@ const barcodeModules = [
   3, 1, 1, 2, 4, 1, 2, 1, 3, 2, 1, 4, 1, 1, 3, 1, 2, 3, 1, 4, 2, 1, 1, 3,
 ];
 
-const perforationDashes = Array.from({ length: 28 });
+const PERFORATION_DASH_WIDTH = 6;
+const PERFORATION_DASH_GAP = 5;
 
 const teamColors: Record<string, string> = {
   키움: '#570514',
@@ -29,10 +31,18 @@ const teamColors: Record<string, string> = {
 };
 
 function TicketCard({ ticket, onPress }: TicketCardProps) {
+  const [perforationWidth, setPerforationWidth] = useState(0);
   const date = new Date(ticket.matchDate);
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   const weekday = ['일', '월', '화', '수', '목', '금', '토'][date.getDay()];
+  const perforationDashCount = Math.max(
+    1,
+    Math.floor(
+      (perforationWidth + PERFORATION_DASH_GAP) /
+        (PERFORATION_DASH_WIDTH + PERFORATION_DASH_GAP),
+    ),
+  );
 
   return (
     <Pressable
@@ -121,8 +131,13 @@ function TicketCard({ ticket, onPress }: TicketCardProps) {
       <View style={styles.perforationWrap}>
         <View style={styles.leftCutout} />
 
-        <View style={styles.perforation}>
-          {perforationDashes.map((_, index) => (
+        <View
+          onLayout={({ nativeEvent }) =>
+            setPerforationWidth(nativeEvent.layout.width)
+          }
+          style={styles.perforation}
+        >
+          {Array.from({ length: perforationDashCount }).map((_, index) => (
             <View key={`dash-${index}`} style={styles.perforationDash} />
           ))}
         </View>
@@ -287,12 +302,14 @@ const styles = StyleSheet.create({
     marginHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: PERFORATION_DASH_GAP,
+    overflow: 'hidden',
   },
 
   perforationDash: {
-    width: 6,
-    height: 1,
+    width: PERFORATION_DASH_WIDTH,
+    height: StyleSheet.hairlineWidth,
+    flexShrink: 0,
     backgroundColor: '#D2D2D2',
   },
 
