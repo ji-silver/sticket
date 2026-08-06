@@ -25,6 +25,7 @@ import { getTickets } from '../../features/ticket/ticket.service.ts';
 import TicketCard from './components/TicketCard.tsx';
 
 function TicketListScreen() {
+  const horizontalPadding = 20;
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
@@ -117,7 +118,12 @@ function TicketListScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.hero}>
-          <ResponsiveContent style={styles.horizontalContent}>
+          <ResponsiveContent
+            style={[
+              styles.horizontalContent,
+              { paddingHorizontal: horizontalPadding },
+            ]}
+          >
             <View style={styles.ticketCountRow}>
               <AppText style={styles.ticketCountNumber}>{ticketCount}</AppText>
 
@@ -135,7 +141,10 @@ function TicketListScreen() {
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.seasonList}
+                contentContainerStyle={[
+                  styles.seasonList,
+                  { paddingHorizontal: horizontalPadding },
+                ]}
               >
                 {seasons.map(season => {
                   const isSelected = activeSeason === season;
@@ -154,7 +163,12 @@ function TicketListScreen() {
           </View>
         )}
 
-        <ResponsiveContent style={styles.horizontalContent}>
+        <ResponsiveContent
+          style={[
+            styles.horizontalContent,
+            { paddingHorizontal: horizontalPadding },
+          ]}
+        >
           <View style={styles.contentContainer}>
             {isLoading ? (
               <View style={styles.loadingContainer}>
@@ -251,7 +265,7 @@ const styles = StyleSheet.create({
     lineHeight: 28,
   },
   seasonList: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 12,
     gap: 10,
   },
   seasonBar: {
@@ -270,7 +284,7 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   horizontalContent: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 12,
   },
   loadingContainer: {
     minHeight: 214,

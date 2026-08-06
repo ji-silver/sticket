@@ -1,5 +1,11 @@
 import type { PropsWithChildren } from 'react';
-import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
+import {
+  StyleProp,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+  ViewStyle,
+} from 'react-native';
 
 interface ResponsiveContentProps extends PropsWithChildren {
   maxWidth?: number;
@@ -8,10 +14,17 @@ interface ResponsiveContentProps extends PropsWithChildren {
 
 function ResponsiveContent({
   children,
-  maxWidth = 640,
+  maxWidth,
   style,
 }: ResponsiveContentProps) {
-  return <View style={[styles.content, { maxWidth }, style]}>{children}</View>;
+  const { width, height } = useWindowDimensions();
+  const responsiveMaxWidth = maxWidth ?? (width > height ? 760 : 640);
+
+  return (
+    <View style={[styles.content, { maxWidth: responsiveMaxWidth }, style]}>
+      {children}
+    </View>
+  );
 }
 
 export default ResponsiveContent;

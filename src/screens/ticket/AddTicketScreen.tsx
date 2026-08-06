@@ -34,6 +34,7 @@ import type { RouteProp } from '@react-navigation/native';
 type AddTicketRouteProp = RouteProp<RootStackParamList, 'AddTicket'>;
 
 function AddTicketScreen() {
+  const horizontalPadding = 20;
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<AddTicketRouteProp>();
@@ -196,155 +197,171 @@ function AddTicketScreen() {
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
         >
-          <ResponsiveContent>
+          <ResponsiveContent
+            style={[
+              styles.horizontalContent,
+              { paddingHorizontal: horizontalPadding },
+            ]}
+          >
             <OriginalTicketImageField
               value={originalTicketImage}
               onChange={setOriginalTicketImage}
             />
 
-          <View style={styles.sectionHeader}>
-            <AppText style={styles.sectionTitle}>직관 날짜</AppText>
-          </View>
+            <View style={styles.sectionHeader}>
+              <AppText style={styles.sectionTitle}>직관 날짜</AppText>
+            </View>
 
-          {selectedDate && (
-            <View style={styles.dateSummaryCard}>
-              <View style={styles.dateSummaryTextArea}>
-                <AppText style={styles.dateSummaryLabel}>선택한 날짜</AppText>
-                <AppText style={styles.dateSummaryText}>
-                  {selectedDateText}
-                </AppText>
+            {selectedDate && (
+              <View style={styles.dateSummaryCard}>
+                <View style={styles.dateSummaryTextArea}>
+                  <AppText style={styles.dateSummaryLabel}>선택한 날짜</AppText>
+                  <AppText style={styles.dateSummaryText}>
+                    {selectedDateText}
+                  </AppText>
+                </View>
+
+                <InlineActionButton
+                  label="변경"
+                  tone="primary"
+                  onPress={handlePressDateSummary}
+                  accessibilityLabel="직관 날짜 다시 선택"
+                />
               </View>
+            )}
 
-              <InlineActionButton
-                label="변경"
-                tone="primary"
-                onPress={handlePressDateSummary}
-                accessibilityLabel="직관 날짜 다시 선택"
+            {isCalendarOpen && (
+              <AppCalendar
+                current={selectedDate || undefined}
+                maxDate={today}
+                disableAllTouchEventsForDisabledDays
+                markedDates={markedDates}
+                onDayPress={handlePressDay}
               />
-            </View>
-          )}
+            )}
 
-          {isCalendarOpen && (
-            <AppCalendar
-              current={selectedDate || undefined}
-              maxDate={today}
-              disableAllTouchEventsForDisabledDays
-              markedDates={markedDates}
-              onDayPress={handlePressDay}
-            />
-          )}
+            {selectedDate && !isCalendarOpen && (
+              <View style={styles.gameSection}>
+                <View style={styles.gameSectionHeader}>
+                  <AppText style={styles.sectionTitle}>
+                    어떤 경기를 봤나요?
+                  </AppText>
+                </View>
 
-          {selectedDate && !isCalendarOpen && (
-            <View style={styles.gameSection}>
-              <View style={styles.gameSectionHeader}>
-                <AppText style={styles.sectionTitle}>
-                  어떤 경기를 봤나요?
-                </AppText>
+                {isLoadingGames ? (
+                  <View style={styles.gameLoadingCard}>
+                    <ActivityIndicator size="small" color={colors.primary} />
+                  </View>
+                ) : gameLoadError ? (
+                  <EmptyCard
+                    title="경기 정보를 불러오지 못했어요"
+                    description={gameLoadError}
+                    style={styles.emptyCard}
+                  />
+                ) : games.length > 0 ? (
+                  <View style={styles.gameList}>
+                    {games.map(game => {
+                      const isSelected = selectedGameId === game.id;
+
+                      return (
+                        <Pressable
+                          key={game.id}
+                          style={({ pressed }) => [
+                            styles.gameCard,
+                            isSelected && styles.gameCardSelected,
+                            pressed && styles.gameCardPressed,
+                          ]}
+                          onPress={() => handlePressGame(game.id)}
+                          accessibilityRole="button"
+                          accessibilityLabel={`${game.awayTeamName} 원정 대 ${game.homeTeamName} 홈, ${game.time}, ${game.stadiumName}`}
+                          accessibilityState={{ selected: isSelected }}
+                        >
+                          <View style={styles.matchupRow}>
+                            <View style={styles.teamSide}>
+                              <AppText style={styles.teamRole}>AWAY</AppText>
+                              <AppText
+                                style={styles.teamName}
+                                numberOfLines={1}
+                              >
+                                {game.awayTeamName}
+                              </AppText>
+                            </View>
+
+                            <AppText style={styles.vsText}>VS</AppText>
+
+                            <View style={styles.teamSide}>
+                              <AppText style={styles.teamRole}>HOME</AppText>
+                              <AppText
+                                style={styles.teamName}
+                                numberOfLines={1}
+                              >
+                                {game.homeTeamName}
+                              </AppText>
+                            </View>
+                          </View>
+
+                          <View style={styles.gameMetaRow}>
+                            <View style={styles.gameMetaContent}>
+                              <AppText style={styles.gameTime}>
+                                {game.time}
+                              </AppText>
+
+                              <View style={styles.metaDot} />
+
+                              <AppText
+                                style={styles.stadiumName}
+                                numberOfLines={1}
+                              >
+                                {game.stadiumName}
+                              </AppText>
+                            </View>
+                          </View>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                ) : (
+                  <EmptyCard
+                    title="이 날짜에는 경기가 없어요"
+                    description="다른 날짜를 선택해 직관 경기를 찾아보세요"
+                    style={styles.emptyCard}
+                  />
+                )}
               </View>
-
-              {isLoadingGames ? (
-                <View style={styles.gameLoadingCard}>
-                  <ActivityIndicator size="small" color={colors.primary} />
-                </View>
-              ) : gameLoadError ? (
-                <EmptyCard
-                  title="경기 정보를 불러오지 못했어요"
-                  description={gameLoadError}
-                  style={styles.emptyCard}
-                />
-              ) : games.length > 0 ? (
-                <View style={styles.gameList}>
-                  {games.map(game => {
-                    const isSelected = selectedGameId === game.id;
-
-                    return (
-                      <Pressable
-                        key={game.id}
-                        style={({ pressed }) => [
-                          styles.gameCard,
-                          isSelected && styles.gameCardSelected,
-                          pressed && styles.gameCardPressed,
-                        ]}
-                        onPress={() => handlePressGame(game.id)}
-                        accessibilityRole="button"
-                        accessibilityLabel={`${game.awayTeamName} 원정 대 ${game.homeTeamName} 홈, ${game.time}, ${game.stadiumName}`}
-                        accessibilityState={{ selected: isSelected }}
-                      >
-                        <View style={styles.matchupRow}>
-                          <View style={styles.teamSide}>
-                            <AppText style={styles.teamRole}>AWAY</AppText>
-                            <AppText style={styles.teamName} numberOfLines={1}>
-                              {game.awayTeamName}
-                            </AppText>
-                          </View>
-
-                          <AppText style={styles.vsText}>VS</AppText>
-
-                          <View style={styles.teamSide}>
-                            <AppText style={styles.teamRole}>HOME</AppText>
-                            <AppText style={styles.teamName} numberOfLines={1}>
-                              {game.homeTeamName}
-                            </AppText>
-                          </View>
-                        </View>
-
-                        <View style={styles.gameMetaRow}>
-                          <View style={styles.gameMetaContent}>
-                            <AppText style={styles.gameTime}>
-                              {game.time}
-                            </AppText>
-
-                            <View style={styles.metaDot} />
-
-                            <AppText
-                              style={styles.stadiumName}
-                              numberOfLines={1}
-                            >
-                              {game.stadiumName}
-                            </AppText>
-                          </View>
-                        </View>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-              ) : (
-                <EmptyCard
-                  title="이 날짜에는 경기가 없어요"
-                  description="다른 날짜를 선택해 직관 경기를 찾아보세요"
-                  style={styles.emptyCard}
-                />
-              )}
-            </View>
-          )}
+            )}
 
             {selectedDate && !isCalendarOpen && (
               <View style={styles.seatSection}>
-              <View style={styles.seatSectionHeader}>
-                <AppText style={styles.sectionTitle}>좌석 정보</AppText>
-                <AppText style={styles.optionalLabel}>선택</AppText>
-              </View>
+                <View style={styles.seatSectionHeader}>
+                  <AppText style={styles.sectionTitle}>좌석 정보</AppText>
+                  <AppText style={styles.optionalLabel}>선택</AppText>
+                </View>
 
-              <View style={styles.seatInputCard}>
-                <TextInput
-                  maxLength={100}
-                  value={seatName}
-                  onChangeText={setSeatName}
-                  style={styles.seatInput}
-                  placeholder="예: 덕아웃상단석 9블럭 J열"
-                  placeholderTextColor={colors.textSecondary}
-                  returnKeyType="done"
-                  clearButtonMode="while-editing"
-                  accessibilityLabel="좌석 정보"
-                />
-              </View>
+                <View style={styles.seatInputCard}>
+                  <TextInput
+                    maxLength={100}
+                    value={seatName}
+                    onChangeText={setSeatName}
+                    style={styles.seatInput}
+                    placeholder="예: 덕아웃상단석 9블럭 J열"
+                    placeholderTextColor={colors.textSecondary}
+                    returnKeyType="done"
+                    clearButtonMode="while-editing"
+                    accessibilityLabel="좌석 정보"
+                  />
+                </View>
               </View>
             )}
           </ResponsiveContent>
         </ScrollView>
 
         <View style={styles.footer}>
-          <ResponsiveContent style={styles.footerContent}>
+          <ResponsiveContent
+            style={[
+              styles.footerContent,
+              { paddingHorizontal: horizontalPadding },
+            ]}
+          >
             <Pressable
               disabled={isSaveDisabled}
               onPress={handleAddTicket}
@@ -403,9 +420,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    paddingHorizontal: 24,
     paddingTop: 24,
     paddingBottom: 32,
+  },
+  horizontalContent: {
+    paddingHorizontal: 12,
   },
   sectionHeader: {
     marginBottom: 18,
@@ -585,7 +604,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   footerContent: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 12,
   },
   saveButton: {
     height: 54,

@@ -136,6 +136,7 @@ const calendarTheme = {
 } as CalendarProps['theme'];
 
 function CalendarScreen() {
+  const horizontalPadding = 20;
   const navigation = useNavigation<CalendarNavigationProp>();
   const { profile } = useAuth();
   const today = getTodayInKorea();
@@ -407,7 +408,12 @@ function CalendarScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        <ResponsiveContent maxWidth={720}>
+        <ResponsiveContent
+          style={[
+            styles.horizontalContent,
+            { paddingHorizontal: horizontalPadding },
+          ]}
+        >
           <View style={styles.header}>
             <AppText style={styles.headerTitle}>캘린더</AppText>
           </View>
@@ -426,143 +432,151 @@ function CalendarScreen() {
           </View>
 
           <View style={styles.recordSection}>
-          <View style={styles.recordHeader}>
-            <AppText style={styles.selectedDateText}>
-              {formatSelectedDate(selectedDate)}
-            </AppText>
-          </View>
-
-          {isLoading || isLoadingTeamGames ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color={colors.primary} />
+            <View style={styles.recordHeader}>
+              <AppText style={styles.selectedDateText}>
+                {formatSelectedDate(selectedDate)}
+              </AppText>
             </View>
-          ) : selectedRecords.length > 0 ? (
-            <View style={styles.recordList}>
-              {selectedRecords.map(record => (
-                <TicketCard
-                  key={record.id}
-                  ticket={record}
-                  onPress={() =>
-                    navigation.navigate('TicketDetail', {
-                      ticket: record,
-                    })
-                  }
-                />
-              ))}
-            </View>
-          ) : selectedGames.length > 0 ? (
-            <View style={styles.teamGameList}>
-              {selectedGames.map(game => {
-                const awayTeamName =
-                  game.homeAway === 'A' ? favoriteTeamName : game.opponentName;
-                const homeTeamName =
-                  game.homeAway === 'H' ? favoriteTeamName : game.opponentName;
-                const isFinished =
-                  game.status === 'FINISHED' &&
-                  game.awayScore !== null &&
-                  game.homeScore !== null;
-                const statusText =
-                  game.status === 'CANCELLED'
-                    ? '경기 취소'
-                    : game.status === 'IN_PROGRESS'
-                    ? '경기 중'
-                    : isFinished
-                    ? '경기 종료'
-                    : '경기 예정';
-                const centerText =
-                  game.status === 'CANCELLED'
-                    ? '취소'
-                    : isFinished
-                    ? `${game.awayScore} : ${game.homeScore}`
-                    : 'VS';
 
-                return (
-                  <View key={game.id} style={styles.teamGameCard}>
-                    <AppText style={styles.teamGameStatus}>
-                      {statusText}
-                    </AppText>
+            {isLoading || isLoadingTeamGames ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color={colors.primary} />
+              </View>
+            ) : selectedRecords.length > 0 ? (
+              <View style={styles.recordList}>
+                {selectedRecords.map(record => (
+                  <TicketCard
+                    key={record.id}
+                    ticket={record}
+                    onPress={() =>
+                      navigation.navigate('TicketDetail', {
+                        ticket: record,
+                      })
+                    }
+                  />
+                ))}
+              </View>
+            ) : selectedGames.length > 0 ? (
+              <View style={styles.teamGameList}>
+                {selectedGames.map(game => {
+                  const awayTeamName =
+                    game.homeAway === 'A'
+                      ? favoriteTeamName
+                      : game.opponentName;
+                  const homeTeamName =
+                    game.homeAway === 'H'
+                      ? favoriteTeamName
+                      : game.opponentName;
+                  const isFinished =
+                    game.status === 'FINISHED' &&
+                    game.awayScore !== null &&
+                    game.homeScore !== null;
+                  const statusText =
+                    game.status === 'CANCELLED'
+                      ? '경기 취소'
+                      : game.status === 'IN_PROGRESS'
+                      ? '경기 중'
+                      : isFinished
+                      ? '경기 종료'
+                      : '경기 예정';
+                  const centerText =
+                    game.status === 'CANCELLED'
+                      ? '취소'
+                      : isFinished
+                      ? `${game.awayScore} : ${game.homeScore}`
+                      : 'VS';
 
-                    <View style={styles.teamGameMatchup}>
-                      <AppText style={styles.teamGameTeam} numberOfLines={1}>
-                        {awayTeamName}
+                  return (
+                    <View key={game.id} style={styles.teamGameCard}>
+                      <AppText style={styles.teamGameStatus}>
+                        {statusText}
                       </AppText>
-                      <AppText style={styles.teamGameScore}>
-                        {centerText}
-                      </AppText>
-                      <AppText style={styles.teamGameTeam} numberOfLines={1}>
-                        {homeTeamName}
-                      </AppText>
-                    </View>
 
-                    <AppText style={styles.teamGameMeta}>
-                      {game.time} · {game.stadiumName}
-                    </AppText>
-
-                    {selectedDate <= today && game.status !== 'CANCELLED' ? (
-                      <Pressable
-                        style={({ pressed }) => [
-                          styles.addTicketButton,
-                          styles.teamGameAddButton,
-                          pressed && styles.addTicketButtonPressed,
-                        ]}
-                        onPress={() =>
-                          navigation.navigate('AddTicket', {
-                            initialDate: selectedDate,
-                          })
-                        }
-                        accessibilityRole="button"
-                        accessibilityLabel="선택한 경기에 직관 기록 추가"
-                      >
-                        <Plus
-                          size={15}
-                          color={colors.onPrimary}
-                          strokeWidth={2.6}
-                        />
-                        <AppText style={styles.addTicketButtonText}>
-                          직관 기록 추가
+                      <View style={styles.teamGameMatchup}>
+                        <AppText style={styles.teamGameTeam} numberOfLines={1}>
+                          {awayTeamName}
                         </AppText>
-                      </Pressable>
-                    ) : null}
-                  </View>
-                );
-              })}
-            </View>
-          ) : (
-            <EmptyCard
-              title={
-                selectedDate <= today
-                  ? '우리 팀 경기가 없는 날이에요'
-                  : '예정된 우리 팀 경기가 없어요'
-              }
-              description={
-                selectedDate <= today
-                  ? '다른 경기를 직관했다면 기록을 남겨보세요'
-                  : '다른 날짜를 선택해 보세요'
-              }
-              style={styles.emptyCard}
-            >
-              {selectedDate <= today ? (
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.addTicketButton,
-                    pressed && styles.addTicketButtonPressed,
-                  ]}
-                  onPress={() =>
-                    navigation.navigate('AddTicket', {
-                      initialDate: selectedDate,
-                    })
-                  }
-                  accessibilityRole="button"
-                  accessibilityLabel="선택한 날짜에 티켓 추가"
-                >
-                  <Plus size={15} color={colors.onPrimary} strokeWidth={2.6} />
-                  <AppText style={styles.addTicketButtonText}>
-                    티켓 추가
-                  </AppText>
-                </Pressable>
-              ) : null}
-            </EmptyCard>
-          )}
+                        <AppText style={styles.teamGameScore}>
+                          {centerText}
+                        </AppText>
+                        <AppText style={styles.teamGameTeam} numberOfLines={1}>
+                          {homeTeamName}
+                        </AppText>
+                      </View>
+
+                      <AppText style={styles.teamGameMeta}>
+                        {game.time} · {game.stadiumName}
+                      </AppText>
+
+                      {selectedDate <= today && game.status !== 'CANCELLED' ? (
+                        <Pressable
+                          style={({ pressed }) => [
+                            styles.addTicketButton,
+                            styles.teamGameAddButton,
+                            pressed && styles.addTicketButtonPressed,
+                          ]}
+                          onPress={() =>
+                            navigation.navigate('AddTicket', {
+                              initialDate: selectedDate,
+                            })
+                          }
+                          accessibilityRole="button"
+                          accessibilityLabel="선택한 경기에 직관 기록 추가"
+                        >
+                          <Plus
+                            size={15}
+                            color={colors.onPrimary}
+                            strokeWidth={2.6}
+                          />
+                          <AppText style={styles.addTicketButtonText}>
+                            직관 기록 추가
+                          </AppText>
+                        </Pressable>
+                      ) : null}
+                    </View>
+                  );
+                })}
+              </View>
+            ) : (
+              <EmptyCard
+                title={
+                  selectedDate <= today
+                    ? '우리 팀 경기가 없는 날이에요'
+                    : '예정된 우리 팀 경기가 없어요'
+                }
+                description={
+                  selectedDate <= today
+                    ? '다른 경기를 직관했다면 기록을 남겨보세요'
+                    : '다른 날짜를 선택해 보세요'
+                }
+                style={styles.emptyCard}
+              >
+                {selectedDate <= today ? (
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.addTicketButton,
+                      pressed && styles.addTicketButtonPressed,
+                    ]}
+                    onPress={() =>
+                      navigation.navigate('AddTicket', {
+                        initialDate: selectedDate,
+                      })
+                    }
+                    accessibilityRole="button"
+                    accessibilityLabel="선택한 날짜에 티켓 추가"
+                  >
+                    <Plus
+                      size={15}
+                      color={colors.onPrimary}
+                      strokeWidth={2.6}
+                    />
+                    <AppText style={styles.addTicketButtonText}>
+                      티켓 추가
+                    </AppText>
+                  </Pressable>
+                ) : null}
+              </EmptyCard>
+            )}
           </View>
         </ResponsiveContent>
       </ScrollView>
@@ -582,9 +596,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   contentContainer: {
-    paddingHorizontal: 24,
     paddingTop: 18,
     paddingBottom: 32,
+  },
+  horizontalContent: {
+    paddingHorizontal: 12,
   },
   header: {
     minHeight: 42,
