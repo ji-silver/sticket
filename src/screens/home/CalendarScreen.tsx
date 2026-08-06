@@ -30,6 +30,7 @@ import {
   TeamCalendarGame,
 } from '../../features/game/game.service.ts';
 import { useAuth } from '../../features/auth/AuthProvider.tsx';
+import { getTicketBooks } from '../../features/ticket-book/ticketBook.service.ts';
 
 type CalendarNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type CalendarDayProps = {
@@ -149,6 +150,35 @@ function CalendarScreen() {
   const [selectedDate, setSelectedDate] = useState(today);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const handlePressAddTicket = async () => {
+    try {
+      const ticketBooks = await getTicketBooks();
+
+      if (ticketBooks.length > 0) {
+        navigation.navigate('AddTicket', { initialDate: selectedDate });
+        return;
+      }
+
+      Alert.alert(
+        '다이어리가 없어요',
+        '직관 기록을 추가하려면 먼저 다이어리를 만들어 주세요.',
+        [
+          { text: '취소', style: 'cancel' },
+          {
+            text: '다이어리 추가',
+            onPress: () => navigation.navigate('AddDiary'),
+          },
+        ],
+      );
+    } catch (error) {
+      console.error('다이어리 목록을 확인하지 못했습니다.', error);
+      Alert.alert(
+        '다이어리 정보를 확인하지 못했어요',
+        '잠시 후 다시 시도해 주세요.',
+      );
+    }
+  };
 
   /*
    * useEffect와 다른 점은 useEffect는 컴포넌트가 생성될 때만 실행되지만, useFocusEffect는 화면이 다시 포커스될 때마다 실행된다는 점
@@ -515,11 +545,7 @@ function CalendarScreen() {
                             styles.teamGameAddButton,
                             pressed && styles.addTicketButtonPressed,
                           ]}
-                          onPress={() =>
-                            navigation.navigate('AddTicket', {
-                              initialDate: selectedDate,
-                            })
-                          }
+                          onPress={handlePressAddTicket}
                           accessibilityRole="button"
                           accessibilityLabel="선택한 경기에 직관 기록 추가"
                         >
@@ -529,7 +555,7 @@ function CalendarScreen() {
                             strokeWidth={2.6}
                           />
                           <AppText style={styles.addTicketButtonText}>
-                            직관 기록 추가
+                            티켓 추가
                           </AppText>
                         </Pressable>
                       ) : null}
@@ -557,11 +583,7 @@ function CalendarScreen() {
                       styles.addTicketButton,
                       pressed && styles.addTicketButtonPressed,
                     ]}
-                    onPress={() =>
-                      navigation.navigate('AddTicket', {
-                        initialDate: selectedDate,
-                      })
-                    }
+                    onPress={handlePressAddTicket}
                     accessibilityRole="button"
                     accessibilityLabel="선택한 날짜에 티켓 추가"
                   >
