@@ -1,28 +1,6 @@
-import { supabase } from '../../lib/supabase.ts';
+import { supabase } from '../../lib/supabase';
 import { getTodayInKorea } from '../../lib/date.ts';
-
-export interface KboGame {
-  id: string;
-  date: string;
-  time: string;
-  stadiumName: string;
-  awayTeamName: string;
-  homeTeamName: string;
-  awayScore: number | null;
-  homeScore: number | null;
-}
-
-export interface TeamCalendarGame {
-  id: string;
-  date: string;
-  time: string;
-  stadiumName: string;
-  homeAway: 'H' | 'A';
-  opponentName: string;
-  status: string;
-  awayScore: number | null;
-  homeScore: number | null;
-}
+import { KboGame, TeamCalendarGame } from './types';
 
 export async function getGamesByDate(date: string): Promise<KboGame[]> {
   if (date > getTodayInKorea()) {

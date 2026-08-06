@@ -10,7 +10,7 @@ import {
 import AppText from '../../../components/common/AppText.tsx';
 import { colors } from '../../../styles/colors.ts';
 import { fonts } from '../../../styles/fonts.ts';
-import type { LineupPlayer } from '../types.ts';
+import { LineupPlayer } from '../../../features/ticket/types.ts';
 
 interface TicketLineupSectionProps {
   awayTeamName: string;

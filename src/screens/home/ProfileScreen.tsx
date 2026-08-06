@@ -21,10 +21,8 @@ import { fonts } from '../../styles/fonts.ts';
 import { getTodayInKorea } from '../../lib/date.ts';
 import type { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
 import { useAuth } from '../../features/auth/AuthProvider.tsx';
-import {
-  type AttendanceSummary,
-  getAttendanceSummary,
-} from '../../features/profile/profile.service.ts';
+import { getAttendanceSummary } from '../../features/profile/profile.service.ts';
+import { AttendanceSummary } from '../../features/profile/types.ts';
 
 type ProfileNavigationProp = NativeStackNavigationProp<
   RootStackParamList,

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import AppText from '../../../components/common/AppText.tsx';
 import { colors } from '../../../styles/colors.ts';
 import { fonts } from '../../../styles/fonts.ts';
-import type { Ticket } from '../types.ts';
+import { Ticket } from '../../../features/ticket/types.ts';
 
 interface TicketCardProps {
   ticket: Ticket;

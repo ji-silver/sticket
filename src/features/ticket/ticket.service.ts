@@ -2,10 +2,7 @@ import { decode } from 'base64-arraybuffer';
 
 import { supabase } from '../../lib/supabase.ts';
 import { getTodayInKorea } from '../../lib/date.ts';
-import type {
-  BaseballPosition,
-  LineupPlayer,
-} from '../../screens/ticket/types.ts';
+import type { BaseballPosition, LineupPlayer } from './types';
 import {
   getTicketDiaryFilePaths,
   removeTicketDiaryFiles,

@@ -8,7 +8,7 @@ import AuthScreen from '../screens/auth/AuthScreen.tsx';
 import LoadingScreen from '../screens/auth/LoadingScreen.tsx';
 import ProfileSetupScreen from '../screens/auth/ProfileSetupScreen.tsx';
 import TicketDetailScreen from '../screens/ticket/TicketDetailScreen.tsx';
-import { Ticket } from '../screens/ticket/types.ts';
+import { Ticket } from '../features/ticket/types.ts';
 import { colors } from '../styles/colors.ts';
 import { useAuth } from '../features/auth/AuthProvider.tsx';
 import type { Diary } from '../screens/home/types.ts';

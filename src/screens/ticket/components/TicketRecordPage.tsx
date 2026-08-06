@@ -10,7 +10,7 @@ import AppText from '../../../components/common/AppText.tsx';
 import { useAuth } from '../../../features/auth/AuthProvider.tsx';
 import { colors } from '../../../styles/colors.ts';
 import { fonts } from '../../../styles/fonts.ts';
-import type { Ticket } from '../types.ts';
+import { Ticket } from '../../../features/ticket/types.ts';
 import TicketLineupSection from './TicketLineupSection.tsx';
 import TicketReviewSection from './TicketReviewSection.tsx';
 import TicketVisitInfoSection from './TicketVisitInfoSection.tsx';

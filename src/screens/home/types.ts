@@ -1,6 +1,6 @@
-import type { SportId } from '../ticket/types.ts';
-import type { TicketBookCoverPattern } from '../../features/ticket-book/ticketBook.service.ts';
-import type { BucketItem } from '../../features/bucket-list/bucketList.service.ts';
+import type { SportId } from '../../features/ticket/types.ts';
+import type { TicketBookCoverPattern } from '../../features/ticket-book/types.ts';
+import type { BucketItem } from '../../features/bucket-list/types.ts';
 
 export interface Diary {
   id: string;

@@ -45,12 +45,14 @@ import {
   type DiaryTextStyle,
 } from './diaryText.ts';
 import {
+  SavedDiaryItem,
+  TICKET_DIARY_VERSION,
+} from '../../../../features/ticket/types.ts';
+import {
   getTicketDiaryData,
   getTicketDiaryDrawingBase64,
   getTicketDiaryPhotoUrls,
   removeTicketDiaryFiles,
-  type SavedDiaryItem,
-  TICKET_DIARY_VERSION,
   updateTicketDiaryData,
   uploadTicketDiaryDrawing,
   uploadTicketDiaryPhoto,

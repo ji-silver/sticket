@@ -1,15 +1,9 @@
 import { supabase } from '../../lib/supabase';
+import { AttendanceSummary } from './types';
 
 interface SaveProfileParams {
   nickname: string;
   favoriteTeamName: string;
-}
-
-export interface AttendanceSummary {
-  totalGames: number;
-  wins: number;
-  draws: number;
-  losses: number;
 }
 
 // 현재 구단과 과거 구단 같은 팀 처리

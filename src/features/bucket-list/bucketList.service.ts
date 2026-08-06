@@ -1,14 +1,7 @@
 import { supabase } from '../../lib/supabase.ts';
+import { BucketItem } from './types';
 
 const MAX_BUCKET_TITLE_LENGTH = 50;
-
-export interface BucketItem {
-  id: string;
-  ticketBookId: string;
-  title: string;
-  isCompleted: boolean;
-  displayOrder: number;
-}
 
 function normalizeBucketTitle(title: string) {
   const trimmedTitle = title.trim();

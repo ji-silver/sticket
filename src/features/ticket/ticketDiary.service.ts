@@ -1,6 +1,7 @@
 import { decode } from 'base64-arraybuffer';
 import { Json } from '../../lib/database.types.ts';
 import { supabase } from '../../lib/supabase.ts';
+import { SavedDiaryItem, TICKET_DIARY_VERSION, TicketDiaryData } from './types';
 
 const TICKET_DIARY_BUCKET = 'ticket-diaries';
 const SIGNED_URL_EXPIRES_IN_SECONDS = 60 * 60;
@@ -48,90 +49,6 @@ function readBlobAsBase64(blob: Blob): Promise<string> {
 
     reader.readAsDataURL(blob);
   });
-}
-
-export const TICKET_DIARY_VERSION = 1 as const;
-
-export type TicketDiaryPaperType = 'plain' | 'grid';
-
-export type TicketDiaryMatrix = [
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-];
-
-export interface SavedDiaryPhoto {
-  id: string;
-
-  // file:// 로컬 경로가 아닌 Supabase Storage 내부 경로
-  storagePath: string;
-
-  width: number;
-  height: number;
-  sourceWidth?: number;
-  sourceHeight?: number;
-  matrix: TicketDiaryMatrix;
-}
-
-export interface SavedDiarySticker {
-  id: string;
-
-  // require()의 숫자 값 대신 스티커 고유 ID만 저장
-  stickerId: string;
-
-  width: number;
-  height: number;
-  matrix: TicketDiaryMatrix;
-}
-
-export interface SavedDiaryTextStyle {
-  color: string;
-  fontSize: number;
-  align: 'left' | 'center' | 'right';
-  isBold: boolean;
-  hasUnderline: boolean;
-  hasStrikeThrough: boolean;
-}
-
-export interface SavedDiaryText {
-  id: string;
-  text: string;
-
-  centerX: number;
-  centerY: number;
-  width: number;
-  height: number;
-  rotation: number;
-
-  style: SavedDiaryTextStyle;
-}
-
-export type SavedDiaryItem =
-  | {
-      type: 'photo';
-      data: SavedDiaryPhoto;
-    }
-  | {
-      type: 'sticker';
-      data: SavedDiarySticker;
-    }
-  | {
-      type: 'text';
-      data: SavedDiaryText;
-    };
-
-export interface TicketDiaryData {
-  version: typeof TICKET_DIARY_VERSION;
-  paperType: TicketDiaryPaperType;
-  items: SavedDiaryItem[];
-  drawingIndex: number;
-  drawingPath: string | null;
 }
 
 export function createEmptyTicketDiaryData(): TicketDiaryData {

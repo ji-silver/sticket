@@ -18,15 +18,17 @@ import { useNavigation } from '@react-navigation/core';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
 import { getTodayInKorea } from '../../lib/date.ts';
-
 import { useTickets } from '../../features/ticket/api/useTickets';
-import { useTeamGamesByMonth, useLeagueGameDatesByMonth } from '../../features/game/api/useGames';
+import {
+  useLeagueGameDatesByMonth,
+  useTeamGamesByMonth,
+} from '../../features/game/api/useGames';
 import TicketCard from '../ticket/components/TicketCard.tsx';
 import EmptyCard from '../../components/common/EmptyCard.tsx';
 import { Plus } from 'lucide-react-native';
 import { useAuth } from '../../features/auth/AuthProvider.tsx';
 import { getTicketBooks } from '../../features/ticket-book/ticketBook.service.ts';
-import { TeamCalendarGame } from '../../features/game/game.service.ts';
+import { TeamCalendarGame } from '../../features/game/types.ts';
 
 type CalendarNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type CalendarDayProps = {
@@ -142,8 +144,10 @@ function CalendarScreen() {
   const [selectedDate, setSelectedDate] = useState(today);
 
   const { data: tickets = [], isLoading: isLoadingTickets } = useTickets();
-  const { data: teamGames = [], isLoading: isLoadingTeamGames } = useTeamGamesByMonth(profile?.favorite_team_id, visibleMonth);
-  const { data: leagueGameDates = [] } = useLeagueGameDatesByMonth(visibleMonth);
+  const { data: teamGames = [], isLoading: isLoadingTeamGames } =
+    useTeamGamesByMonth(profile?.favorite_team_id, visibleMonth);
+  const { data: leagueGameDates = [] } =
+    useLeagueGameDatesByMonth(visibleMonth);
 
   const isLoading = isLoadingTickets;
 

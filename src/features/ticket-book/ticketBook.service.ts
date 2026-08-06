@@ -1,9 +1,6 @@
 import { decode } from 'base64-arraybuffer';
-
 import { supabase } from '../../lib/supabase';
-
-type TicketBookSport = 'baseball';
-export type TicketBookCoverPattern = 'solid' | 'stripe';
+import { TicketBook, TicketBookSport, TicketBookCoverPattern } from './types';
 
 const COVER_BUCKET = 'ticket-book-covers';
 const ORIGINAL_TICKET_BUCKET = 'ticket-originals';
@@ -27,16 +24,6 @@ interface UploadTicketBookCoverParams {
   userId: string;
   ticketBookId: string;
   base64: string;
-}
-
-export interface TicketBook {
-  id: string;
-  sport: TicketBookSport;
-  recordCount: number;
-  coverColor: string;
-  coverPattern: TicketBookCoverPattern;
-  coverPhotoPath: string | null;
-  coverPhotoUrl: string | null;
 }
 
 async function getAuthenticatedUser() {
