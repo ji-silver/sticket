@@ -74,6 +74,8 @@ export interface SavedDiaryPhoto {
 
   width: number;
   height: number;
+  sourceWidth?: number;
+  sourceHeight?: number;
   matrix: TicketDiaryMatrix;
 }
 
@@ -227,8 +229,7 @@ export async function getTicketDiaryData(
         belongsToTicket(item.data.storagePath, ticketId),
     ),
     drawingPath:
-      diaryData.drawingPath &&
-      belongsToTicket(diaryData.drawingPath, ticketId)
+      diaryData.drawingPath && belongsToTicket(diaryData.drawingPath, ticketId)
         ? diaryData.drawingPath
         : null,
   };

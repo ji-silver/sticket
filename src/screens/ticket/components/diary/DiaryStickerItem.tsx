@@ -1,5 +1,10 @@
 import DiaryImageItem from './DiaryImageItem.tsx';
-import { type EditorSize, type Matrix3, translate3 } from './photoTransform.ts';
+import {
+  getMaximumSourceScale,
+  type EditorSize,
+  type Matrix3,
+  translate3,
+} from './photoTransform.ts';
 import {
   Alert,
   Image,
@@ -25,6 +30,7 @@ interface DiaryStickerItemProps {
   sticker: DiarySticker;
   editorSize: EditorSize;
   editorScale: number;
+  displayScaleY: number;
   isSelected: boolean;
   onSelect: () => void;
   onChange: (sticker: DiarySticker) => void;
@@ -90,15 +96,20 @@ function DiaryStickerItem({
   sticker,
   editorSize,
   editorScale,
+  displayScaleY,
   isSelected,
   onSelect,
   onChange,
   onDelete,
 }: DiaryStickerItemProps) {
   const sourceSize = Image.resolveAssetSource(sticker.source);
-  const maximumScale = Math.min(
-    sourceSize.width / (sticker.width * editorScale * PixelRatio.get()),
-    sourceSize.height / (sticker.height * editorScale * PixelRatio.get()),
+  const maximumScale = getMaximumSourceScale(
+    sourceSize.width,
+    sourceSize.height,
+    sticker.width,
+    sticker.height,
+    editorScale,
+    PixelRatio.get(),
   );
 
   return (
@@ -108,7 +119,9 @@ function DiaryStickerItem({
       height={sticker.height}
       initialMatrix={sticker.matrix}
       editorSize={editorSize}
-      maximumScale={Math.max(0.25, maximumScale)}
+      displayScale={editorScale}
+      displayScaleY={displayScaleY}
+      maximumScale={maximumScale}
       isSelected={isSelected}
       itemLabel="스티커"
       accessibilityLabel="다이어리 스티커"

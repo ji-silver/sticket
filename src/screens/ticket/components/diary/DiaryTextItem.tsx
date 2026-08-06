@@ -42,6 +42,8 @@ const ROTATION_HANDLE_OFFSET = 28;
 interface DiaryTextItemProps {
   textItem: DiaryText;
   editorSize: EditorSize;
+  displayScale: number;
+  displayScaleY: number;
   isSelected: boolean;
   isEditing: boolean;
   onSelect: () => void;
@@ -56,6 +58,8 @@ interface DiaryTextItemProps {
 function DiaryTextItem({
   textItem,
   editorSize,
+  displayScale,
+  displayScaleY,
   isSelected,
   isEditing,
   onSelect,
@@ -66,6 +70,9 @@ function DiaryTextItem({
   onFinishEditing,
   onDelete,
 }: DiaryTextItemProps) {
+  const safeDisplayScale = Math.max(displayScale, 0.0001);
+  const safeDisplayScaleY = Math.max(displayScaleY, 0.0001);
+  const verticalScaleRatio = Math.min(1, safeDisplayScale / safeDisplayScaleY);
   const textInputRef = useRef<TextInput>(null);
 
   const textSelection = useRef({
@@ -137,6 +144,7 @@ function DiaryTextItem({
     const constrainedFrame = constrainDiaryTextFrame(
       getCurrentFrame(),
       editorSize,
+      verticalScaleRatio,
     );
 
     centerX.value = constrainedFrame.centerX;
@@ -179,7 +187,8 @@ function DiaryTextItem({
       const sine = Math.sin(startFrame.rotation);
 
       const localTranslationX =
-        event.translationX * cosine + event.translationY * sine;
+        (event.translationX / safeDisplayScale) * cosine +
+        (event.translationY / safeDisplayScaleY) * sine;
 
       const maximumWidth = Math.max(MINIMUM_TEXT_WIDTH, editorSize.width - 24);
 
@@ -215,7 +224,8 @@ function DiaryTextItem({
       const sine = Math.sin(startFrame.rotation);
 
       const localTranslationX =
-        event.translationX * cosine + event.translationY * sine;
+        (event.translationX / safeDisplayScale) * cosine +
+        (event.translationY / safeDisplayScaleY) * sine;
 
       const maximumWidth = Math.max(MINIMUM_TEXT_WIDTH, editorSize.width - 24);
 
@@ -260,8 +270,8 @@ function DiaryTextItem({
       const startY = Math.sin(rotationStartAngle.value) * handleDistance;
 
       const currentAngle = Math.atan2(
-        startY + event.translationY,
-        startX + event.translationX,
+        startY + event.translationY / safeDisplayScaleY,
+        startX + event.translationX / safeDisplayScale,
       );
 
       let angleDifference = currentAngle - rotationStartAngle.value;
@@ -313,9 +323,9 @@ function DiaryTextItem({
     },
 
     onUpdate: event => {
-      moveOffsetX.value += event.changeX;
+      moveOffsetX.value += event.changeX / safeDisplayScale;
 
-      moveOffsetY.value += event.changeY;
+      moveOffsetY.value += event.changeY / safeDisplayScaleY;
     },
 
     onDeactivate: commitCurrentFrame,
@@ -333,6 +343,7 @@ function DiaryTextItem({
         rotation: rotation.value,
       },
       editorSize,
+      verticalScaleRatio,
     ),
   );
 
@@ -340,19 +351,19 @@ function DiaryTextItem({
     const frame = displayFrame.value;
 
     return {
-      width: frame.width,
-      height: frame.height,
       transform: [
         {
-          translateX: frame.centerX - frame.width / 2,
+          translateX: (frame.centerX - frame.width / 2) * safeDisplayScale,
         },
         {
-          translateY: frame.centerY - frame.height / 2,
+          translateY: (frame.centerY - frame.height / 2) * safeDisplayScaleY,
         },
         {
           rotateZ: `${frame.rotation}rad`,
         },
       ],
+      width: frame.width * safeDisplayScale,
+      height: frame.height * safeDisplayScale,
     };
   });
 
@@ -368,10 +379,10 @@ function DiaryTextItem({
     return {
       transform: [
         {
-          translateX: point.x - HANDLE_TOUCH_SIZE / 2,
+          translateX: point.x * safeDisplayScale - HANDLE_TOUCH_SIZE / 2,
         },
         {
-          translateY: point.y - HANDLE_TOUCH_SIZE / 2,
+          translateY: point.y * safeDisplayScaleY - HANDLE_TOUCH_SIZE / 2,
         },
         {
           rotateZ: `${frame.rotation}rad`,
@@ -388,10 +399,10 @@ function DiaryTextItem({
     return {
       transform: [
         {
-          translateX: point.x - HANDLE_TOUCH_SIZE / 2,
+          translateX: point.x * safeDisplayScale - HANDLE_TOUCH_SIZE / 2,
         },
         {
-          translateY: point.y - HANDLE_TOUCH_SIZE / 2,
+          translateY: point.y * safeDisplayScaleY - HANDLE_TOUCH_SIZE / 2,
         },
         {
           rotateZ: `${frame.rotation}rad`,
@@ -408,10 +419,10 @@ function DiaryTextItem({
     return {
       transform: [
         {
-          translateX: point.x - HANDLE_TOUCH_SIZE / 2,
+          translateX: point.x * safeDisplayScale - HANDLE_TOUCH_SIZE / 2,
         },
         {
-          translateY: point.y - HANDLE_TOUCH_SIZE / 2,
+          translateY: point.y * safeDisplayScaleY - HANDLE_TOUCH_SIZE / 2,
         },
         {
           rotateZ: `${frame.rotation}rad`,
@@ -433,10 +444,10 @@ function DiaryTextItem({
     return {
       transform: [
         {
-          translateX: point.x - HANDLE_TOUCH_SIZE / 2,
+          translateX: point.x * safeDisplayScale - HANDLE_TOUCH_SIZE / 2,
         },
         {
-          translateY: point.y - HANDLE_TOUCH_SIZE / 2,
+          translateY: point.y * safeDisplayScaleY - HANDLE_TOUCH_SIZE / 2,
         },
         {
           rotateZ: `${frame.rotation}rad`,
@@ -457,12 +468,15 @@ function DiaryTextItem({
       topCenter.y - (Math.cos(frame.rotation) * ROTATION_HANDLE_OFFSET) / 2;
 
     return {
+      height: ROTATION_HANDLE_OFFSET * safeDisplayScale,
       transform: [
         {
-          translateX: middleX - 0.5,
+          translateX: middleX * safeDisplayScale - 0.5,
         },
         {
-          translateY: middleY - ROTATION_HANDLE_OFFSET / 2,
+          translateY:
+            middleY * safeDisplayScaleY -
+            (ROTATION_HANDLE_OFFSET * safeDisplayScale) / 2,
         },
         {
           rotateZ: `${frame.rotation}rad`,
@@ -507,8 +521,11 @@ function DiaryTextItem({
 
   const commonTextStyle = {
     color: textItem.style.color,
-    fontSize: textItem.style.fontSize,
-    lineHeight,
+    fontSize: textItem.style.fontSize * safeDisplayScale,
+    lineHeight: lineHeight * safeDisplayScale,
+    minHeight: MINIMUM_TEXT_HEIGHT * safeDisplayScale,
+    paddingHorizontal: 10 * safeDisplayScale,
+    paddingVertical: 7 * safeDisplayScale,
     textAlign: textItem.style.align,
     textDecorationLine,
     fontFamily,
@@ -526,7 +543,7 @@ function DiaryTextItem({
   };
 
   const handleTextMeasureLayout = ({ nativeEvent }: LayoutChangeEvent) => {
-    updateTextBoxHeight(nativeEvent.layout.height);
+    updateTextBoxHeight(nativeEvent.layout.height / safeDisplayScale);
   };
 
   const handleTextSelectionChange = ({

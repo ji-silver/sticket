@@ -67,6 +67,8 @@ export async function selectDiaryPhoto(
       storagePath: null,
       width: photoWidth,
       height: photoHeight,
+      sourceWidth: image.width,
+      sourceHeight: image.height,
       matrix: translate3(initialX, initialY),
     };
   } catch (error) {

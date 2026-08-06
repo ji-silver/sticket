@@ -65,6 +65,7 @@ export function createDiaryText(editorSize: EditorSize): DiaryText | null {
 export function constrainDiaryTextFrame(
   frame: DiaryTextFrame,
   editorSize: EditorSize,
+  verticalScaleRatio = 1,
 ): DiaryTextFrame {
   'worklet';
 
@@ -95,7 +96,9 @@ export function constrainDiaryTextFrame(
     centerY: clamp(
       frame.centerY,
       verticalInset,
-      editorSize.height - verticalInset,
+      editorSize.height -
+        verticalInset +
+        boundingHeight * (1 - verticalScaleRatio),
     ),
   };
 }

@@ -42,6 +42,8 @@ interface DiaryImageItemProps {
   height: number;
   initialMatrix: Matrix3;
   editorSize: EditorSize;
+  displayScale: number;
+  displayScaleY: number;
   isSelected: boolean;
   itemLabel: string;
   accessibilityLabel: string;
@@ -57,6 +59,8 @@ function DiaryImageItem({
   height,
   initialMatrix,
   editorSize,
+  displayScale,
+  displayScaleY,
   isSelected,
   itemLabel,
   accessibilityLabel,
@@ -65,6 +69,9 @@ function DiaryImageItem({
   onDelete,
   maximumScale = MAXIMUM_PHOTO_SCALE,
 }: DiaryImageItemProps) {
+  const safeDisplayScale = Math.max(displayScale, 0.0001);
+  const safeDisplayScaleY = Math.max(displayScaleY, 0.0001);
+  const verticalScaleRatio = Math.min(1, safeDisplayScale / safeDisplayScaleY);
   const matrix = useSharedValue<Matrix3>(initialMatrix);
   const translation = useSharedValue<Point>({
     x: 0,
@@ -103,6 +110,7 @@ function DiaryImageItem({
       height,
       editorSize,
       maximumScale,
+      verticalScaleRatio,
     );
 
     matrix.value = constrainedMatrix;
@@ -153,8 +161,8 @@ function DiaryImageItem({
         0.0001,
       );
       const currentDistance = Math.hypot(
-        startVector.x + event.translationX,
-        startVector.y + event.translationY,
+        startVector.x + event.translationX / safeDisplayScale,
+        startVector.y + event.translationY / safeDisplayScaleY,
       );
       const savedRotation = Math.atan2(matrix.value[1], matrix.value[0]);
       const maximumScaleForResize = getMaximumPhotoScale(
@@ -199,8 +207,8 @@ function DiaryImageItem({
       const startVector = rotationStartVector.value;
       const startAngle = Math.atan2(startVector.y, startVector.x);
       const currentAngle = Math.atan2(
-        startVector.y + event.translationY,
-        startVector.x + event.translationX,
+        startVector.y + event.translationY / safeDisplayScaleY,
+        startVector.x + event.translationX / safeDisplayScale,
       );
       let angleDelta = currentAngle - startAngle;
 
@@ -240,8 +248,8 @@ function DiaryImageItem({
 
     onUpdate: event => {
       translation.value = {
-        x: translation.value.x + event.changeX,
-        y: translation.value.y + event.changeY,
+        x: translation.value.x + event.changeX / safeDisplayScale,
+        y: translation.value.y + event.changeY / safeDisplayScaleY,
       };
     },
 
@@ -263,6 +271,7 @@ function DiaryImageItem({
       height,
       editorSize,
       maximumScale,
+      verticalScaleRatio,
     ),
   );
 
@@ -272,10 +281,10 @@ function DiaryImageItem({
     return {
       transform: [
         {
-          translateX: constrainedMatrix[6],
+          translateX: constrainedMatrix[6] * safeDisplayScale,
         },
         {
-          translateY: constrainedMatrix[7],
+          translateY: constrainedMatrix[7] * safeDisplayScaleY,
         },
         {
           scale: Math.hypot(constrainedMatrix[0], constrainedMatrix[1]),
@@ -297,8 +306,12 @@ function DiaryImageItem({
 
     return {
       transform: [
-        { translateX: point.x - ITEM_HANDLE_TOUCH_SIZE / 2 },
-        { translateY: point.y - ITEM_HANDLE_TOUCH_SIZE / 2 },
+        {
+          translateX: point.x * safeDisplayScale - ITEM_HANDLE_TOUCH_SIZE / 2,
+        },
+        {
+          translateY: point.y * safeDisplayScaleY - ITEM_HANDLE_TOUCH_SIZE / 2,
+        },
         { rotateZ: `${rotationValue}rad` },
       ],
     };
@@ -321,8 +334,12 @@ function DiaryImageItem({
 
     return {
       transform: [
-        { translateX: point.x - ITEM_HANDLE_TOUCH_SIZE / 2 },
-        { translateY: point.y - ITEM_HANDLE_TOUCH_SIZE / 2 },
+        {
+          translateX: point.x * safeDisplayScale - ITEM_HANDLE_TOUCH_SIZE / 2,
+        },
+        {
+          translateY: point.y * safeDisplayScaleY - ITEM_HANDLE_TOUCH_SIZE / 2,
+        },
         { rotateZ: `${rotationValue}rad` },
       ],
     };
@@ -344,9 +361,14 @@ function DiaryImageItem({
       topCenter.y - (Math.cos(rotationValue) * ROTATION_HANDLE_OFFSET) / 2;
 
     return {
+      height: ROTATION_HANDLE_OFFSET * safeDisplayScale,
       transform: [
-        { translateX: middleX - 0.5 },
-        { translateY: middleY - ROTATION_HANDLE_OFFSET / 2 },
+        { translateX: middleX * safeDisplayScale - 0.5 },
+        {
+          translateY:
+            middleY * safeDisplayScaleY -
+            (ROTATION_HANDLE_OFFSET * safeDisplayScale) / 2,
+        },
         { rotateZ: `${rotationValue}rad` },
       ],
     };
@@ -365,8 +387,12 @@ function DiaryImageItem({
 
     return {
       transform: [
-        { translateX: point.x - ITEM_HANDLE_TOUCH_SIZE / 2 },
-        { translateY: point.y - ITEM_HANDLE_TOUCH_SIZE / 2 },
+        {
+          translateX: point.x * safeDisplayScale - ITEM_HANDLE_TOUCH_SIZE / 2,
+        },
+        {
+          translateY: point.y * safeDisplayScaleY - ITEM_HANDLE_TOUCH_SIZE / 2,
+        },
         { rotateZ: `${rotationValue}rad` },
       ],
     };
@@ -379,8 +405,8 @@ function DiaryImageItem({
           style={[
             styles.itemContainer,
             {
-              width,
-              height,
+              width: width * safeDisplayScale,
+              height: height * safeDisplayScale,
             },
             animatedStyle,
           ]}

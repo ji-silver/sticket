@@ -26,6 +26,8 @@ export interface DiaryPhoto {
   storagePath: string | null;
   width: number;
   height: number;
+  sourceWidth?: number;
+  sourceHeight?: number;
   matrix: Matrix3;
 }
 
@@ -38,6 +40,37 @@ export function clamp(value: number, minimum: number, maximum: number) {
   'worklet';
 
   return Math.min(maximum, Math.max(minimum, value));
+}
+
+export function getMaximumSourceScale(
+  sourceWidth: number | undefined,
+  sourceHeight: number | undefined,
+  displayWidth: number,
+  displayHeight: number,
+  editorScale: number,
+  pixelRatio: number,
+  maximumScale = MAXIMUM_PHOTO_SCALE,
+) {
+  if (
+    !sourceWidth ||
+    !sourceHeight ||
+    displayWidth <= 0 ||
+    displayHeight <= 0
+  ) {
+    return maximumScale;
+  }
+
+  const safeEditorScale = Math.max(editorScale, 0.0001);
+  const safePixelRatio = Math.max(pixelRatio, 1);
+
+  return Math.max(
+    0.01,
+    Math.min(
+      maximumScale,
+      sourceWidth / (displayWidth * safeEditorScale * safePixelRatio),
+      sourceHeight / (displayHeight * safeEditorScale * safePixelRatio),
+    ),
+  );
 }
 
 // 0도에서 4도 안으로 들어온 회전값을 0도로 맞추기
@@ -155,6 +188,7 @@ export function constrainPhotoPosition(
   photoHeight: number,
   editorSize: EditorSize,
   maximumScale = MAXIMUM_PHOTO_SCALE,
+  verticalScaleRatio = 1,
 ): Matrix3 {
   'worklet';
 
@@ -190,7 +224,9 @@ export function constrainPhotoPosition(
   const constrainedCenterY = clamp(
     currentCenterY,
     boundingHeight / 2,
-    editorSize.height - boundingHeight / 2,
+    editorSize.height -
+      boundingHeight / 2 +
+      boundingHeight * (1 - verticalScaleRatio),
   );
 
   return [

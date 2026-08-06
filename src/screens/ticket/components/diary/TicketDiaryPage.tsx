@@ -2,6 +2,7 @@ import {
   ActivityIndicator,
   Alert,
   AppState,
+  Image,
   Keyboard,
   KeyboardAvoidingView,
   type LayoutChangeEvent,
@@ -18,9 +19,7 @@ import GridPaper from './GridPaper.tsx';
 import DiaryPhotoItem from './DiaryPhotoItem.tsx';
 import { type DiaryPhoto, type EditorSize } from './photoTransform.ts';
 import { selectDiaryPhoto } from './selectDiaryPhoto.ts';
-import DiaryStickerPicker, {
-  DIARY_STICKER_PICKER_HEIGHT,
-} from './DiaryStickerPicker.tsx';
+import DiaryStickerPicker from './DiaryStickerPicker.tsx';
 import DiaryStickerItem, {
   createDiarySticker,
   type DiarySticker,
@@ -36,10 +35,7 @@ import DiaryBottomToolbar, { type DiaryToolId } from './DiaryBottomToolbar.tsx';
 import DiaryLayerPanel, {
   type DiaryLayerPanelItem,
 } from './DiaryLayerPanel.tsx';
-import DiaryPaperSelector, {
-  DIARY_PAPER_SELECTOR_HEIGHT,
-  type PaperType,
-} from './DiaryPaperSelector.tsx';
+import DiaryPaperSelector, { type PaperType } from './DiaryPaperSelector.tsx';
 import DiaryTextItem from './DiaryTextItem.tsx';
 import DiaryTextToolbar from './DiaryTextToolbar.tsx';
 import {
@@ -67,6 +63,7 @@ const DRAWING_LAYER_ID = '__drawing__';
 const MAX_DIARY_PAGE_WIDTH = 640;
 const DIARY_PAGE_HORIZONTAL_INSET = 32;
 const PHONE_LAYOUT_MAX_DIMENSION = 500;
+const REFERENCE_DIARY_PAGE_HEIGHT = 587;
 
 interface TicketDiaryPageProps {
   ticketId: string;
@@ -143,6 +140,8 @@ async function prepareDiaryItemsForSave(
           storagePath,
           width: item.data.width,
           height: item.data.height,
+          sourceWidth: item.data.sourceWidth,
+          sourceHeight: item.data.sourceHeight,
           matrix: item.data.matrix,
         },
       });
@@ -197,6 +196,42 @@ async function restoreDiaryItems(
 
   const signedUrlByPath = await getTicketDiaryPhotoUrls(photoPaths);
 
+  const sourceSizeByPath = new Map<string, { width: number; height: number }>();
+
+  await Promise.all(
+    savedItems.map(async item => {
+      if (
+        item.type !== 'photo' ||
+        (item.data.sourceWidth !== undefined &&
+          item.data.sourceHeight !== undefined)
+      ) {
+        return;
+      }
+
+      const uri = signedUrlByPath.get(item.data.storagePath);
+
+      if (!uri) {
+        return;
+      }
+
+      try {
+        const size = await new Promise<{ width: number; height: number }>(
+          (resolve, reject) => {
+            Image.getSize(
+              uri,
+              (width, height) => resolve({ width, height }),
+              reject,
+            );
+          },
+        );
+
+        sourceSizeByPath.set(item.data.storagePath, size);
+      } catch {
+        // 기존 사진의 해상도를 읽지 못하면 기존 저장 데이터를 그대로 사용합니다.
+      }
+    }),
+  );
+
   return savedItems.map(item => {
     if (item.type === 'photo') {
       const uri = signedUrlByPath.get(item.data.storagePath);
@@ -205,6 +240,8 @@ async function restoreDiaryItems(
         throw new Error('저장된 다이어리 사진을 불러올 수 없습니다.');
       }
 
+      const sourceSize = sourceSizeByPath.get(item.data.storagePath);
+
       return {
         type: 'photo',
         data: {
@@ -212,6 +249,8 @@ async function restoreDiaryItems(
           uri,
           base64: null,
           storagePath: item.data.storagePath,
+          sourceWidth: item.data.sourceWidth ?? sourceSize?.width,
+          sourceHeight: item.data.sourceHeight ?? sourceSize?.height,
         },
       };
     }
@@ -316,6 +355,10 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
     width: 0,
     height: 0,
   });
+  const [editorCanvasRegionSize, setEditorCanvasRegionSize] = useState({
+    width: 0,
+    height: 0,
+  });
 
   // 다이어리 영역 (사진 배치 시 넘어가지 않게)
   // 아이폰과 아이패드 등 기기 해상도 차이로 인한 위치 틀어짐 방지를 위해 고정 논리 해상도를 사용합니다.
@@ -332,29 +375,35 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
 
   const isLandscape = editorWrapperSize.width > editorWrapperSize.height;
-  const isPhoneLayout =
-    Math.min(editorWrapperSize.width, editorWrapperSize.height) <=
-    PHONE_LAYOUT_MAX_DIMENSION;
-  const pageHorizontalInset = isPhoneLayout ? 0 : DIARY_PAGE_HORIZONTAL_INSET;
-  const reservedBottomPanelHeight =
-    selectedTool === 'sticker'
-      ? DIARY_STICKER_PICKER_HEIGHT
-      : selectedTool === 'paper'
-      ? DIARY_PAPER_SELECTOR_HEIGHT
-      : 0;
-  const availableEditorHeight = Math.max(
-    0,
-    editorWrapperSize.height - reservedBottomPanelHeight,
+  const shortestEditorDimension = Math.min(
+    editorWrapperSize.width,
+    editorWrapperSize.height,
   );
+  const longestEditorDimension = Math.max(
+    editorWrapperSize.width,
+    editorWrapperSize.height,
+  );
+  const isPhoneLayout =
+    shortestEditorDimension > 0 &&
+    shortestEditorDimension <= PHONE_LAYOUT_MAX_DIMENSION &&
+    longestEditorDimension <= 1000;
+  const pageHorizontalInset = isPhoneLayout ? 0 : DIARY_PAGE_HORIZONTAL_INSET;
+  const availableEditorHeight = Math.max(0, editorCanvasRegionSize.height);
   const pageWidth = Math.min(
     Math.max(0, editorWrapperSize.width - pageHorizontalInset),
     MAX_DIARY_PAGE_WIDTH,
-    availableEditorHeight * (editorSize.width / editorSize.height),
+    availableEditorHeight * (editorSize.width / REFERENCE_DIARY_PAGE_HEIGHT),
   );
   const editorScale = Math.max(0.01, pageWidth / editorSize.width);
-  const displayedEditorHeight = isPhoneLayout
-    ? Math.max(editorSize.height, availableEditorHeight / editorScale)
-    : editorSize.height;
+  const displayedEditorWidth = pageWidth;
+  const displayedEditorHeight = REFERENCE_DIARY_PAGE_HEIGHT * editorScale;
+  const displayScaleY =
+    editorScale * (REFERENCE_DIARY_PAGE_HEIGHT / editorSize.height);
+  const activeEditorSize = editorSize;
+  const layerPanelEditorSize: EditorSize = {
+    width: editorSize.width,
+    height: REFERENCE_DIARY_PAGE_HEIGHT,
+  };
 
   const selectedText =
     selectedItem?.type === 'text'
@@ -706,6 +755,13 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
     setEditorWrapperSize({ width, height });
   };
 
+  const handleEditorCanvasRegionLayout = ({
+    nativeEvent,
+  }: LayoutChangeEvent) => {
+    const { width, height } = nativeEvent.layout;
+    setEditorCanvasRegionSize({ width, height });
+  };
+
   const handlePaperSelect = (next: PaperType) => {
     setPaperType(next);
     setSelectedTool(null);
@@ -828,7 +884,7 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
   const handleAddText = () => {
     finishCurrentTextEditing();
 
-    const newText = createDiaryText(editorSize);
+    const newText = createDiaryText(activeEditorSize);
 
     if (newText === null) {
       Alert.alert(
@@ -970,7 +1026,7 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
   const handleAddSticker = (stickerDefinition: DiaryStickerDefinition) => {
     finishCurrentTextEditing();
 
-    const newSticker = createDiarySticker(stickerDefinition, editorSize);
+    const newSticker = createDiarySticker(stickerDefinition, activeEditorSize);
 
     if (newSticker === null) {
       return;
@@ -1014,7 +1070,7 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
       return;
     }
 
-    const selectedPhoto = await selectDiaryPhoto(editorSize);
+    const selectedPhoto = await selectDiaryPhoto(activeEditorSize);
 
     if (selectedPhoto === null) {
       return;
@@ -1159,7 +1215,9 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
         <DiaryPhotoItem
           key={`photo-${photo.id}`}
           photo={photo}
-          editorSize={editorSize}
+          editorSize={activeEditorSize}
+          editorScale={editorScale}
+          displayScaleY={displayScaleY}
           isSelected={
             selectedItem?.type === 'photo' && selectedItem.id === photo.id
           }
@@ -1177,8 +1235,9 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
         <DiaryStickerItem
           key={`sticker-${sticker.id}`}
           sticker={sticker}
-          editorSize={editorSize}
+          editorSize={activeEditorSize}
           editorScale={editorScale}
+          displayScaleY={displayScaleY}
           isSelected={
             selectedItem?.type === 'sticker' && selectedItem.id === sticker.id
           }
@@ -1195,7 +1254,9 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
       <DiaryTextItem
         key={`text-${textItem.id}`}
         textItem={textItem}
-        editorSize={editorSize}
+        editorSize={activeEditorSize}
+        displayScale={editorScale}
+        displayScaleY={displayScaleY}
         isSelected={
           selectedItem?.type === 'text' && selectedItem.id === textItem.id
         }
@@ -1225,17 +1286,15 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
             style={[
               styles.editorCanvasRegion,
               isPhoneLayout && styles.phoneCanvasRegion,
-              {
-                paddingBottom: reservedBottomPanelHeight,
-              },
             ]}
+            onLayout={handleEditorCanvasRegionLayout}
           >
             <View
               style={[
                 styles.editorWorkspace,
                 {
-                  width: editorSize.width * editorScale,
-                  height: displayedEditorHeight * editorScale,
+                  width: displayedEditorWidth,
+                  height: displayedEditorHeight,
                 },
               ]}
             >
@@ -1243,8 +1302,8 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
                 style={[
                   styles.editorCanvasSlot,
                   {
-                    width: editorSize.width * editorScale,
-                    height: displayedEditorHeight * editorScale,
+                    width: displayedEditorWidth,
+                    height: displayedEditorHeight,
                   },
                 ]}
               >
@@ -1252,9 +1311,8 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
                   style={[
                     styles.editorArea,
                     {
-                      width: editorSize.width,
+                      width: displayedEditorWidth,
                       height: displayedEditorHeight,
-                      transform: [{ scale: editorScale }],
                     },
                   ]}
                 >
@@ -1270,6 +1328,9 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
 
                   <DiaryDrawingCanvas
                     ref={drawingCanvasRef}
+                    logicalSize={editorSize}
+                    displayScale={editorScale}
+                    displayScaleY={displayScaleY}
                     isDrawingMode={selectedTool === 'drawing'}
                     onDrawingChange={handleDrawingChange}
                   />
@@ -1308,7 +1369,7 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
 
               {!isLandscape && isLayerPanelVisible ? (
                 <DiaryLayerPanel
-                  editorSize={editorSize}
+                  editorSize={layerPanelEditorSize}
                   editorScale={editorScale}
                   placement="overlay"
                   items={layerPanelItems}
@@ -1322,7 +1383,7 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
 
             {isLandscape && isLayerPanelVisible ? (
               <DiaryLayerPanel
-                editorSize={editorSize}
+                editorSize={layerPanelEditorSize}
                 editorScale={editorScale}
                 placement="side"
                 items={layerPanelItems}
@@ -1403,7 +1464,7 @@ const styles = StyleSheet.create({
   },
 
   phoneCanvasRegion: {
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
   },
 
   editorWorkspace: {

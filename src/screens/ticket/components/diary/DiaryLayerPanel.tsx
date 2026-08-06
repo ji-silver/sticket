@@ -232,9 +232,8 @@ function DiaryLayerPanel({
           height: panelHeight,
           ...(isOverlay
             ? {
-                top: PANEL_TOP_INSET / safeEditorScale,
-                right: PANEL_HORIZONTAL_INSET / safeEditorScale,
-                transform: [{ scale: 1 / safeEditorScale }],
+                top: PANEL_TOP_INSET,
+                right: PANEL_HORIZONTAL_INSET,
               }
             : null),
         },
