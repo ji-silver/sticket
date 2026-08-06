@@ -14,6 +14,7 @@ import { fonts } from '../../styles/fonts.ts';
 import TicketDiaryPage from './components/diary/TicketDiaryPage.tsx';
 import TicketRecordPage from './components/TicketRecordPage.tsx';
 import { useDeleteTicket } from '../../features/ticket/api/useDeleteTicket';
+import { useGetTickets } from '../../features/ticket/api/useGetTickets';
 
 type TicketDetailNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type TicketDetailRouteProp = RouteProp<RootStackParamList, 'TicketDetail'>;
@@ -22,7 +23,10 @@ type DetailTab = 'record' | 'diary';
 function TicketDetailScreen() {
   const navigation = useNavigation<TicketDetailNavigationProp>();
   const route = useRoute<TicketDetailRouteProp>();
-  const { ticket } = route.params;
+  const { ticketId } = route.params;
+
+  const { data: tickets = [] } = useGetTickets();
+  const ticket = tickets.find(t => t.id === ticketId);
 
   const [activeTab, setActiveTab] = useState<DetailTab>('record');
   const [hasOpenedDiary, setHasOpenedDiary] = useState(false);
@@ -47,7 +51,7 @@ function TicketDetailScreen() {
   };
 
   const handleDeleteTicket = async () => {
-    if (isDeleting) {
+    if (isDeleting || !ticket) {
       return;
     }
 
@@ -61,6 +65,10 @@ function TicketDetailScreen() {
       Alert.alert('티켓을 삭제하지 못했어요', '잠시 후 다시 시도해 주세요.');
     }
   };
+
+  if (!ticket) {
+    return null;
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>

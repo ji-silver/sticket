@@ -149,7 +149,7 @@ function TicketListScreen() {
                     key={ticket.id}
                     ticket={ticket}
                     onPress={() =>
-                      navigation.navigate('TicketDetail', { ticket })
+                      navigation.navigate('TicketDetail', { ticketId: ticket.id })
                     }
                   />
                 ))}

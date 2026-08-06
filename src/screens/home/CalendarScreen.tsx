@@ -384,7 +384,7 @@ function CalendarScreen() {
                     ticket={record}
                     onPress={() =>
                       navigation.navigate('TicketDetail', {
-                        ticket: record,
+                        ticketId: record.id,
                       })
                     }
                   />
