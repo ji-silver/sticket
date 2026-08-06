@@ -5,22 +5,23 @@ import DiarySection from './components/DiarySection.tsx';
 import { Bucket, Diary } from './types.ts';
 import BucketListSection from './components/BucketListSection.tsx';
 import { useNavigation } from '@react-navigation/core';
-import { useCallback, useState } from 'react';
+import { useState, useEffect } from 'react';
 import DiaryActionSheet from './components/DiaryActionSheet.tsx';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
 import { fonts } from '../../styles/fonts.ts';
 import AppText from '../../components/common/AppText.tsx';
 import { colors } from '../../styles/colors.ts';
-import { useFocusEffect } from '@react-navigation/native';
-import {
-  deleteTicketBook,
-  getTicketBooks,
-} from '../../features/ticket-book/ticketBook.service.ts';
+import { useTicketBooks } from '../../features/ticket-book/api/useTicketBooks';
+import { useBucketList } from '../../features/bucket-list/api/useBucketList';
+import { useQueryClient } from '@tanstack/react-query';
+import { BUCKET_LIST_QUERY_KEY } from '../../features/bucket-list/api/useBucketList';
+import { TICKET_BOOKS_QUERY_KEY } from '../../features/ticket-book/api/useTicketBooks';
+
+import { deleteTicketBook } from '../../features/ticket-book/ticketBook.service.ts';
 import {
   createBucketItem,
   deleteBucketItem,
-  getBucketItems,
   restoreBucketItem,
   updateBucketItemCompleted,
   updateBucketItemTitle,
@@ -37,84 +38,52 @@ const SPORT_TITLES: Record<Diary['sport'], string> = {
 
 function HomeScreen() {
   const navigation = useNavigation<HomeNavigationProp>();
-  const [diaryList, setDiaryList] = useState<Diary[]>([]);
+  const queryClient = useQueryClient();
+
   const [selectedDiaryIndex, setSelectedDiaryIndex] = useState(0);
-  const [bucketsByDiaryId, setBucketsByDiaryId] = useState<
-    Record<string, Bucket[]>
-  >({});
   const [menuDiary, setMenuDiary] = useState<Diary | null>(null);
-  const [isLoadingTicketBooks, setIsLoadingTicketBooks] = useState(true);
+
+  const { data: ticketBooks = [], isLoading: isBooksLoading } = useTicketBooks();
+  const ticketBookIds = ticketBooks.map(b => b.id);
+  const { data: bucketItems = [], isLoading: isBucketsLoading } = useBucketList(ticketBookIds);
+
+  const isLoadingTicketBooks = isBooksLoading || (ticketBookIds.length > 0 && isBucketsLoading);
+
+  const diaryList = ticketBooks.map(ticketBook => ({
+    id: ticketBook.id,
+    sport: ticketBook.sport,
+    title: SPORT_TITLES[ticketBook.sport],
+    recordCount: ticketBook.recordCount,
+    coverColor: ticketBook.coverColor,
+    coverPattern: ticketBook.coverPattern,
+    coverPhotoPath: ticketBook.coverPhotoPath,
+    photoUri: ticketBook.coverPhotoUrl ?? undefined,
+  }));
+
   const hasDiaries = diaryList.length > 0;
+
+  const bucketsByDiaryId: Record<string, Bucket[]> = {};
+  ticketBooks.forEach(b => {
+    bucketsByDiaryId[b.id] = [];
+  });
+  bucketItems.forEach(item => {
+    if (bucketsByDiaryId[item.ticketBookId]) {
+      bucketsByDiaryId[item.ticketBookId].push(item);
+    }
+  });
 
   const selectedDiary = diaryList[selectedDiaryIndex];
   const selectedBuckets = selectedDiary
     ? bucketsByDiaryId[selectedDiary.id] ?? []
     : [];
 
-  useFocusEffect(
-    useCallback(() => {
-      let isActive = true;
-
-      setIsLoadingTicketBooks(true);
-
-      const loadHomeData = async () => {
-        try {
-          const ticketBooks = await getTicketBooks();
-          const bucketItems = await getBucketItems(
-            ticketBooks.map(ticketBook => ticketBook.id),
-          );
-
-          if (!isActive) {
-            return;
-          }
-
-          const diaries: Diary[] = ticketBooks.map(ticketBook => ({
-            id: ticketBook.id,
-            sport: ticketBook.sport,
-            title: SPORT_TITLES[ticketBook.sport],
-            recordCount: ticketBook.recordCount,
-            coverColor: ticketBook.coverColor,
-            coverPattern: ticketBook.coverPattern,
-            coverPhotoPath: ticketBook.coverPhotoPath,
-            photoUri: ticketBook.coverPhotoUrl ?? undefined,
-          }));
-          const nextBucketsByDiaryId = Object.fromEntries(
-            ticketBooks.map(ticketBook => [ticketBook.id, [] as Bucket[]]),
-          );
-
-          bucketItems.forEach(bucketItem => {
-            nextBucketsByDiaryId[bucketItem.ticketBookId]?.push(bucketItem);
-          });
-
-          setDiaryList(diaries);
-          setBucketsByDiaryId(nextBucketsByDiaryId);
-          setSelectedDiaryIndex(currentIndex =>
-            Math.min(currentIndex, Math.max(diaries.length - 1, 0)),
-          );
-        } catch (error) {
-          if (!isActive) {
-            return;
-          }
-
-          console.error('홈 데이터를 불러오지 못했습니다.', error);
-          Alert.alert(
-            '홈 정보를 불러오지 못했어요',
-            '잠시 후 다시 시도해 주세요.',
-          );
-        } finally {
-          if (isActive) {
-            setIsLoadingTicketBooks(false);
-          }
-        }
-      };
-
-      loadHomeData();
-
-      return () => {
-        isActive = false;
-      };
-    }, []),
-  );
+  useEffect(() => {
+    if (diaryList.length > 0) {
+      setSelectedDiaryIndex(current =>
+        Math.min(current, Math.max(diaryList.length - 1, 0))
+      );
+    }
+  }, [diaryList.length]);
 
   const handlePressAddDiary = () => {
     navigation.navigate('AddDiary');
@@ -126,16 +95,8 @@ function HomeScreen() {
 
   const handleAddBucket = async (ticketBookId: string, title: string) => {
     try {
-      const createdBucket = await createBucketItem(ticketBookId, title);
-
-      setBucketsByDiaryId(currentBuckets => ({
-        ...currentBuckets,
-        [ticketBookId]: [
-          ...(currentBuckets[ticketBookId] ?? []),
-          createdBucket,
-        ],
-      }));
-
+      await createBucketItem(ticketBookId, title);
+      queryClient.invalidateQueries({ queryKey: BUCKET_LIST_QUERY_KEY(ticketBookIds) });
       return true;
     } catch (error) {
       console.error('버킷리스트를 추가하지 못했습니다.', error);
@@ -149,31 +110,11 @@ function HomeScreen() {
 
   const handleToggleBucket = async (bucket: Bucket) => {
     const nextIsCompleted = !bucket.isCompleted;
-
-    setBucketsByDiaryId(currentBuckets => ({
-      ...currentBuckets,
-      [bucket.ticketBookId]: (currentBuckets[bucket.ticketBookId] ?? []).map(
-        currentBucket =>
-          currentBucket.id === bucket.id
-            ? { ...currentBucket, isCompleted: nextIsCompleted }
-            : currentBucket,
-      ),
-    }));
-
     try {
       await updateBucketItemCompleted(bucket.id, nextIsCompleted);
+      queryClient.invalidateQueries({ queryKey: BUCKET_LIST_QUERY_KEY(ticketBookIds) });
       return true;
     } catch (error) {
-      setBucketsByDiaryId(currentBuckets => ({
-        ...currentBuckets,
-        [bucket.ticketBookId]: (currentBuckets[bucket.ticketBookId] ?? []).map(
-          currentBucket =>
-            currentBucket.id === bucket.id
-              ? { ...currentBucket, isCompleted: bucket.isCompleted }
-              : currentBucket,
-        ),
-      }));
-
       console.error('버킷리스트 완료 상태를 변경하지 못했습니다.', error);
       Alert.alert(
         '완료 상태를 변경하지 못했어요',
@@ -185,18 +126,8 @@ function HomeScreen() {
 
   const handleUpdateBucketTitle = async (bucket: Bucket, title: string) => {
     try {
-      const updatedBucket = await updateBucketItemTitle(bucket.id, title);
-
-      setBucketsByDiaryId(currentBuckets => ({
-        ...currentBuckets,
-        [bucket.ticketBookId]: (currentBuckets[bucket.ticketBookId] ?? []).map(
-          currentBucket =>
-            currentBucket.id === bucket.id
-              ? { ...currentBucket, title: updatedBucket.title }
-              : currentBucket,
-        ),
-      }));
-
+      await updateBucketItemTitle(bucket.id, title);
+      queryClient.invalidateQueries({ queryKey: BUCKET_LIST_QUERY_KEY(ticketBookIds) });
       return true;
     } catch (error) {
       console.error('버킷리스트 내용을 수정하지 못했습니다.', error);
@@ -211,14 +142,7 @@ function HomeScreen() {
   const handleDeleteBucket = async (bucket: Bucket) => {
     try {
       await deleteBucketItem(bucket.id);
-
-      setBucketsByDiaryId(currentBuckets => ({
-        ...currentBuckets,
-        [bucket.ticketBookId]: (
-          currentBuckets[bucket.ticketBookId] ?? []
-        ).filter(currentBucket => currentBucket.id !== bucket.id),
-      }));
-
+      queryClient.invalidateQueries({ queryKey: BUCKET_LIST_QUERY_KEY(ticketBookIds) });
       return true;
     } catch (error) {
       console.error('버킷리스트를 삭제하지 못했습니다.', error);
@@ -230,20 +154,10 @@ function HomeScreen() {
     }
   };
 
-  const handleRestoreBucket = async (bucket: Bucket, index: number) => {
+  const handleRestoreBucket = async (bucket: Bucket, _index: number) => {
     try {
-      const restoredBucket = await restoreBucketItem(bucket);
-
-      setBucketsByDiaryId(currentBuckets => {
-        const nextBuckets = [...(currentBuckets[bucket.ticketBookId] ?? [])];
-        nextBuckets.splice(index, 0, restoredBucket);
-
-        return {
-          ...currentBuckets,
-          [bucket.ticketBookId]: nextBuckets,
-        };
-      });
-
+      await restoreBucketItem(bucket);
+      queryClient.invalidateQueries({ queryKey: BUCKET_LIST_QUERY_KEY(ticketBookIds) });
       return true;
     } catch (error) {
       console.error('삭제한 버킷리스트를 복원하지 못했습니다.', error);
@@ -259,18 +173,8 @@ function HomeScreen() {
   const handleDeleteDiary = async (diaryId: string) => {
     try {
       await deleteTicketBook(diaryId);
-
-      const nextDiaries = diaryList.filter(diary => diary.id !== diaryId);
-
-      setDiaryList(nextDiaries);
-      setSelectedDiaryIndex(currentIndex =>
-        Math.min(currentIndex, Math.max(nextDiaries.length - 1, 0)),
-      );
-      setBucketsByDiaryId(currentBuckets => {
-        const nextBuckets = { ...currentBuckets };
-        delete nextBuckets[diaryId];
-        return nextBuckets;
-      });
+      queryClient.invalidateQueries({ queryKey: TICKET_BOOKS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: BUCKET_LIST_QUERY_KEY(ticketBookIds) });
     } catch (error) {
       console.error('티켓북을 삭제하지 못했습니다.', error);
       Alert.alert('티켓북을 삭제하지 못했어요', '잠시 후 다시 시도해 주세요.');
