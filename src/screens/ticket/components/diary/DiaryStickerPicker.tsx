@@ -13,8 +13,12 @@ import {
   type DiaryStickerDefinition,
 } from './diaryStickerPacks.ts';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useState } from 'react';
 
 export const DIARY_STICKER_PICKER_HEIGHT = 300;
+const MIN_STICKER_CELL_WIDTH = 96;
+const MIN_STICKER_COLUMNS = 4;
+const MAX_STICKER_COLUMNS = 12;
 
 interface DiaryStickerPickerProps {
   selectedPackId: string;
@@ -30,6 +34,7 @@ function DiaryStickerPicker({
   onClose,
 }: DiaryStickerPickerProps) {
   const { bottom } = useSafeAreaInsets();
+  const [pickerWidth, setPickerWidth] = useState(0);
 
   const selectedPack =
     DIARY_STICKER_PACKS.find(pack => pack.id === selectedPackId) ??
@@ -38,6 +43,14 @@ function DiaryStickerPicker({
   if (selectedPack === undefined) {
     return null;
   }
+
+  const numColumns = Math.min(
+    MAX_STICKER_COLUMNS,
+    Math.max(
+      MIN_STICKER_COLUMNS,
+      Math.floor(pickerWidth / MIN_STICKER_CELL_WIDTH),
+    ),
+  );
 
   return (
     <View style={styles.container}>
@@ -98,10 +111,11 @@ function DiaryStickerPicker({
       </View>
 
       <FlatList
-        key={selectedPack.id}
+        key={`${selectedPack.id}-${numColumns}`}
         data={selectedPack.stickers}
         keyExtractor={sticker => sticker.id}
-        numColumns={4}
+        numColumns={numColumns}
+        onLayout={({ nativeEvent }) => setPickerWidth(nativeEvent.layout.width)}
         showsVerticalScrollIndicator={false}
         style={styles.stickerList}
         contentContainerStyle={[
@@ -111,7 +125,7 @@ function DiaryStickerPicker({
           },
         ]}
         renderItem={({ item: sticker, index }) => (
-          <View style={styles.stickerCell}>
+          <View style={[styles.stickerCell, { width: `${100 / numColumns}%` }]}>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={`스티커 ${index + 1} 추가`}
@@ -211,7 +225,6 @@ const styles = StyleSheet.create({
   },
 
   stickerCell: {
-    width: '25%',
     padding: 4,
   },
 
