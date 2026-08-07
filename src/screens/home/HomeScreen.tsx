@@ -36,11 +36,13 @@ function HomeScreen() {
   const [selectedDiaryIndex, setSelectedDiaryIndex] = useState(0);
   const [menuDiary, setMenuDiary] = useState<Diary | null>(null);
 
-  const { data: ticketBooks = [], isLoading: isLoadingTicketBooks } =
-    useGetTicketBooks();
-  const { data: bucketList = [] } = useGetBucketList(
-    ticketBooks.map(b => b.id),
-  );
+  const {
+    data: ticketBooks = [],
+    isLoading: isLoadingTicketBooks,
+    isError: isTicketBooksError,
+  } = useGetTicketBooks();
+  const { data: bucketList = [], isError: isBucketListError } =
+    useGetBucketList(ticketBooks.map(b => b.id));
 
   const diaryList = ticketBooks.map(ticketBook => ({
     id: ticketBook.id,
@@ -77,6 +79,12 @@ function HomeScreen() {
       );
     }
   }, [diaryList.length]);
+
+  useEffect(() => {
+    if (isTicketBooksError || isBucketListError) {
+      Alert.alert('홈 정보를 불러오지 못했어요', '잠시 후 다시 시도해 주세요.');
+    }
+  }, [isTicketBooksError, isBucketListError]);
 
   const handlePressAddDiary = () => {
     navigation.navigate('AddDiary');

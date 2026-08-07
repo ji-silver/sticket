@@ -1,10 +1,5 @@
 import React from 'react';
-import {
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor } from '../../test-utils';
 import { Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/core';
 import TicketListScreen from './TicketListScreen';
@@ -154,7 +149,7 @@ describe('TicketListScreen', () => {
       fireEvent.press(ticketCard);
 
       expect(mockNavigate).toHaveBeenCalledWith('TicketDetail', {
-        ticket: mockTickets[0],
+        ticketId: '1',
       });
     });
   });

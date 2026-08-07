@@ -7,13 +7,14 @@ import {
 } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import HomeScreen from './HomeScreen';
-import { getTicketBooks } from '../../features/ticket-book/ticketBook.service';
-import {
-  createBucketItem,
-  deleteBucketItem,
-  getBucketItems,
-  updateBucketItemCompleted,
-} from '../../features/bucket-list/bucketList.service';
+import { useGetTicketBooks } from '../../features/ticket-book/api/useGetTicketBooks';
+import { useGetBucketList } from '../../features/bucket-list/api/useGetBucketList';
+import { useDeleteTicketBook } from '../../features/ticket-book/api/useDeleteTicketBook';
+import { useCreateBucketItem } from '../../features/bucket-list/api/useCreateBucketItem';
+import { useDeleteBucketItem } from '../../features/bucket-list/api/useDeleteBucketItem';
+import { useRestoreBucketItem } from '../../features/bucket-list/api/useRestoreBucketItem';
+import { useUpdateBucketItemCompleted } from '../../features/bucket-list/api/useUpdateBucketItemCompleted';
+import { useUpdateBucketItemTitle } from '../../features/bucket-list/api/useUpdateBucketItemTitle';
 
 const mockNavigate = jest.fn();
 
@@ -39,45 +40,84 @@ jest.mock('@react-navigation/native', () => {
 
 jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 
-jest.mock('../../features/ticket-book/ticketBook.service', () => ({
-  getTicketBooks: jest.fn(),
-  deleteTicketBook: jest.fn(),
-}));
-
-jest.mock('../../features/bucket-list/bucketList.service', () => ({
-  getBucketItems: jest.fn(),
-  createBucketItem: jest.fn(),
-  updateBucketItemCompleted: jest.fn(),
-  updateBucketItemTitle: jest.fn(),
-  deleteBucketItem: jest.fn(),
-  restoreBucketItem: jest.fn(),
-}));
+jest.mock('../../features/ticket-book/api/useGetTicketBooks');
+jest.mock('../../features/bucket-list/api/useGetBucketList');
+jest.mock('../../features/ticket-book/api/useDeleteTicketBook');
+jest.mock('../../features/bucket-list/api/useCreateBucketItem');
+jest.mock('../../features/bucket-list/api/useDeleteBucketItem');
+jest.mock('../../features/bucket-list/api/useRestoreBucketItem');
+jest.mock('../../features/bucket-list/api/useUpdateBucketItemCompleted');
+jest.mock('../../features/bucket-list/api/useUpdateBucketItemTitle');
 
 describe('HomeScreen', () => {
+  const mockCreateBucketMutateAsync = jest.fn();
+  const mockUpdateCompletedMutateAsync = jest.fn();
+  const mockUpdateTitleMutateAsync = jest.fn();
+  const mockDeleteBucketMutateAsync = jest.fn();
+  const mockRestoreBucketMutateAsync = jest.fn();
+  const mockDeleteTicketBookMutateAsync = jest.fn();
+
   beforeEach(() => {
     jest.clearAllMocks();
     jest.spyOn(console, 'error').mockImplementation(() => {});
+
+    // 기본 mutation 훅 모킹
+    (useDeleteTicketBook as jest.Mock).mockReturnValue({
+      mutateAsync: mockDeleteTicketBookMutateAsync,
+    });
+    (useCreateBucketItem as jest.Mock).mockReturnValue({
+      mutateAsync: mockCreateBucketMutateAsync,
+    });
+    (useUpdateBucketItemCompleted as jest.Mock).mockReturnValue({
+      mutateAsync: mockUpdateCompletedMutateAsync,
+    });
+    (useUpdateBucketItemTitle as jest.Mock).mockReturnValue({
+      mutateAsync: mockUpdateTitleMutateAsync,
+    });
+    (useDeleteBucketItem as jest.Mock).mockReturnValue({
+      mutateAsync: mockDeleteBucketMutateAsync,
+    });
+    (useRestoreBucketItem as jest.Mock).mockReturnValue({
+      mutateAsync: mockRestoreBucketMutateAsync,
+    });
+
+    (useGetTicketBooks as jest.Mock).mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+    });
+    (useGetBucketList as jest.Mock).mockReturnValue({
+      data: [],
+      isError: false,
+    });
   });
 
   describe('초기 데이터 로딩 로직', () => {
     it('API 통신에 성공하면 서버에서 받아온 티켓북과 버킷리스트를 화면에 렌더링한다', async () => {
-      (getTicketBooks as jest.Mock).mockResolvedValueOnce([
-        {
-          id: 'ticket-1',
-          sport: 'baseball',
-          coverColor: '#DF9EAF',
-          coverPattern: 'solid',
-        },
-      ]);
-      (getBucketItems as jest.Mock).mockResolvedValueOnce([
-        {
-          id: 'bucket-1',
-          ticketBookId: 'ticket-1',
-          title: '야구장 가서 치킨 먹기',
-          isCompleted: false,
-          displayOrder: 0,
-        },
-      ]);
+      (useGetTicketBooks as jest.Mock).mockReturnValue({
+        data: [
+          {
+            id: 'ticket-1',
+            sport: 'baseball',
+            coverColor: '#DF9EAF',
+            coverPattern: 'solid',
+          },
+        ],
+        isLoading: false,
+        isError: false,
+      });
+      (useGetBucketList as jest.Mock).mockReturnValue({
+        data: [
+          {
+            id: 'bucket-1',
+            ticketBookId: 'ticket-1',
+            title: '야구장 가서 치킨 먹기',
+            isCompleted: false,
+            displayOrder: 0,
+          },
+        ],
+        isError: false,
+      });
 
       await render(<HomeScreen />);
 
@@ -88,9 +128,6 @@ describe('HomeScreen', () => {
     });
 
     it('티켓북 데이터가 비어있을 경우 빈 상태에 맞게 화면을 처리한다', async () => {
-      (getTicketBooks as jest.Mock).mockResolvedValueOnce([]);
-      (getBucketItems as jest.Mock).mockResolvedValueOnce([]);
-
       await render(<HomeScreen />);
 
       await waitFor(() => {
@@ -99,9 +136,11 @@ describe('HomeScreen', () => {
     });
 
     it('데이터 로딩 중 서버 통신 에러가 발생하면 안내 팝업을 띄운다', async () => {
-      (getTicketBooks as jest.Mock).mockRejectedValueOnce(
-        new Error('500 Server Error'),
-      );
+      (useGetTicketBooks as jest.Mock).mockReturnValue({
+        data: [],
+        isLoading: false,
+        isError: true,
+      });
 
       await render(<HomeScreen />);
 
@@ -117,15 +156,22 @@ describe('HomeScreen', () => {
   describe('화면 네비게이션 로직', () => {
     it('헤더의 다이어리 추가 버튼을 누르면 AddDiary 화면으로 이동한다', async () => {
       const user = userEvent.setup();
-      (getTicketBooks as jest.Mock).mockResolvedValueOnce([
-        {
-          id: 'ticket-1',
-          sport: 'baseball',
-          coverColor: '#DF9EAF',
-          coverPattern: 'solid',
-        },
-      ]);
-      (getBucketItems as jest.Mock).mockResolvedValueOnce([]);
+      (useGetTicketBooks as jest.Mock).mockReturnValue({
+        data: [
+          {
+            id: 'ticket-1',
+            sport: 'baseball',
+            coverColor: '#DF9EAF',
+            coverPattern: 'solid',
+          },
+        ],
+        isLoading: false,
+        isError: false,
+      });
+      (useGetBucketList as jest.Mock).mockReturnValue({
+        data: [],
+        isError: false,
+      });
 
       await render(<HomeScreen />);
 
@@ -142,29 +188,36 @@ describe('HomeScreen', () => {
 
   describe('버킷리스트 인터랙션 및 서버 연동 로직', () => {
     beforeEach(() => {
-      (getTicketBooks as jest.Mock).mockResolvedValue([
-        {
-          id: 'ticket-1',
-          sport: 'baseball',
-          coverColor: '#DF9EAF',
-          coverPattern: 'solid',
-          title: '야구',
-        },
-      ]);
-      (getBucketItems as jest.Mock).mockResolvedValue([
-        {
-          id: 'bucket-1',
-          ticketBookId: 'ticket-1',
-          title: '기존 버킷리스트',
-          isCompleted: false,
-          displayOrder: 0,
-        },
-      ]);
+      (useGetTicketBooks as jest.Mock).mockReturnValue({
+        data: [
+          {
+            id: 'ticket-1',
+            sport: 'baseball',
+            coverColor: '#DF9EAF',
+            coverPattern: 'solid',
+            title: '야구',
+          },
+        ],
+        isLoading: false,
+        isError: false,
+      });
+      (useGetBucketList as jest.Mock).mockReturnValue({
+        data: [
+          {
+            id: 'bucket-1',
+            ticketBookId: 'ticket-1',
+            title: '기존 버킷리스트',
+            isCompleted: false,
+            displayOrder: 0,
+          },
+        ],
+        isError: false,
+      });
     });
 
     it('버킷리스트 완료 체크박스를 누르면 완료 상태가 서버로 전송된다', async () => {
       const user = userEvent.setup();
-      (updateBucketItemCompleted as jest.Mock).mockResolvedValueOnce(true);
+      mockUpdateCompletedMutateAsync.mockResolvedValueOnce(true);
 
       await render(<HomeScreen />);
 
@@ -177,12 +230,15 @@ describe('HomeScreen', () => {
       });
       await user.press(checkbox);
 
-      expect(updateBucketItemCompleted).toHaveBeenCalledWith('bucket-1', true);
+      expect(mockUpdateCompletedMutateAsync).toHaveBeenCalledWith({
+        bucketItemId: 'bucket-1',
+        isCompleted: true,
+      });
     });
 
     it('수정 버튼을 누르고 새 버킷리스트를 추가하면 생성 API가 호출된다', async () => {
       const user = userEvent.setup();
-      (createBucketItem as jest.Mock).mockResolvedValueOnce({
+      mockCreateBucketMutateAsync.mockResolvedValueOnce({
         id: 'bucket-2',
         ticketBookId: 'ticket-1',
         title: '새로운 직관 목표',
@@ -207,15 +263,15 @@ describe('HomeScreen', () => {
       });
       await user.press(submitButton);
 
-      expect(createBucketItem).toHaveBeenCalledWith(
-        'ticket-1',
-        '새로운 직관 목표',
-      );
+      expect(mockCreateBucketMutateAsync).toHaveBeenCalledWith({
+        ticketBookId: 'ticket-1',
+        title: '새로운 직관 목표',
+      });
     });
 
     it('버킷리스트 편집 모달에서 항목의 삭제 버튼을 누르면 삭제 API가 호출된다', async () => {
       const user = userEvent.setup();
-      (deleteBucketItem as jest.Mock).mockResolvedValueOnce(true);
+      mockDeleteBucketMutateAsync.mockResolvedValueOnce(true);
 
       await render(<HomeScreen />);
 
@@ -231,7 +287,7 @@ describe('HomeScreen', () => {
       });
       await user.press(deleteButton);
 
-      expect(deleteBucketItem).toHaveBeenCalledWith('bucket-1');
+      expect(mockDeleteBucketMutateAsync).toHaveBeenCalledWith('bucket-1');
     });
   });
 });

@@ -1,10 +1,5 @@
 import React from 'react';
-import {
-  render,
-  screen,
-  userEvent,
-  waitFor,
-} from '@testing-library/react-native';
+import { render, screen, userEvent, waitFor } from '../../test-utils';
 import { Alert } from 'react-native';
 import ImagePicker from 'react-native-image-crop-picker';
 import AddDiaryScreen from './AddDiaryScreen';

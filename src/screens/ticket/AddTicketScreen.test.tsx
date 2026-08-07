@@ -1,15 +1,9 @@
 import React from 'react';
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from '@testing-library/react-native';
+import { cleanup, fireEvent, render, screen, waitFor } from '../../test-utils';
 import { Alert } from 'react-native';
 import AddTicketScreen from './AddTicketScreen';
 import { getGamesByDate } from '../../features/game/game.service';
-import { createTicket } from '../../features/ticket/ticket.service';
+import { useCreateTicket } from '../../features/ticket/api/useCreateTicket';
 
 const mockGoBack = jest.fn();
 const mockUseRoute = jest.fn();
@@ -24,8 +18,8 @@ jest.mock('../../features/game/game.service.ts', () => ({
   getGamesByDate: jest.fn(),
 }));
 
-jest.mock('../../features/ticket/ticket.service.ts', () => ({
-  createTicket: jest.fn(),
+jest.mock('../../features/ticket/api/useCreateTicket', () => ({
+  useCreateTicket: jest.fn(),
 }));
 
 jest.mock('../../features/auth/AuthProvider.tsx', () => ({
@@ -69,8 +63,15 @@ afterEach(() => {
 });
 
 describe('AddTicketScreen', () => {
+  const mockMutateAsync = jest.fn().mockResolvedValue({});
+
   beforeEach(() => {
     jest.clearAllMocks();
+
+    (useCreateTicket as jest.Mock).mockReturnValue({
+      mutateAsync: mockMutateAsync,
+      isPending: false,
+    });
     mockUseRoute.mockReturnValue({ params: { initialDate: undefined } });
     mockUseAuth.mockReturnValue({
       profile: { favorite_team: { short_name: '키움' } },
@@ -248,7 +249,6 @@ describe('AddTicketScreen', () => {
           stadiumName: '잠실',
         },
       ]);
-      (createTicket as jest.Mock).mockResolvedValueOnce({ id: 't1' });
 
       await setup();
 
@@ -269,7 +269,7 @@ describe('AddTicketScreen', () => {
       fireEvent.press(addButton);
 
       await waitFor(() => {
-        expect(createTicket).toHaveBeenCalledWith({
+        expect(mockMutateAsync).toHaveBeenCalledWith({
           gameKey: 'g1',
           seatName: '',
           originalPhotoBase64: undefined,
@@ -289,8 +289,7 @@ describe('AddTicketScreen', () => {
           stadiumName: '잠실',
         },
       ]);
-      (createTicket as jest.Mock).mockRejectedValueOnce({ code: '23505' });
-
+      mockMutateAsync.mockRejectedValueOnce({ code: '23505' });
       await setup();
 
       const dayButton = screen.getByText('Mock Date 1');
@@ -310,7 +309,7 @@ describe('AddTicketScreen', () => {
       fireEvent.press(addButton);
 
       await waitFor(() => {
-        expect(createTicket).toHaveBeenCalled();
+        expect(mockMutateAsync).toHaveBeenCalled();
       });
 
       expect(mockGoBack).not.toHaveBeenCalled();

@@ -187,6 +187,10 @@ describe('ProfileSetupScreen', () => {
         );
       });
 
+      await waitFor(() => {
+        expect(startButton).not.toBeDisabled();
+      });
+
       expect(mockCompleteProfile).not.toHaveBeenCalled();
     });
   });
