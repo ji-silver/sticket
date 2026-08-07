@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -34,7 +34,7 @@ function TicketLineupSection({
   const [selectedSide, setSelectedSide] = useState<LineupSide>(preferredSide);
   const [pageWidth, setPageWidth] = useState(0);
   const pagerRef = useRef<ScrollView>(null);
-  const pageStyle = useMemo(() => ({ width: pageWidth }), [pageWidth]);
+  const pageStyle = { width: pageWidth };
   useEffect(() => {
     setSelectedSide(preferredSide);
     pagerRef.current?.scrollTo({
