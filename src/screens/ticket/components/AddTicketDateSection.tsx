@@ -6,8 +6,6 @@ import { colors } from '../../../styles/colors.ts';
 import { fonts } from '../../../styles/fonts.ts';
 import type { DateData } from 'react-native-calendars';
 
-리;
-
 interface AddTicketDateSectionProps {
   today: string;
   selectedDate: string;
