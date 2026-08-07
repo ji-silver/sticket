@@ -14,10 +14,8 @@ import { fonts } from '../../styles/fonts.ts';
 import { useNavigation, useRoute } from '@react-navigation/core';
 import { useEffect, useState } from 'react';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import AppCalendar from '../../components/common/AppCalendar.tsx';
 import { DateData } from 'react-native-calendars';
 import { colors } from '../../styles/colors.ts';
-import InlineActionButton from '../../components/common/InlineActionButton.tsx';
 import ScreenHeader from '../../components/common/ScreenHeader.tsx';
 import ResponsiveContent from '../../components/common/ResponsiveContent.tsx';
 import type { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
@@ -25,11 +23,12 @@ import OriginalTicketImageField, {
   SelectedOriginalTicketImage,
 } from './components/OriginalTicketImageField.tsx';
 import { useGetGamesByDate } from '../../features/game/api/useGetGamesByDate';
-import EmptyCard from '../../components/common/EmptyCard.tsx';
 import { useAuth } from '../../features/auth/AuthProvider.tsx';
 import { getTodayInKorea } from '../../lib/date.ts';
 import type { RouteProp } from '@react-navigation/native';
 import { useCreateTicket } from '../../features/ticket/api/useCreateTicket';
+import AddTicketDateSection from './components/AddTicketDateSection.tsx';
+import AddTicketGameSection from './components/AddTicketGameSection.tsx';
 
 type AddTicketRouteProp = RouteProp<RootStackParamList, 'AddTicket'>;
 
@@ -50,6 +49,7 @@ function AddTicketScreen() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(!initialDate);
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
   const queryDate = !isCalendarOpen && selectedDate ? selectedDate : '';
+
   const {
     data: games = [],
     isLoading: isLoadingGames,
@@ -78,18 +78,6 @@ function AddTicketScreen() {
 
   const canSaveTicket = selectedDate.length > 0 && selectedGameId !== null;
   const isSaveDisabled = !canSaveTicket || createTicketMutation.isPending;
-
-  const selectedDateText = selectedDate ? formatDateText(selectedDate) : '';
-
-  const markedDates = selectedDate
-    ? {
-        [selectedDate]: {
-          selected: true,
-          selectedColor: colors.primary,
-          selectedTextColor: colors.onPrimary,
-        },
-      }
-    : {};
 
   const handlePressDay = (day: DateData) => {
     if (day.dateString > today) {
@@ -170,126 +158,22 @@ function AddTicketScreen() {
               onChange={setOriginalTicketImage}
             />
 
-            <View style={styles.sectionHeader}>
-              <AppText style={styles.sectionTitle}>직관 날짜</AppText>
-            </View>
-
-            {selectedDate && (
-              <View style={styles.dateSummaryCard}>
-                <View style={styles.dateSummaryTextArea}>
-                  <AppText style={styles.dateSummaryLabel}>선택한 날짜</AppText>
-                  <AppText style={styles.dateSummaryText}>
-                    {selectedDateText}
-                  </AppText>
-                </View>
-
-                <InlineActionButton
-                  label="변경"
-                  tone="primary"
-                  onPress={handlePressDateSummary}
-                  accessibilityLabel="직관 날짜 다시 선택"
-                />
-              </View>
-            )}
-
-            {isCalendarOpen && (
-              <AppCalendar
-                current={selectedDate || undefined}
-                maxDate={today}
-                disableAllTouchEventsForDisabledDays
-                markedDates={markedDates}
-                onDayPress={handlePressDay}
-              />
-            )}
+            <AddTicketDateSection
+              today={today}
+              selectedDate={selectedDate}
+              isCalendarOpen={isCalendarOpen}
+              onPressDay={handlePressDay}
+              onPressDateSummary={handlePressDateSummary}
+            />
 
             {selectedDate && !isCalendarOpen && (
-              <View style={styles.gameSection}>
-                <View style={styles.gameSectionHeader}>
-                  <AppText style={styles.sectionTitle}>
-                    어떤 경기를 봤나요?
-                  </AppText>
-                </View>
-
-                {isLoadingGames ? (
-                  <View style={styles.gameLoadingCard}>
-                    <ActivityIndicator size="small" color={colors.primary} />
-                  </View>
-                ) : gameLoadError ? (
-                  <EmptyCard
-                    title="경기 정보를 불러오지 못했어요"
-                    description={gameLoadError}
-                    style={styles.emptyCard}
-                  />
-                ) : games.length > 0 ? (
-                  <View style={styles.gameList}>
-                    {games.map(game => {
-                      const isSelected = selectedGameId === game.id;
-
-                      return (
-                        <Pressable
-                          key={game.id}
-                          style={({ pressed }) => [
-                            styles.gameCard,
-                            isSelected && styles.gameCardSelected,
-                            pressed && styles.gameCardPressed,
-                          ]}
-                          onPress={() => handlePressGame(game.id)}
-                          accessibilityRole="button"
-                          accessibilityLabel={`${game.awayTeamName} 원정 대 ${game.homeTeamName} 홈, ${game.time}, ${game.stadiumName}`}
-                          accessibilityState={{ selected: isSelected }}
-                        >
-                          <View style={styles.matchupRow}>
-                            <View style={styles.teamSide}>
-                              <AppText style={styles.teamRole}>AWAY</AppText>
-                              <AppText
-                                style={styles.teamName}
-                                numberOfLines={1}
-                              >
-                                {game.awayTeamName}
-                              </AppText>
-                            </View>
-
-                            <AppText style={styles.vsText}>VS</AppText>
-
-                            <View style={styles.teamSide}>
-                              <AppText style={styles.teamRole}>HOME</AppText>
-                              <AppText
-                                style={styles.teamName}
-                                numberOfLines={1}
-                              >
-                                {game.homeTeamName}
-                              </AppText>
-                            </View>
-                          </View>
-
-                          <View style={styles.gameMetaRow}>
-                            <View style={styles.gameMetaContent}>
-                              <AppText style={styles.gameTime}>
-                                {game.time}
-                              </AppText>
-
-                              <View style={styles.metaDot} />
-
-                              <AppText
-                                style={styles.stadiumName}
-                                numberOfLines={1}
-                              >
-                                {game.stadiumName}
-                              </AppText>
-                            </View>
-                          </View>
-                        </Pressable>
-                      );
-                    })}
-                  </View>
-                ) : (
-                  <EmptyCard
-                    title="이 날짜에는 경기가 없어요"
-                    description="다른 날짜를 선택해 직관 경기를 찾아보세요"
-                    style={styles.emptyCard}
-                  />
-                )}
-              </View>
+              <AddTicketGameSection
+                games={games}
+                isLoadingGames={isLoadingGames}
+                gameLoadError={gameLoadError}
+                selectedGameId={selectedGameId}
+                onPressGame={handlePressGame}
+              />
             )}
 
             {selectedDate && !isCalendarOpen && (
@@ -360,16 +244,6 @@ function AddTicketScreen() {
 
 export default AddTicketScreen;
 
-const formatDateText = (dateString: string) => {
-  const date = new Date(dateString);
-  const year = date.getFullYear();
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
-  const weekday = ['일', '월', '화', '수', '목', '금', '토'][date.getDay()];
-
-  return `${year}년 ${month}월 ${day}일 ${weekday}요일`;
-};
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -388,141 +262,6 @@ const styles = StyleSheet.create({
   horizontalContent: {
     paddingHorizontal: 12,
   },
-  sectionHeader: {
-    marginBottom: 18,
-  },
-  sectionTitle: {
-    fontSize: 17,
-    fontFamily: fonts.bold,
-    color: colors.text,
-  },
-
-  dateSummaryCard: {
-    minHeight: 82,
-    marginBottom: 16,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 18,
-    borderCurve: 'continuous',
-    backgroundColor: colors.surface,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  dateSummaryTextArea: {
-    flex: 1,
-  },
-  dateSummaryLabel: {
-    fontSize: 12,
-    fontFamily: fonts.regular,
-    color: colors.secondary,
-  },
-  dateSummaryText: {
-    marginTop: 6,
-    fontSize: 18,
-    fontFamily: fonts.bold,
-    color: colors.text,
-  },
-  gameSection: {
-    marginTop: 12,
-  },
-  gameSectionHeader: {
-    marginBottom: 12,
-  },
-
-  gameList: {
-    gap: 10,
-  },
-  gameLoadingCard: {
-    minHeight: 156,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  gameCard: {
-    minHeight: 122,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    borderRadius: 18,
-    borderCurve: 'continuous',
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    justifyContent: 'center',
-    gap: 14,
-  },
-  gameCardSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primarySoft,
-  },
-  gameCardPressed: {
-    opacity: 0.78,
-  },
-  gameMetaRow: {
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gameMetaContent: {
-    maxWidth: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  gameTime: {
-    flexShrink: 0,
-    fontSize: 12,
-    fontFamily: fonts.bold,
-    color: colors.text,
-  },
-  metaDot: {
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: colors.disabled,
-  },
-  stadiumName: {
-    flexShrink: 1,
-    fontSize: 13,
-    fontFamily: fonts.regular,
-    color: colors.textSecondary,
-  },
-  matchupRow: {
-    minHeight: 44,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  teamSide: {
-    flex: 1,
-    minWidth: 0,
-    alignItems: 'center',
-    gap: 3,
-  },
-  teamRole: {
-    fontSize: 10,
-    fontFamily: fonts.bold,
-    color: colors.secondary,
-  },
-  teamName: {
-    fontSize: 20,
-    fontFamily: fonts.bold,
-    color: colors.text,
-    textAlign: 'center',
-  },
-  vsText: {
-    width: 36,
-    fontSize: 11,
-    fontFamily: fonts.bold,
-    color: colors.secondary,
-    textAlign: 'center',
-  },
-
   seatSection: {
     marginTop: 28,
   },
@@ -531,6 +270,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  sectionTitle: {
+    fontSize: 17,
+    fontFamily: fonts.bold,
+    color: colors.text,
   },
   optionalLabel: {
     fontSize: 13,
@@ -553,12 +297,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: fonts.regular,
     color: colors.text,
-  },
-
-  emptyCard: {
-    minHeight: 156,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
   },
   footer: {
     paddingTop: 12,
