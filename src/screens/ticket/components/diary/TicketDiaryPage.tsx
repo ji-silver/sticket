@@ -1,53 +1,38 @@
 import {
-  ActivityIndicator,
   Alert,
   AppState,
   Image,
   Keyboard,
   KeyboardAvoidingView,
   type LayoutChangeEvent,
-  Pressable,
   StyleSheet,
-  View,
 } from 'react-native';
 import { useEffect, useRef, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../../../../styles/colors.ts';
-import AppSnackbar from '../../../../components/common/AppSnackbar.tsx';
-import AppText from '../../../../components/common/AppText.tsx';
-import GridPaper from './GridPaper.tsx';
+import DiaryCanvasArea from './DiaryCanvasArea.tsx';
+import DiaryEditorUI, { DiaryEditorFeedbackUI, DiaryEditorOverlayUI } from './DiaryEditorUI.tsx';
+import { useDiaryStore } from './store/useDiaryStore.ts';
 import DiaryPhotoItem from './DiaryPhotoItem.tsx';
 import { type DiaryPhoto, type EditorSize } from './photoTransform.ts';
 import { selectDiaryPhoto } from './selectDiaryPhoto.ts';
-import DiaryStickerPicker from './DiaryStickerPicker.tsx';
-import DiaryStickerItem, {
-  createDiarySticker,
-  type DiarySticker,
-} from './DiaryStickerItem.tsx';
-import {
-  DIARY_STICKER_PACKS,
-  type DiaryStickerDefinition,
-} from './diaryStickerPacks.ts';
-import DiaryDrawingCanvas, {
-  type DiaryDrawingCanvasRef,
-} from './DiaryDrawingCanvas.tsx';
-import DiaryBottomToolbar, { type DiaryToolId } from './DiaryBottomToolbar.tsx';
-import DiaryLayerPanel, {
-  type DiaryLayerPanelItem,
-} from './DiaryLayerPanel.tsx';
-import DiaryPaperSelector, { type PaperType } from './DiaryPaperSelector.tsx';
+import DiaryStickerItem, { createDiarySticker, type DiarySticker } from './DiaryStickerItem.tsx';
+import { DIARY_STICKER_PACKS, type DiaryStickerDefinition } from './diaryStickerPacks.ts';
+
+import type { DiaryDrawingCanvasRef } from './DiaryDrawingCanvas.tsx';
+
+import type { DiaryToolId } from './DiaryBottomToolbar.tsx';
+
+import type { DiaryLayerPanelItem } from './DiaryLayerPanel.tsx';
+
+import type { PaperType } from './DiaryPaperSelector.tsx';
+
 import DiaryTextItem from './DiaryTextItem.tsx';
-import DiaryTextToolbar from './DiaryTextToolbar.tsx';
-import {
-  createDiaryText,
-  type DiaryText,
-  type DiaryTextFrame,
-  type DiaryTextStyle,
-} from './diaryText.ts';
-import {
-  SavedDiaryItem,
-  TICKET_DIARY_VERSION,
-} from '../../../../features/ticket/types.ts';
+
+import { createDiaryText, type DiaryText, type DiaryTextFrame, type DiaryTextStyle } from './diaryText.ts';
+
+import { type SavedDiaryItem, TICKET_DIARY_VERSION } from '../../../../features/ticket/types.ts';
+
 import {
   getTicketDiaryData,
   getTicketDiaryDrawingBase64,
@@ -71,33 +56,33 @@ interface TicketDiaryPageProps {
   ticketId: string;
 }
 
-type DiaryItem =
+export type DiaryItem =
   | {
-      type: 'photo';
-      data: DiaryPhoto;
-    }
+  type: 'photo';
+  data: DiaryPhoto;
+}
   | {
-      type: 'sticker';
-      data: DiarySticker;
-    }
+  type: 'sticker';
+  data: DiarySticker;
+}
   | {
-      type: 'text';
-      data: DiaryText;
-    };
+  type: 'text';
+  data: DiaryText;
+};
 
-type SelectedDiaryItem =
+export type SelectedDiaryItem =
   | {
-      type: 'photo';
-      id: string;
-    }
+  type: 'photo';
+  id: string;
+}
   | {
-      type: 'sticker';
-      id: string;
-    }
+  type: 'sticker';
+  id: string;
+}
   | {
-      type: 'text';
-      id: string;
-    }
+  type: 'text';
+  id: string;
+}
   | null;
 
 interface DiarySaveSnapshot {
@@ -198,7 +183,13 @@ async function restoreDiaryItems(
 
   const signedUrlByPath = await getTicketDiaryPhotoUrls(photoPaths);
 
-  const sourceSizeByPath = new Map<string, { width: number; height: number }>();
+  const sourceSizeByPath = new Map<
+    string,
+    {
+      width: number;
+      height: number;
+    }
+  >();
 
   await Promise.all(
     savedItems.map(async item => {
@@ -217,19 +208,28 @@ async function restoreDiaryItems(
       }
 
       try {
-        const size = await new Promise<{ width: number; height: number }>(
-          (resolve, reject) => {
-            Image.getSize(
-              uri,
-              (width, height) => resolve({ width, height }),
-              reject,
-            );
-          },
-        );
+        const size = await new Promise<{
+          width: number;
+          height: number;
+        }>((resolve, reject) => {
+          Image.getSize(
+            uri,
 
-        sourceSizeByPath.set(item.data.storagePath, size);
-      } catch {
-        // 기존 사진의 해상도를 읽지 못하면 기존 저장 데이터를 그대로 사용합니다.
+            (width, height) =>
+              resolve({
+                width,
+                height,
+              }),
+
+            reject,
+          );
+        });
+
+        sourceSizeByPath.set(
+          item.data.storagePath,
+
+          size,
+        );
       }
     }),
   );
@@ -298,14 +298,16 @@ function createLayerPanelItems(
       item.type === 'text'
         ? item.data.text.trim() || '빈 텍스트'
         : item.type === 'sticker'
-        ? '스티커'
-        : '사진',
+          ? '스티커'
+          : '사진',
     imageSource:
       item.type === 'photo'
-        ? { uri: item.data.uri }
+        ? {
+          uri: item.data.uri,
+        }
         : item.type === 'sticker'
-        ? item.data.source
-        : undefined,
+          ? item.data.source
+          : undefined,
   }));
 
   if (hasDrawing) {
@@ -339,58 +341,77 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
   const lastQueuedVersionRef = useRef(0);
   const lastSavedVersionRef = useRef(0);
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
+
   const enqueueDiarySaveRef = useRef<
     (snapshot: DiarySaveSnapshot) => Promise<void>
-  >(async () => {});
-  const showSnackbarRef = useRef<(message: string) => void>(() => {});
-  const showAutosaveErrorRef = useRef<(error: unknown) => void>(() => {});
+  >(async () => {
+  });
+
+  const showSnackbarRef = useRef<(message: string) => void>(() => {
+  });
+
+  const showAutosaveErrorRef = useRef<(error: unknown) => void>(() => {
+  });
+
   const snackbarTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [selectedTool, setSelectedTool] = useState<DiaryToolId | null>(null);
-  const [isLayerPanelVisible, setIsLayerPanelVisible] = useState(false);
-  const [paperType, setPaperType] = useState<PaperType>('plain');
-  const [selectedStickerPackId, setSelectedStickerPackId] = useState(
-    DIARY_STICKER_PACKS[0]?.id ?? '',
+  const selectedTool = useDiaryStore(state => state.selectedTool);
+
+  const setSelectedTool = useDiaryStore(state => state.setSelectedTool);
+
+  const setIsLayerPanelVisible = useDiaryStore(
+    state => state.setIsLayerPanelVisible,
   );
+
+  const paperType = useDiaryStore(state => state.paperType);
+  const setPaperType = useDiaryStore(state => state.setPaperType);
+  const items = useDiaryStore(state => state.items);
+  const setItems = useDiaryStore(state => state.setItems);
+  const drawingIndex = useDiaryStore(state => state.drawingIndex);
+  const setDrawingIndex = useDiaryStore(state => state.setDrawingIndex);
+  const selectedItem = useDiaryStore(state => state.selectedItem);
+  const setSelectedItem = useDiaryStore(state => state.setSelectedItem);
+  const editingTextId = useDiaryStore(state => state.editingTextId);
+  const setEditingTextId = useDiaryStore(state => state.setEditingTextId);
+  const initializeDiary = useDiaryStore(state => state.initializeDiary);
+  const resetDiary = useDiaryStore(state => state.reset);
 
   const [editorWrapperSize, setEditorWrapperSize] = useState({
     width: 0,
     height: 0,
   });
+
   const [editorCanvasRegionSize, setEditorCanvasRegionSize] = useState({
     width: 0,
     height: 0,
   });
 
-  // 다이어리 영역 (사진 배치 시 넘어가지 않게)
-  // 아이폰과 아이패드 등 기기 해상도 차이로 인한 위치 틀어짐 방지를 위해 고정 논리 해상도를 사용합니다.
   const [editorSize] = useState<EditorSize>({
     width: 393,
     height: 524,
   });
 
-  // 사진, 스티커, 텍스트를 하나의 배열로 관리합니다.
-  // 배열의 마지막 항목이 화면에서 가장 위에 표시됩니다.
-  const [items, setItems] = useState<DiaryItem[]>([]);
-  const [drawingIndex, setDrawingIndex] = useState(0);
-  const [selectedItem, setSelectedItem] = useState<SelectedDiaryItem>(null);
-  const [editingTextId, setEditingTextId] = useState<string | null>(null);
-
   const isLandscape = editorWrapperSize.width > editorWrapperSize.height;
+
   const shortestEditorDimension = Math.min(
     editorWrapperSize.width,
     editorWrapperSize.height,
   );
+
   const longestEditorDimension = Math.max(
     editorWrapperSize.width,
     editorWrapperSize.height,
   );
+
   const isPhoneLayout =
     shortestEditorDimension > 0 &&
     shortestEditorDimension <= PHONE_LAYOUT_MAX_DIMENSION &&
     longestEditorDimension <= 1000;
+
   const pageHorizontalInset = isPhoneLayout ? 0 : DIARY_PAGE_HORIZONTAL_INSET;
+
   const availableEditorHeight = Math.max(0, editorCanvasRegionSize.height);
+
   const pageWidth = Math.min(
     Math.max(0, editorWrapperSize.width - pageHorizontalInset),
     MAX_DIARY_PAGE_WIDTH,
@@ -410,8 +431,8 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
   const selectedText =
     selectedItem?.type === 'text'
       ? items.find(
-          item => item.type === 'text' && item.data.id === selectedItem.id,
-        )
+        item => item.type === 'text' && item.data.id === selectedItem.id,
+      )
       : null;
 
   const hasDrawing = drawingBase64Ref.current !== null;
@@ -424,8 +445,8 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
     selectedTool === 'drawing'
       ? DRAWING_LAYER_ID
       : selectedItem
-      ? `${selectedItem.type}:${selectedItem.id}`
-      : null;
+        ? `${selectedItem.type}:${selectedItem.id}`
+        : null;
 
   const showSnackbar = (message: string) => {
     if (!isMountedRef.current) {
@@ -437,14 +458,15 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
     }
 
     setSnackbarMessage(message);
-    snackbarTimeoutRef.current = setTimeout(
-      () => setSnackbarMessage(null),
-      3000,
-    );
+
+    snackbarTimeoutRef.current = setTimeout(() => {
+      setSnackbarMessage(null);
+    }, 3000);
   };
 
   const showAutosaveError = (error: unknown) => {
     console.error('다이어리를 자동 저장하지 못했습니다.', error);
+
     showSnackbar(AUTOSAVE_ERROR_MESSAGE);
   };
 
@@ -608,13 +630,11 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
           managedStoragePathsRef.current.add(diaryData.drawingPath);
         }
 
-        setPaperType(diaryData.paperType);
-        setItems(restoredItems);
-        setDrawingIndex(diaryData.drawingIndex);
-        setSelectedItem(null);
-        setEditingTextId(null);
-        setSelectedTool(null);
-        setIsLayerPanelVisible(false);
+        initializeDiary({
+          paperType: diaryData.paperType,
+          items: restoredItems,
+          drawingIndex: diaryData.drawingIndex,
+        });
 
         if (!drawingCanvasRef.current) {
           throw new Error('그림 캔버스를 불러올 수 없습니다.');
@@ -655,6 +675,11 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
           return;
         }
 
+        resetDiary();
+        drawingBase64Ref.current = null;
+        drawingStoragePathRef.current = null;
+        drawingCanvasRef.current?.clear();
+
         console.error('다이어리를 불러오지 못했습니다.', error);
 
         Alert.alert(
@@ -673,7 +698,7 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
     return () => {
       isActive = false;
     };
-  }, [ticketId]);
+  }, [ticketId, initializeDiary, resetDiary]);
 
   useEffect(() => {
     if (isLoading) {
@@ -682,6 +707,7 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
 
     if (!isAutosaveReadyRef.current) {
       isAutosaveReadyRef.current = true;
+
       return;
     }
 
@@ -709,33 +735,32 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
   }, [drawingIndex, drawingRevision, isLoading, items, paperType]);
 
   useEffect(() => {
-    const appStateSubscription = AppState.addEventListener(
-      'change',
-      nextAppState => {
-        if (nextAppState === 'active') {
-          return;
-        }
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      if (nextAppState === 'active') {
+        return;
+      }
 
-        const latestSnapshot = latestSnapshotRef.current;
+      const latestSnapshot = latestSnapshotRef.current;
 
-        if (
-          latestSnapshot &&
-          latestSnapshot.version > lastSavedVersionRef.current
-        ) {
-          enqueueDiarySaveRef.current(latestSnapshot).catch(error => {
-            showAutosaveErrorRef.current(error);
-          });
-        }
-      },
-    );
+      if (
+        latestSnapshot &&
+        latestSnapshot.version > lastSavedVersionRef.current
+      ) {
+        enqueueDiarySaveRef.current(latestSnapshot).catch(error => {
+          showAutosaveErrorRef.current(error);
+        });
+      }
+    });
 
     return () => {
-      appStateSubscription.remove();
+      subscription.remove();
     };
   }, []);
 
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    isMountedRef.current = true;
+
+    return () => {
       isMountedRef.current = false;
 
       if (snackbarTimeoutRef.current) {
@@ -755,20 +780,29 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
           );
         });
       }
-    },
-    [],
-  );
+
+      resetDiary();
+    };
+  }, [resetDiary]);
 
   const handleEditorWrapperLayout = ({ nativeEvent }: LayoutChangeEvent) => {
     const { width, height } = nativeEvent.layout;
-    setEditorWrapperSize({ width, height });
+
+    setEditorWrapperSize({
+      width,
+      height,
+    });
   };
 
   const handleEditorCanvasRegionLayout = ({
-    nativeEvent,
-  }: LayoutChangeEvent) => {
+                                            nativeEvent,
+                                          }: LayoutChangeEvent) => {
     const { width, height } = nativeEvent.layout;
-    setEditorCanvasRegionSize({ width, height });
+
+    setEditorCanvasRegionSize({
+      width,
+      height,
+    });
   };
 
   const handlePaperSelect = (next: PaperType) => {
@@ -823,9 +857,9 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
       currentItems.map(item =>
         item.type === 'photo' && item.data.id === changedPhoto.id
           ? {
-              type: 'photo',
-              data: changedPhoto,
-            }
+            type: 'photo',
+            data: changedPhoto,
+          }
           : item,
       ),
     );
@@ -834,24 +868,20 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
   const handleSelectPhoto = (photoId: string) => {
     finishCurrentTextEditing();
 
-    const nextSelectedItem: Exclude<SelectedDiaryItem, null> = {
+    setSelectedItem({
       type: 'photo',
       id: photoId,
-    };
-
-    setSelectedItem(nextSelectedItem);
+    });
   };
 
   const handleDeletePhoto = (photoId: string) => {
     removeDiaryItem('photo', photoId);
 
-    setSelectedItem(currentItem => {
-      if (currentItem?.type === 'photo' && currentItem.id === photoId) {
-        return null;
-      }
-
-      return currentItem;
-    });
+    setSelectedItem(currentItem =>
+      currentItem?.type === 'photo' && currentItem.id === photoId
+        ? null
+        : currentItem,
+    );
   };
 
   const handleChangeSticker = (changedSticker: DiarySticker) => {
@@ -859,9 +889,9 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
       currentItems.map(item =>
         item.type === 'sticker' && item.data.id === changedSticker.id
           ? {
-              type: 'sticker',
-              data: changedSticker,
-            }
+            type: 'sticker',
+            data: changedSticker,
+          }
           : item,
       ),
     );
@@ -870,24 +900,20 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
   const handleSelectSticker = (stickerId: string) => {
     finishCurrentTextEditing();
 
-    const nextSelectedItem: Exclude<SelectedDiaryItem, null> = {
+    setSelectedItem({
       type: 'sticker',
       id: stickerId,
-    };
-
-    setSelectedItem(nextSelectedItem);
+    });
   };
 
   const handleDeleteSticker = (stickerId: string) => {
     removeDiaryItem('sticker', stickerId);
 
-    setSelectedItem(currentItem => {
-      if (currentItem?.type === 'sticker' && currentItem.id === stickerId) {
-        return null;
-      }
-
-      return currentItem;
-    });
+    setSelectedItem(currentItem =>
+      currentItem?.type === 'sticker' && currentItem.id === stickerId
+        ? null
+        : currentItem,
+    );
   };
 
   const handleAddText = () => {
@@ -924,12 +950,10 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
   const handleSelectText = (textId: string) => {
     finishCurrentTextEditing();
 
-    const nextSelectedItem: Exclude<SelectedDiaryItem, null> = {
+    setSelectedItem({
       type: 'text',
       id: textId,
-    };
-
-    setSelectedItem(nextSelectedItem);
+    });
   };
 
   const handleStartTextEditing = (textId: string) => {
@@ -946,12 +970,13 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
       currentItems.map(item =>
         item.type === 'text' && item.data.id === textId
           ? {
-              type: 'text',
-              data: {
-                ...item.data,
-                text: value,
-              },
-            }
+            type: 'text',
+            data: {
+              ...item.data,
+
+              text: value,
+            },
+          }
           : item,
       ),
     );
@@ -962,12 +987,13 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
       currentItems.map(item =>
         item.type === 'text' && item.data.id === textId
           ? {
-              type: 'text',
-              data: {
-                ...item.data,
-                ...frame,
-              },
-            }
+            type: 'text',
+            data: {
+              ...item.data,
+
+              ...frame,
+            },
+          }
           : item,
       ),
     );
@@ -978,12 +1004,13 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
       currentItems.map(item =>
         item.type === 'text' && item.data.id === textId
           ? {
-              type: 'text',
-              data: {
-                ...item.data,
-                height,
-              },
-            }
+            type: 'text',
+            data: {
+              ...item.data,
+
+              height,
+            },
+          }
           : item,
       ),
     );
@@ -1018,15 +1045,16 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
       currentItems.map(item =>
         item.type === 'text' && item.data.id === selectedTextId
           ? {
-              type: 'text',
-              data: {
-                ...item.data,
-                style: {
-                  ...item.data.style,
-                  ...patch,
-                },
+            type: 'text',
+            data: {
+              ...item.data,
+              style: {
+                ...item.data.style,
+
+                ...patch,
               },
-            }
+            },
+          }
           : item,
       ),
     );
@@ -1171,6 +1199,7 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
       const item = itemByLayerId.get(layer.id);
       return item ? [item] : [];
     });
+
     const nextDrawingIndex = bottomToTop.findIndex(
       layer => layer.id === DRAWING_LAYER_ID,
     );
@@ -1304,159 +1333,46 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
         behavior="padding"
         style={styles.keyboardAvoidingContainer}
       >
-        <View style={styles.editorWrapper} onLayout={handleEditorWrapperLayout}>
-          <View
-            style={[
-              styles.editorCanvasRegion,
-              isPhoneLayout && styles.phoneCanvasRegion,
-            ]}
-            onLayout={handleEditorCanvasRegionLayout}
-          >
-            <View
-              style={[
-                styles.editorWorkspace,
-                {
-                  width: displayedEditorWidth,
-                  height: displayedEditorHeight,
-                },
-              ]}
-            >
-              <View
-                style={[
-                  styles.editorCanvasSlot,
-                  {
-                    width: displayedEditorWidth,
-                    height: displayedEditorHeight,
-                  },
-                ]}
-              >
-                <View
-                  style={[
-                    styles.editorArea,
-                    {
-                      width: displayedEditorWidth,
-                      height: displayedEditorHeight,
-                    },
-                  ]}
-                >
-                  <Pressable
-                    accessible={false}
-                    style={styles.editorBackground}
-                    onPress={handleDeselectDiaryItem}
-                  >
-                    {paperType === 'grid' ? <GridPaper /> : null}
-                  </Pressable>
-
-                  {items.slice(0, drawingIndex).map(renderDiaryItem)}
-
-                  <DiaryDrawingCanvas
-                    ref={drawingCanvasRef}
-                    logicalSize={editorSize}
-                    displayScale={editorScale}
-                    displayScaleY={displayScaleY}
-                    isDrawingMode={selectedTool === 'drawing'}
-                    onDrawingChange={handleDrawingChange}
-                  />
-
-                  <View
-                    pointerEvents={
-                      selectedTool === 'drawing' ? 'none' : 'box-none'
-                    }
-                    style={styles.foregroundItems}
-                  >
-                    {items.slice(drawingIndex).map(renderDiaryItem)}
-                  </View>
-
-                  {selectedTool === 'drawing' ? (
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel="드로잉 완료"
-                      hitSlop={8}
-                      onPress={handleFinishDrawing}
-                      style={({ pressed }) => [
-                        styles.drawingDoneButton,
-                        pressed && styles.pressedDrawingDoneButton,
-                      ]}
-                    >
-                      <AppText
-                        size={14}
-                        weight="semiBold"
-                        color={colors.primary}
-                      >
-                        완료
-                      </AppText>
-                    </Pressable>
-                  ) : null}
-                </View>
-              </View>
-
-              {!isLandscape && isLayerPanelVisible ? (
-                <DiaryLayerPanel
-                  editorSize={layerPanelEditorSize}
-                  editorScale={editorScale}
-                  placement="overlay"
-                  items={layerPanelItems}
-                  selectedLayerId={selectedLayerId}
-                  onSelectLayer={handleSelectLayer}
-                  onMoveLayer={handleMoveLayer}
-                  onClose={() => setIsLayerPanelVisible(false)}
-                />
-              ) : null}
-            </View>
-
-            {isLandscape && isLayerPanelVisible ? (
-              <DiaryLayerPanel
-                editorSize={layerPanelEditorSize}
-                editorScale={editorScale}
-                placement="side"
-                items={layerPanelItems}
-                selectedLayerId={selectedLayerId}
-                onSelectLayer={handleSelectLayer}
-                onMoveLayer={handleMoveLayer}
-                onClose={() => setIsLayerPanelVisible(false)}
-              />
-            ) : null}
-          </View>
-
-          {selectedTool === 'sticker' ? (
-            <DiaryStickerPicker
-              selectedPackId={selectedStickerPackId}
-              onSelectPack={setSelectedStickerPackId}
-              onSelectSticker={handleAddSticker}
-              onClose={() => setSelectedTool(null)}
-            />
-          ) : null}
-
-          {selectedTool === 'paper' ? (
-            <DiaryPaperSelector
-              paperType={paperType}
-              onSelect={handlePaperSelect}
-            />
-          ) : null}
-        </View>
-
-        {selectedText?.type === 'text' ? (
-          <DiaryTextToolbar
-            textItem={selectedText.data}
-            onChangeStyle={handleChangeSelectedTextStyle}
+        <DiaryCanvasArea
+          displayedEditorWidth={displayedEditorWidth}
+          displayedEditorHeight={displayedEditorHeight}
+          editorSize={editorSize}
+          editorScale={editorScale}
+          displayScaleY={displayScaleY}
+          isPhoneLayout={isPhoneLayout}
+          isLandscape={isLandscape}
+          layerPanelEditorSize={layerPanelEditorSize}
+          layerPanelItems={layerPanelItems}
+          selectedLayerId={selectedLayerId}
+          drawingCanvasRef={drawingCanvasRef}
+          onEditorWrapperLayout={handleEditorWrapperLayout}
+          onEditorCanvasRegionLayout={handleEditorCanvasRegionLayout}
+          onDeselectDiaryItem={handleDeselectDiaryItem}
+          onDrawingChange={handleDrawingChange}
+          onFinishDrawing={handleFinishDrawing}
+          onSelectLayer={handleSelectLayer}
+          onMoveLayer={handleMoveLayer}
+          onCloseLayerPanel={() => setIsLayerPanelVisible(false)}
+          renderDiaryItem={renderDiaryItem}
+        >
+          <DiaryEditorOverlayUI
+            onAddSticker={handleAddSticker}
+            onCloseStickerPicker={() => setSelectedTool(null)}
+            onSelectPaper={handlePaperSelect}
           />
-        ) : selectedTool !== 'sticker' && selectedTool !== 'drawing' ? (
-          <DiaryBottomToolbar
-            selectedTool={isLayerPanelVisible ? 'layers' : selectedTool}
-            onPressTool={handlePressTool}
-          />
-        ) : null}
+        </DiaryCanvasArea>
+
+        <DiaryEditorUI
+          selectedTextItem={selectedText}
+          onChangeTextStyle={handleChangeSelectedTextStyle}
+          onPressTool={handlePressTool}
+        />
       </KeyboardAvoidingView>
 
-      {isLoading ? (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator color={colors.primary} />
-        </View>
-      ) : null}
-
-      {snackbarMessage ? (
-        <AppSnackbar message={snackbarMessage} horizontalInset={24} />
-      ) : null}
+      <DiaryEditorFeedbackUI
+        isLoading={isLoading}
+        snackbarMessage={snackbarMessage}
+      />
     </SafeAreaView>
   );
 }
@@ -1471,85 +1387,5 @@ const styles = StyleSheet.create({
 
   keyboardAvoidingContainer: {
     flex: 1,
-  },
-
-  editorWrapper: {
-    flex: 1,
-    backgroundColor: colors.background,
-    overflow: 'hidden',
-  },
-
-  editorCanvasRegion: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-  },
-
-  phoneCanvasRegion: {
-    justifyContent: 'center',
-  },
-
-  editorWorkspace: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  editorCanvasSlot: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  editorArea: {
-    position: 'relative',
-    overflow: 'hidden',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-  },
-
-  editorBackground: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-  },
-
-  drawingDoneButton: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    zIndex: 1,
-    minWidth: 60,
-    height: 40,
-    paddingHorizontal: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    borderRadius: 10,
-    borderCurve: 'continuous',
-    backgroundColor: colors.surface,
-  },
-
-  pressedDrawingDoneButton: {
-    backgroundColor: colors.primarySoft,
-  },
-
-  loadingOverlay: {
-    ...StyleSheet.absoluteFill,
-    zIndex: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surface,
-  },
-
-  foregroundItems: {
-    ...StyleSheet.absoluteFill,
   },
 });
