@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.surface,
   },
   contentContainer: {
     paddingBottom: 40,
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 18,
     paddingBottom: 12,
-    backgroundColor: colors.background,
+    backgroundColor: colors.surface,
   },
   matchMeta: {
     fontSize: 12,
@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 9,
     borderRadius: 11,
     borderCurve: 'continuous',
-    backgroundColor: colors.primarySoft,
+    backgroundColor: colors.successSoft,
     alignSelf: 'center',
     alignItems: 'center',
     justifyContent: 'center',
@@ -343,18 +343,18 @@ const styles = StyleSheet.create({
   matchResultText: {
     fontSize: 11,
     fontFamily: fonts.bold,
-    color: colors.primary,
+    color: colors.success,
   },
   matchResultBadgeLose: {
-    backgroundColor: '#FDECEC',
+    backgroundColor: colors.errorSoft,
   },
   matchResultTextLose: {
-    color: '#C44D4D',
+    color: colors.error,
   },
   matchResultBadgeDraw: {
-    backgroundColor: '#F0F1F2',
+    backgroundColor: colors.infoSoft,
   },
   matchResultTextDraw: {
-    color: colors.textSecondary,
+    color: colors.info,
   },
 });

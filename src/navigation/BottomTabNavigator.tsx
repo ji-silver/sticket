@@ -4,8 +4,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HomeScreen from '../screens/home/HomeScreen.tsx';
 import CalendarScreen from '../screens/home/CalendarScreen.tsx';
 import ProfileScreen from '../screens/home/ProfileScreen.tsx';
-import { CalendarDays, Home, User } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
+import { CalendarDays, Home, User } from 'lucide-react-native';
 import { fonts } from '../styles/fonts.ts';
 import { colors } from '../styles/colors.ts';
 import AppText from '../components/common/AppText.tsx';
@@ -27,17 +27,9 @@ type TabLabelProps = TabIconProps & {
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-function renderTabIcon(
-  Icon: LucideIcon,
-  { color, focused }: TabIconProps,
-) {
+function renderTabIcon(Icon: LucideIcon, { color, focused }: TabIconProps) {
   return (
-    <View
-      style={[
-        styles.iconContainer,
-        focused && styles.iconContainerActive,
-      ]}
-    >
+    <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
       <Icon size={24} color={color} strokeWidth={2.2} />
     </View>
   );
@@ -73,7 +65,7 @@ function BottomTabNavigator() {
         tabBarPosition: 'bottom',
         tabBarLabelPosition: 'below-icon',
         tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.secondary,
+        tabBarInactiveTintColor: colors.textSecondary,
         tabBarStyle: {
           height: 64 + insets.bottom,
           paddingTop: 6,

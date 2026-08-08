@@ -171,13 +171,13 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     fontSize: 15,
     fontFamily: fonts.bold,
-    color: colors.secondary,
+    color: colors.textSecondary,
   },
   confirmButton: {
     backgroundColor: colors.primary,
   },
   destructiveButton: {
-    backgroundColor: '#D92D20',
+    backgroundColor: colors.error,
   },
   confirmButtonText: {
     fontSize: 15,

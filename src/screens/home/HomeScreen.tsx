@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: fonts.medium,
     fontWeight: '500',
-    color: '#9CA3AF',
+    color: colors.textTertiary,
   },
   addButton: {
     height: 42,

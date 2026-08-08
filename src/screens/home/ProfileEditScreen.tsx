@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
     width: 54,
     fontSize: 13,
     fontFamily: fonts.regular,
-    color: colors.secondary,
+    color: colors.textSecondary,
   },
   teamName: {
     flex: 1,

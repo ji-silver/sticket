@@ -1,4 +1,4 @@
-import { View, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import AppText from '../../../components/common/AppText.tsx';
 import EmptyCard from '../../../components/common/EmptyCard.tsx';
 import { colors } from '../../../styles/colors.ts';
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   },
   gameCardSelected: {
     borderColor: colors.primary,
-    backgroundColor: colors.primarySoft,
+    // backgroundColor: colors.primary50,
   },
   gameCardPressed: {
     opacity: 0.78,
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
   teamRole: {
     fontSize: 10,
     fontFamily: fonts.bold,
-    color: colors.secondary,
+    color: colors.textSecondary,
   },
   teamName: {
     fontSize: 20,
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     width: 36,
     fontSize: 11,
     fontFamily: fonts.bold,
-    color: colors.secondary,
+    color: colors.textSecondary,
     textAlign: 'center',
   },
   emptyCard: {

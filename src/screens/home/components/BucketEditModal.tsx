@@ -166,7 +166,7 @@ function BucketEditModal({
     <AppBottomSheet
       visible={visible}
       title={title}
-      description="목표를 추가하거나 내용을 바로 수정할 수 있어요"
+      description="직관 목표를 추가해보세요"
       headerRight={
         <InlineActionButton label="닫기" tone="primary" onPress={onClose} />
       }

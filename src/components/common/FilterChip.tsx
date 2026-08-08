@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
   text: {
     fontSize: 13,
     fontFamily: fonts.regular,
-    color: colors.secondary,
+    color: colors.textSecondary,
   },
   textSelected: {
     fontFamily: fonts.bold,

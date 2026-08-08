@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: fonts.medium,
     fontWeight: '500',
-    color: '#8A8A8A',
+    color: colors.textTertiary,
     textAlign: 'center',
   },
 
@@ -240,7 +240,6 @@ const styles = StyleSheet.create({
   },
   pageDotActive: {
     width: 18,
-    backgroundColor: colors.primary,
   },
   emptyDiaryCard: {
     marginHorizontal: 24,

@@ -8,7 +8,7 @@ interface InlineActionButtonProps {
   label: string;
   onPress: () => void;
   icon?: ReactNode;
-  tone?: 'primary' | 'secondary';
+  tone?: 'primary' | 'textSecondary';
   accessibilityLabel?: string;
 }
 
@@ -16,7 +16,7 @@ function InlineActionButton({
   label,
   onPress,
   icon,
-  tone = 'secondary',
+  tone = 'textSecondary',
   accessibilityLabel = label,
 }: InlineActionButtonProps) {
   const isPrimary = tone === 'primary';
@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
   text: {
     fontSize: 14,
     fontFamily: fonts.bold,
-    color: colors.secondary,
+    color: colors.textSecondary,
   },
   textPrimary: {
     color: colors.primary,

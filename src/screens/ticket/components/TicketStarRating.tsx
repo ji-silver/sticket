@@ -80,8 +80,8 @@ function TicketStarRating({ value, onChange }: TicketStarRatingProps) {
                 >
                   <Star
                     size={28}
-                    color={colors.primary}
-                    fill={colors.primary}
+                    color={colors.accentYellow}
+                    fill={colors.accentYellow}
                     strokeWidth={2}
                   />
                 </View>

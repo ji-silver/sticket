@@ -102,7 +102,7 @@ function AccountSettingsSection({
           >
             <AppText style={styles.serviceRowText}>로그아웃</AppText>
 
-            <LogOut size={18} color={colors.secondary} strokeWidth={2} />
+            <LogOut size={18} color={colors.textSecondary} strokeWidth={2} />
           </Pressable>
 
           <View style={styles.serviceDivider} />
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
   serviceValue: {
     fontSize: 13,
     fontFamily: fonts.regular,
-    color: colors.secondary,
+    color: colors.textSecondary,
   },
 
   serviceDivider: {

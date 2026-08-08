@@ -18,7 +18,7 @@ function GridPaper() {
             patternUnits="userSpaceOnUse"
           >
             <Path
-              d={`M ${GRID_SIZE} 0 L 0 0 0 ${GRID_SIZE}`}
+              d={`M ${GRID_SIZE} 0 V ${GRID_SIZE} H 0`}
               fill="none"
               stroke={GRID_LINE_COLOR}
               strokeWidth={StyleSheet.hairlineWidth}

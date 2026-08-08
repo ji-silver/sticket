@@ -430,7 +430,7 @@ const styles = StyleSheet.create({
   },
   colorSwatchButtonSelected: {
     borderWidth: 2,
-    borderColor: colors.primary,
+    borderColor: colors.text,
   },
   colorSwatch: {
     width: 30,

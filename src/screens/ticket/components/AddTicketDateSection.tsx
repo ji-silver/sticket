@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
   dateSummaryLabel: {
     fontSize: 12,
     fontFamily: fonts.regular,
-    color: colors.secondary,
+    color: colors.textSecondary,
   },
   dateSummaryText: {
     marginTop: 6,

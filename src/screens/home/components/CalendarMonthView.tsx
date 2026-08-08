@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
     height: 14,
     borderRadius: 7,
     borderCurve: 'continuous',
-    backgroundColor: '#BFD3E2',
+    backgroundColor: colors.accentYellow,
     transform: [
       {
         translateX: -7,
@@ -411,14 +411,14 @@ const styles = StyleSheet.create({
   },
 
   calendarWinResult: {
-    backgroundColor: '#E7F3EC',
+    backgroundColor: colors.successSoft,
   },
 
   calendarLossResult: {
-    backgroundColor: '#FDECEC',
+    backgroundColor: colors.errorSoft,
   },
 
   calendarDrawResult: {
-    backgroundColor: '#F0F1F2',
+    backgroundColor: colors.infoSoft,
   },
 });
