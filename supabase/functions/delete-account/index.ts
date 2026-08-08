@@ -14,7 +14,11 @@ interface AppleTokenResponse {
   error_description?: string;
 }
 
-const STORAGE_BUCKETS = ['ticket-book-covers', 'ticket-originals'] as const;
+const STORAGE_BUCKETS = [
+  'ticket-book-covers',
+  'ticket-originals',
+  'ticket-diaries',
+] as const;
 const STORAGE_BATCH_SIZE = 1000;
 
 function jsonResponse(body: Record<string, unknown>, status: number) {
