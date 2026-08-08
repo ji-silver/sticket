@@ -8,6 +8,7 @@ import AuthScreen from '../screens/auth/AuthScreen.tsx';
 import LoadingScreen from '../screens/auth/LoadingScreen.tsx';
 import ProfileSetupScreen from '../screens/auth/ProfileSetupScreen.tsx';
 import TicketDetailScreen from '../screens/ticket/TicketDetailScreen.tsx';
+import DocumentScreen from '../screens/DocumentScreen.tsx';
 
 import { colors } from '../styles/colors.ts';
 import { useAuth } from '../features/auth/AuthProvider.tsx';
@@ -32,6 +33,10 @@ export type RootStackParamList = {
   ProfileEdit: undefined;
   TicketDetail: {
     ticketId: string;
+  };
+  Document: {
+    title: string;
+    uri: string;
   };
 };
 
@@ -76,6 +81,7 @@ function RootStackNavigator() {
           <Stack.Screen name="AddTicket" component={AddTicketScreen} />
           <Stack.Screen name="TicketDetail" component={TicketDetailScreen} />
           <Stack.Screen name="ProfileEdit" component={ProfileEditScreen} />
+          <Stack.Screen name="Document" component={DocumentScreen} />
         </>
       )}
     </Stack.Navigator>

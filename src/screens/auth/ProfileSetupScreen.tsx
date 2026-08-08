@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronRight, Check } from 'lucide-react-native';
+import { Check, ChevronRight } from 'lucide-react-native';
 
 import AppText from '../../components/common/AppText.tsx';
 import TeamSelectSheet from '../home/components/TeamSelectSheet.tsx';
@@ -26,14 +26,19 @@ function ProfileSetupScreen() {
     profile?.favorite_team?.name ?? '',
   );
   const [isTeamSheetOpen, setIsTeamSheetOpen] = useState(false);
-  const [isAgreed, setIsAgreed] = useState(false);
+  const [isTermsAgreed, setIsTermsAgreed] = useState(false);
+  const [isPrivacyAgreed, setIsPrivacyAgreed] = useState(false);
 
   const [isSaving, setIsSaving] = useState(false);
 
   const trimmedNickname = nickname.trim();
   const isNicknameValid =
     trimmedNickname.length >= 2 && trimmedNickname.length <= 10;
-  const isFormValid = isNicknameValid && favoriteTeam.length > 0 && isAgreed;
+  const isFormValid =
+    isNicknameValid &&
+    favoriteTeam.length > 0 &&
+    isTermsAgreed &&
+    isPrivacyAgreed;
   const showNicknameError = hasBlurredNickname && !isNicknameValid;
 
   const handleSelectTeam = (team: string) => {
@@ -77,10 +82,6 @@ function ProfileSetupScreen() {
         >
           <View style={styles.intro}>
             <AppText style={styles.title}>프로필을 완성해 주세요</AppText>
-            <AppText style={styles.description}>
-              스티켓에서 사용할 정보를 설정해요.{'\n'}
-              언제든 프로필에서 바꿀 수 있어요.
-            </AppText>
           </View>
 
           <View style={styles.form}>
@@ -162,7 +163,7 @@ function ProfileSetupScreen() {
               </Pressable>
 
               <AppText style={styles.helperText}>
-                현재는 야구만 지원하며, 응원 구단을 꼭 선택해야 해요.
+                현재는 야구 서비스만 지원하고있어요
               </AppText>
             </View>
           </View>
@@ -171,16 +172,44 @@ function ProfileSetupScreen() {
         <View style={styles.footer}>
           <Pressable
             style={styles.agreementRow}
-            onPress={() => setIsAgreed(!isAgreed)}
+            onPress={() => setIsTermsAgreed(!isTermsAgreed)}
             accessibilityRole="checkbox"
-            accessibilityState={{ checked: isAgreed }}
+            accessibilityLabel="필수 이용약관 동의"
+            accessibilityState={{ checked: isTermsAgreed }}
           >
-            <View style={[styles.checkbox, isAgreed && styles.checkboxActive]}>
-              {isAgreed && <Check size={14} color={colors.surface} strokeWidth={3} />}
+            <View
+              style={[styles.checkbox, isTermsAgreed && styles.checkboxActive]}
+            >
+              {isTermsAgreed && (
+                <Check size={14} color={colors.surface} strokeWidth={3} />
+              )}
+            </View>
+            <AppText style={styles.agreementText}>
+              <AppText style={styles.agreementHighlight}>(필수) </AppText>만
+              14세 이상이며, 이용약관에 동의합니다.
+            </AppText>
+          </Pressable>
+
+          <Pressable
+            style={[styles.agreementRow, styles.lastAgreementRow]}
+            onPress={() => setIsPrivacyAgreed(!isPrivacyAgreed)}
+            accessibilityRole="checkbox"
+            accessibilityLabel="필수 개인정보 처리방침 동의"
+            accessibilityState={{ checked: isPrivacyAgreed }}
+          >
+            <View
+              style={[
+                styles.checkbox,
+                isPrivacyAgreed && styles.checkboxActive,
+              ]}
+            >
+              {isPrivacyAgreed && (
+                <Check size={14} color={colors.surface} strokeWidth={3} />
+              )}
             </View>
             <AppText style={styles.agreementText}>
               <AppText style={styles.agreementHighlight}>(필수) </AppText>
-              만 14세 이상이며, 이용약관 및 개인정보 처리방침에 동의합니다.
+              개인정보 처리방침을 확인하고 동의합니다.
             </AppText>
           </Pressable>
 
@@ -360,9 +389,12 @@ const styles = StyleSheet.create({
   agreementRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 10,
     paddingHorizontal: 4,
     gap: 10,
+  },
+  lastAgreementRow: {
+    marginBottom: 16,
   },
   checkbox: {
     width: 22,

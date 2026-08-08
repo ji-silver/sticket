@@ -1,9 +1,12 @@
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ChevronRight, LogOut } from 'lucide-react-native';
 import DeviceInfo from 'react-native-device-info';
 import AppText from '../../../components/common/AppText.tsx';
 import { colors } from '../../../styles/colors.ts';
 import { fonts } from '../../../styles/fonts.ts';
+import type { RootStackParamList } from '../../../navigation/RootStackNavigator.tsx';
 
 interface AccountSettingsSectionProps {
   onPressLogout: () => void;
@@ -11,11 +14,18 @@ interface AccountSettingsSectionProps {
 }
 
 const appVersion = DeviceInfo.getVersion();
+const TERMS_OF_SERVICE_URL =
+  'https://amenable-colby-ae6.notion.site/3b6f2bd020d08050b594d22630e4a866';
+const PRIVACY_POLICY_URL =
+  'https://amenable-colby-ae6.notion.site/3b5f2bd020d0803da252e68a09189ae5';
 
 function AccountSettingsSection({
   onPressLogout,
   onPressWithdrawal,
 }: AccountSettingsSectionProps) {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
   return (
     <>
       <View style={styles.serviceSection}>
@@ -27,7 +37,12 @@ function AccountSettingsSection({
               styles.serviceRow,
               pressed && styles.serviceRowPressed,
             ]}
-            onPress={() => {}}
+            onPress={() =>
+              navigation.navigate('Document', {
+                title: '이용약관',
+                uri: TERMS_OF_SERVICE_URL,
+              })
+            }
             accessibilityRole="button"
           >
             <AppText style={styles.serviceRowText}>이용약관</AppText>
@@ -46,7 +61,12 @@ function AccountSettingsSection({
               styles.serviceRow,
               pressed && styles.serviceRowPressed,
             ]}
-            onPress={() => {}}
+            onPress={() =>
+              navigation.navigate('Document', {
+                title: '개인정보 처리방침',
+                uri: PRIVACY_POLICY_URL,
+              })
+            }
             accessibilityRole="button"
           >
             <AppText style={styles.serviceRowText}>개인정보 처리방침</AppText>

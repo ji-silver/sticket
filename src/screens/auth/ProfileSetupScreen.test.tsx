@@ -1,5 +1,7 @@
 import React from 'react';
 import {
+  act,
+  cleanup,
   fireEvent,
   render,
   screen,
@@ -11,6 +13,10 @@ import { saveProfile } from '../../features/profile/profile.service';
 import { useAuth } from '../../features/auth/AuthProvider';
 
 jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+
+afterEach(() => {
+  cleanup();
+});
 
 jest.mock('../../features/auth/AuthProvider', () => ({
   useAuth: jest.fn(),
@@ -133,15 +139,19 @@ describe('ProfileSetupScreen', () => {
       const mockTeamOption = await screen.findByText('두산 베어스 선택');
       fireEvent.press(mockTeamOption);
 
+      fireEvent.press(screen.getByLabelText('필수 이용약관 동의'));
+      fireEvent.press(screen.getByLabelText('필수 개인정보 처리방침 동의'));
+
       await waitFor(() => {
         expect(
           screen.getByLabelText('프로필 설정 완료하고 시작하기'),
         ).not.toBeDisabled();
       });
 
-      const startButton =
-        screen.getByLabelText('프로필 설정 완료하고 시작하기');
-      fireEvent.press(startButton);
+      const startButton = screen.getByLabelText('프로필 설정 완료하고 시작하기');
+      await act(async () => {
+        fireEvent.press(startButton);
+      });
 
       await waitFor(() => {
         expect(saveProfile).toHaveBeenCalledWith({
@@ -150,7 +160,13 @@ describe('ProfileSetupScreen', () => {
         });
       });
 
-      expect(mockCompleteProfile).toHaveBeenCalledWith(fakeSavedProfile);
+      await waitFor(() => {
+        expect(mockCompleteProfile).toHaveBeenCalledWith(fakeSavedProfile);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText('시작하기')).toBeVisible();
+      });
     });
 
     it('프로필 저장 중 서버 에러가 발생하면, 알림 팝업을 띄운다', async () => {
@@ -170,15 +186,19 @@ describe('ProfileSetupScreen', () => {
       const mockTeamOption = await screen.findByText('두산 베어스 선택');
       fireEvent.press(mockTeamOption);
 
+      fireEvent.press(screen.getByLabelText('필수 이용약관 동의'));
+      fireEvent.press(screen.getByLabelText('필수 개인정보 처리방침 동의'));
+
       await waitFor(() => {
         expect(
           screen.getByLabelText('프로필 설정 완료하고 시작하기'),
         ).not.toBeDisabled();
       });
 
-      const startButton =
-        screen.getByLabelText('프로필 설정 완료하고 시작하기');
-      fireEvent.press(startButton);
+      const startButton = screen.getByLabelText('프로필 설정 완료하고 시작하기');
+      await act(async () => {
+        fireEvent.press(startButton);
+      });
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith(
@@ -188,7 +208,7 @@ describe('ProfileSetupScreen', () => {
       });
 
       await waitFor(() => {
-        expect(startButton).not.toBeDisabled();
+        expect(screen.getByText('시작하기')).toBeVisible();
       });
 
       expect(mockCompleteProfile).not.toHaveBeenCalled();
