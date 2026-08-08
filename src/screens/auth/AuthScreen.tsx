@@ -1,7 +1,6 @@
 import { Alert, Image, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
-
 import AppText from '../../components/common/AppText.tsx';
 import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
@@ -14,12 +13,11 @@ function AuthScreen() {
   const [loadingProvider, setLoadingProvider] = useState<
     'apple' | 'google' | null
   >(null);
+
   const isLoading = loadingProvider !== null;
 
   const handlePressApple = async () => {
-    if (isLoading) {
-      return;
-    }
+    if (isLoading) return;
 
     setLoadingProvider('apple');
 
@@ -35,9 +33,7 @@ function AuthScreen() {
   };
 
   const handlePressGoogle = async () => {
-    if (isLoading) {
-      return;
-    }
+    if (isLoading) return;
 
     setLoadingProvider('google');
 
@@ -178,7 +174,7 @@ const styles = StyleSheet.create({
     height: 50,
     marginLeft: -14,
     marginRight: -14,
-    marginTop: 4, // 텍스트와 수평을 맞추기 위해 위에서 아래로 살짝 밀어내림
+    marginTop: 4,
   },
   appleButtonText: {
     fontSize: 15,

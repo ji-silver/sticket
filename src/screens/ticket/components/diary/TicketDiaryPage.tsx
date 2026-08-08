@@ -11,13 +11,22 @@ import { useEffect, useRef, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../../../../styles/colors.ts';
 import DiaryCanvasArea from './DiaryCanvasArea.tsx';
-import DiaryEditorUI, { DiaryEditorFeedbackUI, DiaryEditorOverlayUI } from './DiaryEditorUI.tsx';
+import DiaryEditorUI, {
+  DiaryEditorFeedbackUI,
+  DiaryEditorOverlayUI,
+} from './DiaryEditorUI.tsx';
 import { useDiaryStore } from './store/useDiaryStore.ts';
 import DiaryPhotoItem from './DiaryPhotoItem.tsx';
 import { type DiaryPhoto, type EditorSize } from './photoTransform.ts';
 import { selectDiaryPhoto } from './selectDiaryPhoto.ts';
-import DiaryStickerItem, { createDiarySticker, type DiarySticker } from './DiaryStickerItem.tsx';
-import { DIARY_STICKER_PACKS, type DiaryStickerDefinition } from './diaryStickerPacks.ts';
+import DiaryStickerItem, {
+  createDiarySticker,
+  type DiarySticker,
+} from './DiaryStickerItem.tsx';
+import {
+  DIARY_STICKER_PACKS,
+  type DiaryStickerDefinition,
+} from './diaryStickerPacks.ts';
 
 import type { DiaryDrawingCanvasRef } from './DiaryDrawingCanvas.tsx';
 
@@ -29,9 +38,17 @@ import type { PaperType } from './DiaryPaperSelector.tsx';
 
 import DiaryTextItem from './DiaryTextItem.tsx';
 
-import { createDiaryText, type DiaryText, type DiaryTextFrame, type DiaryTextStyle } from './diaryText.ts';
+import {
+  createDiaryText,
+  type DiaryText,
+  type DiaryTextFrame,
+  type DiaryTextStyle,
+} from './diaryText.ts';
 
-import { type SavedDiaryItem, TICKET_DIARY_VERSION } from '../../../../features/ticket/types.ts';
+import {
+  type SavedDiaryItem,
+  TICKET_DIARY_VERSION,
+} from '../../../../features/ticket/types.ts';
 
 import {
   getTicketDiaryData,
@@ -58,31 +75,31 @@ interface TicketDiaryPageProps {
 
 export type DiaryItem =
   | {
-  type: 'photo';
-  data: DiaryPhoto;
-}
+      type: 'photo';
+      data: DiaryPhoto;
+    }
   | {
-  type: 'sticker';
-  data: DiarySticker;
-}
+      type: 'sticker';
+      data: DiarySticker;
+    }
   | {
-  type: 'text';
-  data: DiaryText;
-};
+      type: 'text';
+      data: DiaryText;
+    };
 
 export type SelectedDiaryItem =
   | {
-  type: 'photo';
-  id: string;
-}
+      type: 'photo';
+      id: string;
+    }
   | {
-  type: 'sticker';
-  id: string;
-}
+      type: 'sticker';
+      id: string;
+    }
   | {
-  type: 'text';
-  id: string;
-}
+      type: 'text';
+      id: string;
+    }
   | null;
 
 interface DiarySaveSnapshot {
@@ -230,7 +247,7 @@ async function restoreDiaryItems(
 
           size,
         );
-      }
+      } catch (error) {}
     }),
   );
 
@@ -298,16 +315,16 @@ function createLayerPanelItems(
       item.type === 'text'
         ? item.data.text.trim() || '빈 텍스트'
         : item.type === 'sticker'
-          ? '스티커'
-          : '사진',
+        ? '스티커'
+        : '사진',
     imageSource:
       item.type === 'photo'
         ? {
-          uri: item.data.uri,
-        }
+            uri: item.data.uri,
+          }
         : item.type === 'sticker'
-          ? item.data.source
-          : undefined,
+        ? item.data.source
+        : undefined,
   }));
 
   if (hasDrawing) {
@@ -344,14 +361,11 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
 
   const enqueueDiarySaveRef = useRef<
     (snapshot: DiarySaveSnapshot) => Promise<void>
-  >(async () => {
-  });
+  >(async () => {});
 
-  const showSnackbarRef = useRef<(message: string) => void>(() => {
-  });
+  const showSnackbarRef = useRef<(message: string) => void>(() => {});
 
-  const showAutosaveErrorRef = useRef<(error: unknown) => void>(() => {
-  });
+  const showAutosaveErrorRef = useRef<(error: unknown) => void>(() => {});
 
   const snackbarTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -431,8 +445,8 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
   const selectedText =
     selectedItem?.type === 'text'
       ? items.find(
-        item => item.type === 'text' && item.data.id === selectedItem.id,
-      )
+          item => item.type === 'text' && item.data.id === selectedItem.id,
+        )
       : null;
 
   const hasDrawing = drawingBase64Ref.current !== null;
@@ -445,8 +459,8 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
     selectedTool === 'drawing'
       ? DRAWING_LAYER_ID
       : selectedItem
-        ? `${selectedItem.type}:${selectedItem.id}`
-        : null;
+      ? `${selectedItem.type}:${selectedItem.id}`
+      : null;
 
   const showSnackbar = (message: string) => {
     if (!isMountedRef.current) {
@@ -795,8 +809,8 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
   };
 
   const handleEditorCanvasRegionLayout = ({
-                                            nativeEvent,
-                                          }: LayoutChangeEvent) => {
+    nativeEvent,
+  }: LayoutChangeEvent) => {
     const { width, height } = nativeEvent.layout;
 
     setEditorCanvasRegionSize({
@@ -857,9 +871,9 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
       currentItems.map(item =>
         item.type === 'photo' && item.data.id === changedPhoto.id
           ? {
-            type: 'photo',
-            data: changedPhoto,
-          }
+              type: 'photo',
+              data: changedPhoto,
+            }
           : item,
       ),
     );
@@ -889,9 +903,9 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
       currentItems.map(item =>
         item.type === 'sticker' && item.data.id === changedSticker.id
           ? {
-            type: 'sticker',
-            data: changedSticker,
-          }
+              type: 'sticker',
+              data: changedSticker,
+            }
           : item,
       ),
     );
@@ -970,13 +984,13 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
       currentItems.map(item =>
         item.type === 'text' && item.data.id === textId
           ? {
-            type: 'text',
-            data: {
-              ...item.data,
+              type: 'text',
+              data: {
+                ...item.data,
 
-              text: value,
-            },
-          }
+                text: value,
+              },
+            }
           : item,
       ),
     );
@@ -987,13 +1001,13 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
       currentItems.map(item =>
         item.type === 'text' && item.data.id === textId
           ? {
-            type: 'text',
-            data: {
-              ...item.data,
+              type: 'text',
+              data: {
+                ...item.data,
 
-              ...frame,
-            },
-          }
+                ...frame,
+              },
+            }
           : item,
       ),
     );
@@ -1004,13 +1018,13 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
       currentItems.map(item =>
         item.type === 'text' && item.data.id === textId
           ? {
-            type: 'text',
-            data: {
-              ...item.data,
+              type: 'text',
+              data: {
+                ...item.data,
 
-              height,
-            },
-          }
+                height,
+              },
+            }
           : item,
       ),
     );
@@ -1045,16 +1059,16 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
       currentItems.map(item =>
         item.type === 'text' && item.data.id === selectedTextId
           ? {
-            type: 'text',
-            data: {
-              ...item.data,
-              style: {
-                ...item.data.style,
+              type: 'text',
+              data: {
+                ...item.data,
+                style: {
+                  ...item.data.style,
 
-                ...patch,
+                  ...patch,
+                },
               },
-            },
-          }
+            }
           : item,
       ),
     );

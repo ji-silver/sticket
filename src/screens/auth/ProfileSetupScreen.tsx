@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronRight } from 'lucide-react-native';
+import { ChevronRight, Check } from 'lucide-react-native';
 
 import AppText from '../../components/common/AppText.tsx';
 import TeamSelectSheet from '../home/components/TeamSelectSheet.tsx';
@@ -26,13 +26,14 @@ function ProfileSetupScreen() {
     profile?.favorite_team?.name ?? '',
   );
   const [isTeamSheetOpen, setIsTeamSheetOpen] = useState(false);
+  const [isAgreed, setIsAgreed] = useState(false);
 
   const [isSaving, setIsSaving] = useState(false);
 
   const trimmedNickname = nickname.trim();
   const isNicknameValid =
     trimmedNickname.length >= 2 && trimmedNickname.length <= 10;
-  const isFormValid = isNicknameValid && favoriteTeam.length > 0;
+  const isFormValid = isNicknameValid && favoriteTeam.length > 0 && isAgreed;
   const showNicknameError = hasBlurredNickname && !isNicknameValid;
 
   const handleSelectTeam = (team: string) => {
@@ -168,6 +169,21 @@ function ProfileSetupScreen() {
         </ScrollView>
 
         <View style={styles.footer}>
+          <Pressable
+            style={styles.agreementRow}
+            onPress={() => setIsAgreed(!isAgreed)}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: isAgreed }}
+          >
+            <View style={[styles.checkbox, isAgreed && styles.checkboxActive]}>
+              {isAgreed && <Check size={14} color={colors.surface} strokeWidth={3} />}
+            </View>
+            <AppText style={styles.agreementText}>
+              <AppText style={styles.agreementHighlight}>(필수) </AppText>
+              만 14세 이상이며, 이용약관 및 개인정보 처리방침에 동의합니다.
+            </AppText>
+          </Pressable>
+
           <Pressable
             style={({ pressed }) => [
               styles.startButton,
@@ -340,5 +356,37 @@ const styles = StyleSheet.create({
   },
   startButtonTextDisabled: {
     color: colors.textPlaceholder,
+  },
+  agreementRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingHorizontal: 4,
+    gap: 10,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+  },
+  checkboxActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  agreementText: {
+    flex: 1,
+    fontSize: 13,
+    fontFamily: fonts.medium,
+    color: colors.textSecondary,
+    lineHeight: 18,
+  },
+  agreementHighlight: {
+    color: colors.primary,
+    fontFamily: fonts.bold,
   },
 });
