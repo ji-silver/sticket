@@ -32,7 +32,7 @@
 		B10000000000000000000001 /* Pretendard-Black.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Pretendard-Black.otf"; sourceTree = "<group>"; };
 		B10000000000000000000002 /* Pretendard-Bold.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Pretendard-Bold.otf"; sourceTree = "<group>"; };
 		B10000000000000000000005 /* Pretendard-Regular.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Pretendard-Regular.otf"; sourceTree = "<group>"; };
-		B10000000000000000000006 /* KBLJump_EB_Condensed.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KBLJump_EB_Condensed.otf"; sourceTree = "<group>"; };
+		B10000000000000000000006 /* KBLJump_EB_Condensed.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = KBLJump_EB_Condensed.otf; sourceTree = "<group>"; };
 		C289C00330190985006AC1BA /* Sticket.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = Sticket.entitlements; path = Sticket/Sticket.entitlements; sourceTree = "<group>"; };
 		D20000000000000000000001 /* PencilKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = PencilKit.framework; path = System/Library/Frameworks/PencilKit.framework; sourceTree = SDKROOT; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
@@ -60,7 +60,7 @@
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
-				C10000000000000000000001 /* Fonts */,
+				C10000000000000000000001 /* Sticket/Fonts */,
 			);
 			name = Sticket;
 			sourceTree = "<group>";
@@ -113,7 +113,7 @@
 			path = Pods;
 			sourceTree = "<group>";
 		};
-		C10000000000000000000001 /* Fonts */ = {
+		C10000000000000000000001 /* Sticket/Fonts */ = {
 			isa = PBXGroup;
 			children = (
 				B10000000000000000000006 /* KBLJump_EB_Condensed.otf */,
@@ -221,9 +221,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Sticket/Pods-Sticket-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Sticket/Pods-Sticket-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -260,9 +264,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Sticket/Pods-Sticket-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Sticket/Pods-Sticket-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -299,7 +307,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -330,7 +338,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
