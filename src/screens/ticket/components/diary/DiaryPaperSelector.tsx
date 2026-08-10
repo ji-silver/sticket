@@ -69,7 +69,7 @@ function DiaryPaperSelector({ paperType, onSelect }: DiaryPaperSelectorProps) {
               paperType === 'grid' && styles.selectedPreview,
             ]}
           >
-            <GridPaper />
+            <GridPaper isPreview />
           </View>
 
           <AppText
@@ -99,7 +99,7 @@ function DiaryPaperSelector({ paperType, onSelect }: DiaryPaperSelectorProps) {
               paperType === 'lined' && styles.selectedPreview,
             ]}
           >
-            <LinedPaper />
+            <LinedPaper isPreview />
           </View>
 
           <AppText

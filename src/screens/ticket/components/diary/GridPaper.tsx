@@ -8,29 +8,41 @@ import {
 } from './diaryLayout.ts';
 
 const GRID_SIZE = 20;
+const PREVIEW_GRID_SIZE = 8;
 const GRID_LINE_COLOR = '#7A8793';
+const PREVIEW_GRID_LINE_COLOR = '#D9DEE3';
 
-function GridPaper() {
+interface GridPaperProps {
+  isPreview?: boolean;
+}
+
+function GridPaper({ isPreview = false }: GridPaperProps) {
+  const gridSize = isPreview ? PREVIEW_GRID_SIZE : GRID_SIZE;
+
   return (
     <View pointerEvents="none" style={styles.container}>
       <Svg
         width="100%"
         height="100%"
-        viewBox={`0 0 ${REFERENCE_DIARY_PAGE_WIDTH} ${REFERENCE_DIARY_PAGE_HEIGHT}`}
+        viewBox={
+          isPreview
+            ? undefined
+            : `0 0 ${REFERENCE_DIARY_PAGE_WIDTH} ${REFERENCE_DIARY_PAGE_HEIGHT}`
+        }
         preserveAspectRatio="none"
       >
         <Defs>
           <Pattern
             id="diaryGrid"
-            width={GRID_SIZE}
-            height={GRID_SIZE}
+            width={gridSize}
+            height={gridSize}
             patternUnits="userSpaceOnUse"
           >
             <Path
-              d={`M ${GRID_SIZE} 0 V ${GRID_SIZE} H 0`}
+              d={`M ${gridSize} 0 V ${gridSize} H 0`}
               fill="none"
-              stroke={GRID_LINE_COLOR}
-              strokeWidth={StyleSheet.hairlineWidth}
+              stroke={isPreview ? PREVIEW_GRID_LINE_COLOR : GRID_LINE_COLOR}
+              strokeWidth={isPreview ? 1 : StyleSheet.hairlineWidth}
             />
           </Pattern>
         </Defs>

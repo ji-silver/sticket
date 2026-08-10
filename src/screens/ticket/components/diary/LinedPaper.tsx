@@ -7,16 +7,27 @@ import {
 } from './diaryLayout.ts';
 
 const LINE_SPACING = 28;
+const PREVIEW_LINE_SPACING = 9;
 const LINE_COLOR = '#E1E4E8';
 const LINE_INDEXES = Array.from({ length: 40 }, (_, index) => index + 1);
 
-function LinedPaper() {
+interface LinedPaperProps {
+  isPreview?: boolean;
+}
+
+function LinedPaper({ isPreview = false }: LinedPaperProps) {
+  const lineSpacing = isPreview ? PREVIEW_LINE_SPACING : LINE_SPACING;
+
   return (
     <View pointerEvents="none" style={styles.container}>
       <Svg
         width="100%"
         height="100%"
-        viewBox={`0 0 ${REFERENCE_DIARY_PAGE_WIDTH} ${REFERENCE_DIARY_PAGE_HEIGHT}`}
+        viewBox={
+          isPreview
+            ? undefined
+            : `0 0 ${REFERENCE_DIARY_PAGE_WIDTH} ${REFERENCE_DIARY_PAGE_HEIGHT}`
+        }
         preserveAspectRatio="none"
       >
         <Rect width="100%" height="100%" fill={colors.surface} />
@@ -25,9 +36,9 @@ function LinedPaper() {
           <Line
             key={index}
             x1="0"
-            y1={index * LINE_SPACING}
+            y1={index * lineSpacing}
             x2="100%"
-            y2={index * LINE_SPACING}
+            y2={index * lineSpacing}
             stroke={LINE_COLOR}
             strokeWidth={1}
           />
