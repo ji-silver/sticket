@@ -36,6 +36,21 @@ export interface Point {
   y: number;
 }
 
+export function getInitialPhotoSize(
+  sourceSize: EditorSize,
+  editorSize: EditorSize,
+): EditorSize {
+  const ratio = Math.min(
+    (editorSize.width * 0.5) / sourceSize.width,
+    (editorSize.height * 0.5) / sourceSize.height,
+  );
+
+  return {
+    width: sourceSize.width * ratio,
+    height: sourceSize.height * ratio,
+  };
+}
+
 export function clamp(value: number, minimum: number, maximum: number) {
   'worklet';
 

@@ -3,6 +3,7 @@ import ImagePicker from 'react-native-image-crop-picker';
 import {
   type DiaryPhoto,
   type EditorSize,
+  getInitialPhotoSize,
   translate3,
 } from './photoTransform.ts';
 
@@ -48,15 +49,12 @@ export async function selectDiaryPhoto(
     if (!image.data) {
       throw new Error('선택한 사진 데이터를 불러올 수 없습니다.');
     }
-    const maximumPhotoWidth = editorSize.width * 0.5;
-    const maximumPhotoHeight = editorSize.height * 0.5;
-    const initialRatio = Math.min(
-      maximumPhotoWidth / image.width,
-      maximumPhotoHeight / image.height,
-      1,
+    const initialSize = getInitialPhotoSize(
+      { width: image.width, height: image.height },
+      editorSize,
     );
-    const photoWidth = image.width * initialRatio;
-    const photoHeight = image.height * initialRatio;
+    const photoWidth = initialSize.width;
+    const photoHeight = initialSize.height;
     const initialX = (editorSize.width - photoWidth) / 2;
     const initialY = (editorSize.height - photoHeight) / 2;
 

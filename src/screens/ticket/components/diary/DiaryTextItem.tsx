@@ -36,7 +36,7 @@ const HANDLE_TOUCH_SIZE = 44;
 const ACTION_HANDLE_SIZE = 24;
 const RESIZE_HANDLE_WIDTH = 18;
 const RESIZE_HANDLE_HEIGHT = 28;
-const DELETE_HANDLE_CORNER_OFFSET = 10;
+const HANDLE_CORNER_OFFSET = 10;
 const ROTATION_HANDLE_OFFSET = 28;
 
 interface DiaryTextItemProps {
@@ -372,8 +372,8 @@ function DiaryTextItem({
 
     const point = getDiaryTextPoint(
       frame,
-      -DELETE_HANDLE_CORNER_OFFSET,
-      -DELETE_HANDLE_CORNER_OFFSET,
+      -HANDLE_CORNER_OFFSET,
+      -HANDLE_CORNER_OFFSET,
     );
 
     return {
@@ -394,7 +394,11 @@ function DiaryTextItem({
   const leftHandleStyle = useAnimatedStyle(() => {
     const frame = displayFrame.value;
 
-    const point = getDiaryTextPoint(frame, 0, frame.height / 2);
+    const point = getDiaryTextPoint(
+      frame,
+      -HANDLE_CORNER_OFFSET,
+      frame.height + HANDLE_CORNER_OFFSET,
+    );
 
     return {
       transform: [
@@ -414,7 +418,11 @@ function DiaryTextItem({
   const rightHandleStyle = useAnimatedStyle(() => {
     const frame = displayFrame.value;
 
-    const point = getDiaryTextPoint(frame, frame.width, frame.height / 2);
+    const point = getDiaryTextPoint(
+      frame,
+      frame.width + HANDLE_CORNER_OFFSET,
+      frame.height + HANDLE_CORNER_OFFSET,
+    );
 
     return {
       transform: [
@@ -583,8 +591,8 @@ function DiaryTextItem({
             textAlign={textItem.style.align}
             placeholder="텍스트 입력"
             placeholderTextColor={colors.textPlaceholder}
-            selectionColor={colors.primary}
-            cursorColor={colors.primary}
+            selectionColor={colors.accentBlue}
+            cursorColor={colors.accentBlue}
             onChangeText={onChangeText}
             onSelectionChange={handleTextSelectionChange}
             onBlur={handleTextInputBlur}
@@ -633,10 +641,9 @@ function DiaryTextItem({
                 style={[
                   styles.handleButton,
                   styles.actionHandle,
-                  styles.deleteButton,
                 ]}
               >
-                <X size={12} color="#D92D20" strokeWidth={2} />
+                <X size={12} color={colors.accentBlue} strokeWidth={2} />
               </View>
             </Animated.View>
           </GestureDetector>
@@ -651,7 +658,7 @@ function DiaryTextItem({
               <View style={[styles.handleButton, styles.resizeButton]}>
                 <MoveHorizontal
                   size={12}
-                  color={colors.onPrimary}
+                  color={colors.accentBlue}
                   strokeWidth={2}
                 />
               </View>
@@ -668,7 +675,7 @@ function DiaryTextItem({
               <View style={[styles.handleButton, styles.resizeButton]}>
                 <MoveHorizontal
                   size={12}
-                  color={colors.onPrimary}
+                  color={colors.accentBlue}
                   strokeWidth={2}
                 />
               </View>
@@ -683,7 +690,7 @@ function DiaryTextItem({
               style={[styles.handleTouchArea, rotationHandleStyle]}
             >
               <View style={[styles.handleButton, styles.actionHandle]}>
-                <RotateCw size={12} color={colors.primary} strokeWidth={2} />
+                <RotateCw size={12} color={colors.accentBlue} strokeWidth={2} />
               </View>
             </Animated.View>
           </GestureDetector>
@@ -736,7 +743,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     borderWidth: 1.25,
-    borderColor: colors.primary,
+    borderColor: colors.accentBlue,
   },
 
   rotationConnector: {
@@ -745,7 +752,7 @@ const styles = StyleSheet.create({
     left: 0,
     width: 1,
     height: ROTATION_HANDLE_OFFSET,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accentBlue,
     opacity: 0.6,
   },
 
@@ -765,7 +772,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.accentBlueBorder,
     backgroundColor: colors.surface,
     boxShadow: '0 2px 8px rgba(24, 27, 32, 0.14)',
   },
@@ -775,16 +782,9 @@ const styles = StyleSheet.create({
     height: ACTION_HANDLE_SIZE,
   },
 
-  deleteButton: {
-    borderColor: '#F2C8C4',
-    backgroundColor: '#FFF7F6',
-  },
-
   resizeButton: {
     width: RESIZE_HANDLE_WIDTH,
     height: RESIZE_HANDLE_HEIGHT,
     borderRadius: 6,
-    borderColor: colors.primary,
-    backgroundColor: colors.primary,
   },
 });

@@ -10,6 +10,7 @@ import {
 } from 'react';
 import { AppState } from 'react-native';
 import type { Session } from '@supabase/supabase-js';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { supabase } from '../../lib/supabase';
 import { getProfile } from '../profile/profile.service';
@@ -25,6 +26,7 @@ function getErrorMessage(error: unknown) {
 }
 
 export function AuthProvider({ children }: PropsWithChildren) {
+  const queryClient = useQueryClient();
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   const [profile, setProfile] = useState<UserProfile | null | undefined>(
     undefined,
@@ -93,6 +95,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, [loadSession]);
 
   const userId = session?.user.id;
+
+  useEffect(() => {
+    queryClient.clear();
+  }, [queryClient, userId]);
 
   useEffect(() => {
     if (!userId) {

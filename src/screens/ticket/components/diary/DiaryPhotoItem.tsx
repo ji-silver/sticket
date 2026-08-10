@@ -1,8 +1,5 @@
-import { PixelRatio } from 'react-native';
 import DiaryImageItem from './DiaryImageItem.tsx';
 import {
-  getMaximumSourceScale,
-  MAXIMUM_PHOTO_SCALE,
   type DiaryPhoto,
   type EditorSize,
 } from './photoTransform.ts';
@@ -28,16 +25,6 @@ function DiaryPhotoItem({
   onChange,
   onDelete,
 }: DiaryPhotoItemProps) {
-  const maximumScale = getMaximumSourceScale(
-    photo.sourceWidth,
-    photo.sourceHeight,
-    photo.width,
-    photo.height,
-    editorScale,
-    PixelRatio.get(),
-    MAXIMUM_PHOTO_SCALE,
-  );
-
   return (
     <DiaryImageItem
       source={{ uri: photo.uri }}
@@ -47,7 +34,6 @@ function DiaryPhotoItem({
       editorSize={editorSize}
       displayScale={editorScale}
       displayScaleY={displayScaleY}
-      maximumScale={maximumScale}
       isSelected={isSelected}
       itemLabel="사진"
       accessibilityLabel="다이어리 사진"

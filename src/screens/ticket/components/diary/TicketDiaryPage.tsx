@@ -346,6 +346,7 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
 
   const isMountedRef = useRef(true);
   const isAutosaveReadyRef = useRef(false);
+  const hasLoadedDiaryRef = useRef(false);
   const isRestoringDrawingRef = useRef(false);
   const drawingCaptureVersionRef = useRef(0);
   const drawingBase64Ref = useRef<string | null>(null);
@@ -608,6 +609,7 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
     async function loadDiary() {
       setIsLoading(true);
       isAutosaveReadyRef.current = false;
+      hasLoadedDiaryRef.current = false;
       latestSnapshotRef.current = null;
       nextSnapshotVersionRef.current = 0;
       lastQueuedVersionRef.current = 0;
@@ -684,6 +686,8 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
         } finally {
           isRestoringDrawingRef.current = false;
         }
+
+        hasLoadedDiaryRef.current = true;
       } catch (error) {
         if (!isActive) {
           return;
@@ -715,7 +719,7 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
   }, [ticketId, initializeDiary, resetDiary]);
 
   useEffect(() => {
-    if (isLoading) {
+    if (isLoading || !hasLoadedDiaryRef.current) {
       return;
     }
 
@@ -1122,6 +1126,8 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
     }
 
     const selectedPhoto = await selectDiaryPhoto(activeEditorSize);
+
+    setSelectedTool(null);
 
     if (selectedPhoto === null) {
       return;

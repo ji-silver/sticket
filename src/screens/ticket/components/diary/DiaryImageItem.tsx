@@ -7,6 +7,7 @@ import {
 import {
   GestureDetector,
   usePanGesture,
+  usePinchGesture,
   useSimultaneousGestures,
   useTapGesture,
 } from 'react-native-gesture-handler';
@@ -227,6 +228,38 @@ function DiaryImageItem({
     onDeactivate: commitCurrentTransform,
   });
 
+  const pinchGesture = usePinchGesture({
+    enabled: isSelected,
+
+    onActivate: () => {
+      resizeStartScale.value = Math.max(
+        Math.hypot(matrix.value[0], matrix.value[1]),
+        0.0001,
+      );
+    },
+
+    onUpdate: event => {
+      const savedRotation = Math.atan2(matrix.value[1], matrix.value[0]);
+      const maximumScaleForResize = getMaximumPhotoScale(
+        width,
+        height,
+        savedRotation,
+        editorSize,
+        maximumScale,
+      );
+      const minimumScale = Math.min(MINIMUM_PHOTO_SCALE, maximumScaleForResize);
+      const nextScale = clamp(
+        resizeStartScale.value * event.scale,
+        minimumScale,
+        maximumScaleForResize,
+      );
+
+      scale.value = nextScale / resizeStartScale.value;
+    },
+
+    onDeactivate: commitCurrentTransform,
+  });
+
   const handleGestures = [deleteGesture, resizeGesture, rotationHandleGesture];
 
   const selectGesture = useTapGesture({
@@ -256,7 +289,11 @@ function DiaryImageItem({
     onDeactivate: commitCurrentTransform,
   });
 
-  const itemGesture = useSimultaneousGestures(selectGesture, panGesture);
+  const itemGesture = useSimultaneousGestures(
+    selectGesture,
+    panGesture,
+    pinchGesture,
+  );
 
   const displayMatrix = useDerivedValue(() =>
     constrainPhotoPosition(
@@ -443,8 +480,8 @@ function DiaryImageItem({
               onAccessibilityTap={onDelete}
               style={[styles.handleTouchArea, deleteHandleStyle]}
             >
-              <View style={[styles.handleButton, styles.deleteButton]}>
-                <X size={14} color="#D92D20" strokeWidth={2.1} />
+              <View style={styles.handleButton}>
+                <X size={14} color={colors.accentBlue} strokeWidth={2.1} />
               </View>
             </Animated.View>
           </GestureDetector>
@@ -458,7 +495,11 @@ function DiaryImageItem({
               style={[styles.handleTouchArea, rotationHandleStyle]}
             >
               <View style={styles.handleButton}>
-                <RotateCw size={14} color={colors.primary} strokeWidth={2.1} />
+                <RotateCw
+                  size={14}
+                  color={colors.accentBlue}
+                  strokeWidth={2.1}
+                />
               </View>
             </Animated.View>
           </GestureDetector>
@@ -471,10 +512,10 @@ function DiaryImageItem({
               accessibilityHint={`드래그하여 ${itemLabel} 크기를 변경합니다`}
               style={[styles.handleTouchArea, resizeHandleStyle]}
             >
-              <View style={[styles.handleButton, styles.resizeButton]}>
+              <View style={styles.handleButton}>
                 <MoveDiagonal2
                   size={14}
-                  color={colors.onPrimary}
+                  color={colors.accentBlue}
                   strokeWidth={2.1}
                 />
               </View>
@@ -505,7 +546,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     borderWidth: 1.25,
-    borderColor: colors.primary,
+    borderColor: colors.accentBlue,
   },
   rotationConnector: {
     position: 'absolute',
@@ -513,7 +554,7 @@ const styles = StyleSheet.create({
     left: 0,
     width: 1,
     height: ROTATION_HANDLE_OFFSET,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accentBlue,
     opacity: 0.6,
   },
   handleTouchArea: {
@@ -533,16 +574,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.accentBlueBorder,
     backgroundColor: colors.surface,
     boxShadow: '0 3px 10px rgba(24, 27, 32, 0.16)',
-  },
-  deleteButton: {
-    borderColor: '#F2C8C4',
-    backgroundColor: '#FFF7F6',
-  },
-  resizeButton: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primary,
   },
 });
