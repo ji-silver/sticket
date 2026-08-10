@@ -1,4 +1,8 @@
-import { getInitialPhotoSize } from './photoTransform.ts';
+import {
+  getDisplayedPhotoPoint,
+  getInitialPhotoSize,
+  type Matrix3,
+} from './photoTransform.ts';
 
 describe('getInitialPhotoSize', () => {
   it('작은 원본도 다이어리 절반 크기로 확대한다', () => {
@@ -17,5 +21,20 @@ describe('getInitialPhotoSize', () => {
         { width: 900, height: 1200 },
       ),
     ).toEqual({ width: 300, height: 600 });
+  });
+});
+
+describe('getDisplayedPhotoPoint', () => {
+  it('서로 다른 세로 위치 배율에서도 회전된 이미지 모서리를 정확히 계산한다', () => {
+    const matrix: Matrix3 = [0, 1, 0, -1, 0, 0, 30, 40, 1];
+
+    expect(getDisplayedPhotoPoint(matrix, 200, 100, 0, 0, 2, 3)).toEqual({
+      x: 360,
+      y: 20,
+    });
+    expect(getDisplayedPhotoPoint(matrix, 200, 100, 200, 100, 2, 3)).toEqual({
+      x: 160,
+      y: 420,
+    });
   });
 });

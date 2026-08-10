@@ -24,8 +24,8 @@ import {
   clamp,
   constrainPhotoPosition,
   type EditorSize,
+  getDisplayedPhotoPoint,
   getMaximumPhotoScale,
-  getTransformedPhotoPoint,
   type Matrix3,
   MINIMUM_PHOTO_SCALE,
   MAXIMUM_PHOTO_SCALE,
@@ -35,7 +35,6 @@ import {
 
 const ITEM_HANDLE_TOUCH_SIZE = 44;
 const ITEM_HANDLE_SIZE = 28;
-const ROTATION_HANDLE_OFFSET = 28;
 
 interface DiaryImageItemProps {
   source: ImageSourcePropType;
@@ -163,7 +162,7 @@ function DiaryImageItem({
       );
       const currentDistance = Math.hypot(
         startVector.x + event.translationX / safeDisplayScale,
-        startVector.y + event.translationY / safeDisplayScaleY,
+        startVector.y + event.translationY / safeDisplayScale,
       );
       const savedRotation = Math.atan2(matrix.value[1], matrix.value[0]);
       const maximumScaleForResize = getMaximumPhotoScale(
@@ -195,7 +194,7 @@ function DiaryImageItem({
         0.0001,
       );
       const savedRotation = Math.atan2(matrix.value[1], matrix.value[0]);
-      const handleDistance = (height / 2) * savedScale + ROTATION_HANDLE_OFFSET;
+      const handleDistance = (height / 2) * savedScale;
       const handleAngle = savedRotation - Math.PI / 2;
 
       rotationStartVector.value = {
@@ -208,7 +207,7 @@ function DiaryImageItem({
       const startVector = rotationStartVector.value;
       const startAngle = Math.atan2(startVector.y, startVector.x);
       const currentAngle = Math.atan2(
-        startVector.y + event.translationY / safeDisplayScaleY,
+        startVector.y + event.translationY / safeDisplayScale,
         startVector.x + event.translationX / safeDisplayScale,
       );
       let angleDelta = currentAngle - startAngle;
@@ -339,15 +338,23 @@ function DiaryImageItem({
   const deleteHandleStyle = useAnimatedStyle(() => {
     const matrixValue = displayMatrix.value;
     const rotationValue = Math.atan2(matrixValue[1], matrixValue[0]);
-    const point = getTransformedPhotoPoint(matrixValue, width, height, 0, 0);
+    const point = getDisplayedPhotoPoint(
+      matrixValue,
+      width,
+      height,
+      0,
+      0,
+      safeDisplayScale,
+      safeDisplayScaleY,
+    );
 
     return {
       transform: [
         {
-          translateX: point.x * safeDisplayScale - ITEM_HANDLE_TOUCH_SIZE / 2,
+          translateX: point.x - ITEM_HANDLE_TOUCH_SIZE / 2,
         },
         {
-          translateY: point.y * safeDisplayScaleY - ITEM_HANDLE_TOUCH_SIZE / 2,
+          translateY: point.y - ITEM_HANDLE_TOUCH_SIZE / 2,
         },
         { rotateZ: `${rotationValue}rad` },
       ],
@@ -357,54 +364,23 @@ function DiaryImageItem({
   const rotationHandleStyle = useAnimatedStyle(() => {
     const matrixValue = displayMatrix.value;
     const rotationValue = Math.atan2(matrixValue[1], matrixValue[0]);
-    const topCenter = getTransformedPhotoPoint(
+    const point = getDisplayedPhotoPoint(
       matrixValue,
       width,
       height,
       width / 2,
       0,
+      safeDisplayScale,
+      safeDisplayScaleY,
     );
-    const point = {
-      x: topCenter.x + Math.sin(rotationValue) * ROTATION_HANDLE_OFFSET,
-      y: topCenter.y - Math.cos(rotationValue) * ROTATION_HANDLE_OFFSET,
-    };
 
     return {
       transform: [
         {
-          translateX: point.x * safeDisplayScale - ITEM_HANDLE_TOUCH_SIZE / 2,
+          translateX: point.x - ITEM_HANDLE_TOUCH_SIZE / 2,
         },
         {
-          translateY: point.y * safeDisplayScaleY - ITEM_HANDLE_TOUCH_SIZE / 2,
-        },
-        { rotateZ: `${rotationValue}rad` },
-      ],
-    };
-  });
-
-  const rotationConnectorStyle = useAnimatedStyle(() => {
-    const matrixValue = displayMatrix.value;
-    const rotationValue = Math.atan2(matrixValue[1], matrixValue[0]);
-    const topCenter = getTransformedPhotoPoint(
-      matrixValue,
-      width,
-      height,
-      width / 2,
-      0,
-    );
-    const middleX =
-      topCenter.x + (Math.sin(rotationValue) * ROTATION_HANDLE_OFFSET) / 2;
-    const middleY =
-      topCenter.y - (Math.cos(rotationValue) * ROTATION_HANDLE_OFFSET) / 2;
-
-    return {
-      height: ROTATION_HANDLE_OFFSET * safeDisplayScale,
-      transform: [
-        { translateX: middleX * safeDisplayScale - 0.5 },
-        {
-          translateY:
-            middleY * safeDisplayScaleY -
-            (ROTATION_HANDLE_OFFSET * safeDisplayScale) / 2,
+          translateY: point.y - ITEM_HANDLE_TOUCH_SIZE / 2,
         },
         { rotateZ: `${rotationValue}rad` },
       ],
@@ -414,21 +390,23 @@ function DiaryImageItem({
   const resizeHandleStyle = useAnimatedStyle(() => {
     const matrixValue = displayMatrix.value;
     const rotationValue = Math.atan2(matrixValue[1], matrixValue[0]);
-    const point = getTransformedPhotoPoint(
+    const point = getDisplayedPhotoPoint(
       matrixValue,
       width,
       height,
       width,
       height,
+      safeDisplayScale,
+      safeDisplayScaleY,
     );
 
     return {
       transform: [
         {
-          translateX: point.x * safeDisplayScale - ITEM_HANDLE_TOUCH_SIZE / 2,
+          translateX: point.x - ITEM_HANDLE_TOUCH_SIZE / 2,
         },
         {
-          translateY: point.y * safeDisplayScaleY - ITEM_HANDLE_TOUCH_SIZE / 2,
+          translateY: point.y - ITEM_HANDLE_TOUCH_SIZE / 2,
         },
         { rotateZ: `${rotationValue}rad` },
       ],
@@ -466,11 +444,6 @@ function DiaryImageItem({
 
       {isSelected ? (
         <>
-          <Animated.View
-            pointerEvents="none"
-            style={[styles.rotationConnector, rotationConnectorStyle]}
-          />
-
           <GestureDetector gesture={deleteGesture}>
             <Animated.View
               accessible
@@ -481,7 +454,7 @@ function DiaryImageItem({
               style={[styles.handleTouchArea, deleteHandleStyle]}
             >
               <View style={styles.handleButton}>
-                <X size={14} color={colors.accentBlue} strokeWidth={2.1} />
+                <X size={15} color={colors.accentBlue} strokeWidth={2.1} />
               </View>
             </Animated.View>
           </GestureDetector>
@@ -547,15 +520,6 @@ const styles = StyleSheet.create({
     left: 0,
     borderWidth: 1.25,
     borderColor: colors.accentBlue,
-  },
-  rotationConnector: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: 1,
-    height: ROTATION_HANDLE_OFFSET,
-    backgroundColor: colors.accentBlue,
-    opacity: 0.6,
   },
   handleTouchArea: {
     position: 'absolute',

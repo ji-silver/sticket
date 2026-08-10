@@ -278,3 +278,22 @@ export function getTransformedPhotoPoint(
     y: matrix[7] + photoHeight / 2 + sine * offsetX + cosine * offsetY,
   };
 }
+
+export function getDisplayedPhotoPoint(
+  matrix: Matrix3,
+  photoWidth: number,
+  photoHeight: number,
+  x: number,
+  y: number,
+  displayScale: number,
+  displayScaleY: number,
+): Point {
+  'worklet';
+
+  const point = getTransformedPhotoPoint(matrix, photoWidth, photoHeight, x, y);
+
+  return {
+    x: point.x * displayScale,
+    y: matrix[7] * displayScaleY + (point.y - matrix[7]) * displayScale,
+  };
+}

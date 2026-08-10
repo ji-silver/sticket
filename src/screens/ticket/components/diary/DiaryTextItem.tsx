@@ -26,7 +26,7 @@ import {
   constrainDiaryTextFrame,
   type DiaryText,
   type DiaryTextFrame,
-  getDiaryTextPoint,
+  getDisplayedDiaryTextPoint,
   MINIMUM_TEXT_HEIGHT,
   MINIMUM_TEXT_WIDTH,
 } from './diaryText.ts';
@@ -36,8 +36,6 @@ const HANDLE_TOUCH_SIZE = 44;
 const ACTION_HANDLE_SIZE = 24;
 const RESIZE_HANDLE_WIDTH = 18;
 const RESIZE_HANDLE_HEIGHT = 28;
-const HANDLE_CORNER_OFFSET = 10;
-const ROTATION_HANDLE_OFFSET = 28;
 
 interface DiaryTextItemProps {
   textItem: DiaryText;
@@ -188,7 +186,7 @@ function DiaryTextItem({
 
       const localTranslationX =
         (event.translationX / safeDisplayScale) * cosine +
-        (event.translationY / safeDisplayScaleY) * sine;
+        (event.translationY / safeDisplayScale) * sine;
 
       const maximumWidth = Math.max(MINIMUM_TEXT_WIDTH, editorSize.width - 24);
 
@@ -203,7 +201,8 @@ function DiaryTextItem({
 
       centerX.value = startFrame.centerX - cosine * (widthDifference / 2);
 
-      centerY.value = startFrame.centerY - sine * (widthDifference / 2);
+      centerY.value =
+        startFrame.centerY - sine * (widthDifference / 2) * verticalScaleRatio;
     },
 
     onDeactivate: commitCurrentFrame,
@@ -225,7 +224,7 @@ function DiaryTextItem({
 
       const localTranslationX =
         (event.translationX / safeDisplayScale) * cosine +
-        (event.translationY / safeDisplayScaleY) * sine;
+        (event.translationY / safeDisplayScale) * sine;
 
       const maximumWidth = Math.max(MINIMUM_TEXT_WIDTH, editorSize.width - 24);
 
@@ -240,7 +239,8 @@ function DiaryTextItem({
 
       centerX.value = startFrame.centerX + cosine * (widthDifference / 2);
 
-      centerY.value = startFrame.centerY + sine * (widthDifference / 2);
+      centerY.value =
+        startFrame.centerY + sine * (widthDifference / 2) * verticalScaleRatio;
     },
 
     onDeactivate: commitCurrentFrame,
@@ -250,7 +250,7 @@ function DiaryTextItem({
     enabled: isSelected,
 
     onActivate: () => {
-      const handleDistance = height.value / 2 + ROTATION_HANDLE_OFFSET;
+      const handleDistance = height.value / 2;
 
       const handleAngle = rotation.value - Math.PI / 2;
 
@@ -263,14 +263,14 @@ function DiaryTextItem({
     },
 
     onUpdate: event => {
-      const handleDistance = height.value / 2 + ROTATION_HANDLE_OFFSET;
+      const handleDistance = height.value / 2;
 
       const startX = Math.cos(rotationStartAngle.value) * handleDistance;
 
       const startY = Math.sin(rotationStartAngle.value) * handleDistance;
 
       const currentAngle = Math.atan2(
-        startY + event.translationY / safeDisplayScaleY,
+        startY + event.translationY / safeDisplayScale,
         startX + event.translationX / safeDisplayScale,
       );
 
@@ -370,19 +370,21 @@ function DiaryTextItem({
   const deleteHandleStyle = useAnimatedStyle(() => {
     const frame = displayFrame.value;
 
-    const point = getDiaryTextPoint(
+    const point = getDisplayedDiaryTextPoint(
       frame,
-      -HANDLE_CORNER_OFFSET,
-      -HANDLE_CORNER_OFFSET,
+      0,
+      0,
+      safeDisplayScale,
+      safeDisplayScaleY,
     );
 
     return {
       transform: [
         {
-          translateX: point.x * safeDisplayScale - HANDLE_TOUCH_SIZE / 2,
+          translateX: point.x - HANDLE_TOUCH_SIZE / 2,
         },
         {
-          translateY: point.y * safeDisplayScaleY - HANDLE_TOUCH_SIZE / 2,
+          translateY: point.y - HANDLE_TOUCH_SIZE / 2,
         },
         {
           rotateZ: `${frame.rotation}rad`,
@@ -394,19 +396,21 @@ function DiaryTextItem({
   const leftHandleStyle = useAnimatedStyle(() => {
     const frame = displayFrame.value;
 
-    const point = getDiaryTextPoint(
+    const point = getDisplayedDiaryTextPoint(
       frame,
-      -HANDLE_CORNER_OFFSET,
-      frame.height + HANDLE_CORNER_OFFSET,
+      0,
+      frame.height,
+      safeDisplayScale,
+      safeDisplayScaleY,
     );
 
     return {
       transform: [
         {
-          translateX: point.x * safeDisplayScale - HANDLE_TOUCH_SIZE / 2,
+          translateX: point.x - HANDLE_TOUCH_SIZE / 2,
         },
         {
-          translateY: point.y * safeDisplayScaleY - HANDLE_TOUCH_SIZE / 2,
+          translateY: point.y - HANDLE_TOUCH_SIZE / 2,
         },
         {
           rotateZ: `${frame.rotation}rad`,
@@ -418,19 +422,21 @@ function DiaryTextItem({
   const rightHandleStyle = useAnimatedStyle(() => {
     const frame = displayFrame.value;
 
-    const point = getDiaryTextPoint(
+    const point = getDisplayedDiaryTextPoint(
       frame,
-      frame.width + HANDLE_CORNER_OFFSET,
-      frame.height + HANDLE_CORNER_OFFSET,
+      frame.width,
+      frame.height,
+      safeDisplayScale,
+      safeDisplayScaleY,
     );
 
     return {
       transform: [
         {
-          translateX: point.x * safeDisplayScale - HANDLE_TOUCH_SIZE / 2,
+          translateX: point.x - HANDLE_TOUCH_SIZE / 2,
         },
         {
-          translateY: point.y * safeDisplayScaleY - HANDLE_TOUCH_SIZE / 2,
+          translateY: point.y - HANDLE_TOUCH_SIZE / 2,
         },
         {
           rotateZ: `${frame.rotation}rad`,
@@ -442,49 +448,21 @@ function DiaryTextItem({
   const rotationHandleStyle = useAnimatedStyle(() => {
     const frame = displayFrame.value;
 
-    const topCenter = getDiaryTextPoint(frame, frame.width / 2, 0);
-
-    const point = {
-      x: topCenter.x + Math.sin(frame.rotation) * ROTATION_HANDLE_OFFSET,
-      y: topCenter.y - Math.cos(frame.rotation) * ROTATION_HANDLE_OFFSET,
-    };
+    const point = getDisplayedDiaryTextPoint(
+      frame,
+      frame.width / 2,
+      0,
+      safeDisplayScale,
+      safeDisplayScaleY,
+    );
 
     return {
       transform: [
         {
-          translateX: point.x * safeDisplayScale - HANDLE_TOUCH_SIZE / 2,
+          translateX: point.x - HANDLE_TOUCH_SIZE / 2,
         },
         {
-          translateY: point.y * safeDisplayScaleY - HANDLE_TOUCH_SIZE / 2,
-        },
-        {
-          rotateZ: `${frame.rotation}rad`,
-        },
-      ],
-    };
-  });
-
-  const rotationConnectorStyle = useAnimatedStyle(() => {
-    const frame = displayFrame.value;
-
-    const topCenter = getDiaryTextPoint(frame, frame.width / 2, 0);
-
-    const middleX =
-      topCenter.x + (Math.sin(frame.rotation) * ROTATION_HANDLE_OFFSET) / 2;
-
-    const middleY =
-      topCenter.y - (Math.cos(frame.rotation) * ROTATION_HANDLE_OFFSET) / 2;
-
-    return {
-      height: ROTATION_HANDLE_OFFSET * safeDisplayScale,
-      transform: [
-        {
-          translateX: middleX * safeDisplayScale - 0.5,
-        },
-        {
-          translateY:
-            middleY * safeDisplayScaleY -
-            (ROTATION_HANDLE_OFFSET * safeDisplayScale) / 2,
+          translateY: point.y - HANDLE_TOUCH_SIZE / 2,
         },
         {
           rotateZ: `${frame.rotation}rad`,
@@ -570,35 +548,33 @@ function DiaryTextItem({
 
   const content = (
     <Animated.View style={[styles.textBox, textBoxAnimatedStyle]}>
-      {isEditing ? (
-        <>
-          <Text
-            accessible={false}
-            pointerEvents="none"
-            onLayout={handleTextMeasureLayout}
-            style={[styles.text, commonTextStyle, styles.textMeasure]}
-          >
-            {`${textItem.text}\u200B`}
-          </Text>
+      <Text
+        accessible={false}
+        pointerEvents="none"
+        onLayout={handleTextMeasureLayout}
+        style={[styles.text, commonTextStyle, styles.textMeasure]}
+      >
+        {`${textItem.text}\u200B`}
+      </Text>
 
-          <TextInput
-            key={textInputStyleKey}
-            ref={textInputRef}
-            autoFocus
-            multiline
-            scrollEnabled={false}
-            defaultValue={textItem.text}
-            textAlign={textItem.style.align}
-            placeholder="텍스트 입력"
-            placeholderTextColor={colors.textPlaceholder}
-            selectionColor={colors.accentBlue}
-            cursorColor={colors.accentBlue}
-            onChangeText={onChangeText}
-            onSelectionChange={handleTextSelectionChange}
-            onBlur={handleTextInputBlur}
-            style={[styles.text, styles.textInput, commonTextStyle]}
-          />
-        </>
+      {isEditing ? (
+        <TextInput
+          key={textInputStyleKey}
+          ref={textInputRef}
+          autoFocus
+          multiline
+          scrollEnabled={false}
+          defaultValue={textItem.text}
+          textAlign={textItem.style.align}
+          placeholder="텍스트 입력"
+          placeholderTextColor={colors.textPlaceholder}
+          selectionColor={colors.accentBlue}
+          cursorColor={colors.accentBlue}
+          onChangeText={onChangeText}
+          onSelectionChange={handleTextSelectionChange}
+          onBlur={handleTextInputBlur}
+          style={[styles.text, styles.textInput, commonTextStyle]}
+        />
       ) : (
         <Text
           accessible
@@ -624,11 +600,6 @@ function DiaryTextItem({
 
       {isSelected ? (
         <>
-          <Animated.View
-            pointerEvents="none"
-            style={[styles.rotationConnector, rotationConnectorStyle]}
-          />
-
           <GestureDetector gesture={deleteGesture}>
             <Animated.View
               accessible
@@ -637,12 +608,7 @@ function DiaryTextItem({
               onAccessibilityTap={onDelete}
               style={[styles.handleTouchArea, deleteHandleStyle]}
             >
-              <View
-                style={[
-                  styles.handleButton,
-                  styles.actionHandle,
-                ]}
-              >
+              <View style={[styles.handleButton, styles.actionHandle]}>
                 <X size={12} color={colors.accentBlue} strokeWidth={2} />
               </View>
             </Animated.View>
@@ -744,16 +710,6 @@ const styles = StyleSheet.create({
     left: 0,
     borderWidth: 1.25,
     borderColor: colors.accentBlue,
-  },
-
-  rotationConnector: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: 1,
-    height: ROTATION_HANDLE_OFFSET,
-    backgroundColor: colors.accentBlue,
-    opacity: 0.6,
   },
 
   handleTouchArea: {

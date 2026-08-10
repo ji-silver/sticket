@@ -122,3 +122,21 @@ export function getDiaryTextPoint(
     y: frame.centerY + sine * offsetX + cosine * offsetY,
   };
 }
+
+export function getDisplayedDiaryTextPoint(
+  frame: DiaryTextFrame,
+  localX: number,
+  localY: number,
+  displayScale: number,
+  displayScaleY: number,
+) {
+  'worklet';
+
+  const point = getDiaryTextPoint(frame, localX, localY);
+  const frameTop = frame.centerY - frame.height / 2;
+
+  return {
+    x: point.x * displayScale,
+    y: frameTop * displayScaleY + (point.y - frameTop) * displayScale,
+  };
+}
