@@ -2,7 +2,9 @@ import React from 'react';
 import { fireEvent, render, screen, waitFor } from '../../test-utils';
 import { Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/core';
-import TicketListScreen from './TicketListScreen';
+import TicketListScreen, {
+  getTicketIndexAtScrollOffset,
+} from './TicketListScreen';
 import { getTickets } from '../../features/ticket/ticket.service';
 
 jest.spyOn(Alert, 'alert').mockImplementation(() => {});
@@ -56,6 +58,17 @@ describe('TicketListScreen', () => {
   const setup = async () => {
     return render(<TicketListScreen />);
   };
+
+  describe('월 오버레이 위치 계산', () => {
+    it('현재 스크롤 위치의 첫 티켓 인덱스를 찾는다', () => {
+      const ticketOffsets = [0, 160, 320];
+
+      expect(getTicketIndexAtScrollOffset(ticketOffsets, -20)).toBe(0);
+      expect(getTicketIndexAtScrollOffset(ticketOffsets, 159)).toBe(0);
+      expect(getTicketIndexAtScrollOffset(ticketOffsets, 160)).toBe(1);
+      expect(getTicketIndexAtScrollOffset(ticketOffsets, 500)).toBe(2);
+    });
+  });
 
   describe('데이터 페칭 및 빈 화면 상태 처리', () => {
     it('티켓 데이터가 없으면, 빈 화면 전용 안내 문구와 추가 버튼이 노출된다', async () => {

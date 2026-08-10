@@ -1,7 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Animated,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -20,7 +23,40 @@ import InlineActionButton from '../../components/common/InlineActionButton.tsx';
 import ScreenHeader from '../../components/common/ScreenHeader.tsx';
 import ResponsiveContent from '../../components/common/ResponsiveContent.tsx';
 import { useGetTickets } from '../../features/ticket/api/useGetTickets';
+import { Ticket } from '../../features/ticket/types.ts';
 import TicketCard from './components/TicketCard.tsx';
+
+const MONTH_OVERLAY_HIDE_DELAY = 700;
+
+function getMonthLabel(ticket: Ticket | undefined) {
+  if (!ticket) {
+    return null;
+  }
+
+  return `${new Date(ticket.matchDate).getMonth() + 1}월`;
+}
+
+export function getTicketIndexAtScrollOffset(
+  ticketOffsets: number[],
+  targetOffset: number,
+) {
+  let firstIndex = 0;
+  let lastIndex = ticketOffsets.length - 1;
+  let ticketIndex = 0;
+
+  while (firstIndex <= lastIndex) {
+    const middleIndex = Math.floor((firstIndex + lastIndex) / 2);
+
+    if (ticketOffsets[middleIndex] > targetOffset) {
+      lastIndex = middleIndex - 1;
+    } else {
+      ticketIndex = middleIndex;
+      firstIndex = middleIndex + 1;
+    }
+  }
+
+  return ticketIndex;
+}
 
 function TicketListScreen() {
   const horizontalPadding = 20;
@@ -33,6 +69,14 @@ function TicketListScreen() {
     error,
   } = useGetTickets();
   const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
+  const [visibleMonth, setVisibleMonth] = useState<string | null>(null);
+  const visibleMonthRef = useRef<string | null>(null);
+  const monthOverlayOpacity = useRef(new Animated.Value(0)).current;
+  const monthOverlayHideTimer = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const ticketListOffset = useRef(0);
+  const ticketOffsets = useRef<number[]>([]);
 
   const diaryTitle = '야구';
   const ticketCount = tickets.length;
@@ -52,12 +96,85 @@ function TicketListScreen() {
       ? selectedSeason
       : seasons[0] ?? null;
 
-  const filteredTickets =
-    activeSeason === null
-      ? tickets
-      : tickets.filter(
-          ticket => new Date(ticket.matchDate).getFullYear() === activeSeason,
-        );
+  const filteredTickets = useMemo(
+    () =>
+      tickets
+        .filter(
+          ticket =>
+            activeSeason === null ||
+            new Date(ticket.matchDate).getFullYear() === activeSeason,
+        )
+        .sort(
+          (firstTicket, secondTicket) =>
+            new Date(secondTicket.matchDate).getTime() -
+            new Date(firstTicket.matchDate).getTime(),
+        ),
+    [activeSeason, tickets],
+  );
+
+  const clearMonthOverlayHideTimer = () => {
+    if (monthOverlayHideTimer.current) {
+      clearTimeout(monthOverlayHideTimer.current);
+      monthOverlayHideTimer.current = null;
+    }
+  };
+
+  const showMonthOverlay = () => {
+    clearMonthOverlayHideTimer();
+    monthOverlayOpacity.stopAnimation();
+    Animated.timing(monthOverlayOpacity, {
+      toValue: 1,
+      duration: 120,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const hideMonthOverlay = () => {
+    clearMonthOverlayHideTimer();
+    monthOverlayHideTimer.current = setTimeout(() => {
+      Animated.timing(monthOverlayOpacity, {
+        toValue: 0,
+        duration: 180,
+        useNativeDriver: true,
+      }).start();
+    }, MONTH_OVERLAY_HIDE_DELAY);
+  };
+
+  const updateVisibleMonth = (scrollY: number) => {
+    const targetOffset = scrollY - ticketListOffset.current;
+    const ticketIndex = getTicketIndexAtScrollOffset(
+      ticketOffsets.current,
+      targetOffset,
+    );
+
+    const nextVisibleMonth = getMonthLabel(filteredTickets[ticketIndex]);
+
+    if (visibleMonthRef.current !== nextVisibleMonth) {
+      visibleMonthRef.current = nextVisibleMonth;
+      setVisibleMonth(nextVisibleMonth);
+    }
+  };
+
+  const handleScroll = ({
+    nativeEvent,
+  }: NativeSyntheticEvent<NativeScrollEvent>) => {
+    updateVisibleMonth(nativeEvent.contentOffset.y);
+  };
+
+  useEffect(() => {
+    ticketOffsets.current = [];
+    const firstMonth = getMonthLabel(filteredTickets[0]);
+    visibleMonthRef.current = firstMonth;
+    setVisibleMonth(firstMonth);
+  }, [filteredTickets]);
+
+  useEffect(
+    () => () => {
+      clearMonthOverlayHideTimer();
+      monthOverlayOpacity.stopAnimation();
+    },
+    [monthOverlayOpacity],
+  );
 
   const handlePressAddTicket = () => {
     navigation.navigate('AddTicket');
@@ -84,6 +201,12 @@ function TicketListScreen() {
         style={styles.content}
         stickyHeaderIndices={hasTickets ? [1] : []}
         showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        onScrollBeginDrag={showMonthOverlay}
+        onScrollEndDrag={hideMonthOverlay}
+        onMomentumScrollBegin={showMonthOverlay}
+        onMomentumScrollEnd={hideMonthOverlay}
+        scrollEventThrottle={32}
       >
         <View style={styles.hero}>
           <ResponsiveContent
@@ -143,15 +266,28 @@ function TicketListScreen() {
                 <ActivityIndicator size={'small'} color={colors.primary} />
               </View>
             ) : hasTickets ? (
-              <View style={styles.ticketList}>
-                {filteredTickets.map(ticket => (
-                  <TicketCard
+              <View
+                style={styles.ticketList}
+                onLayout={({ nativeEvent }) => {
+                  ticketListOffset.current = nativeEvent.layout.y;
+                }}
+              >
+                {filteredTickets.map((ticket, index) => (
+                  <View
                     key={ticket.id}
-                    ticket={ticket}
-                    onPress={() =>
-                      navigation.navigate('TicketDetail', { ticketId: ticket.id })
-                    }
-                  />
+                    onLayout={({ nativeEvent }) => {
+                      ticketOffsets.current[index] = nativeEvent.layout.y;
+                    }}
+                  >
+                    <TicketCard
+                      ticket={ticket}
+                      onPress={() =>
+                        navigation.navigate('TicketDetail', {
+                          ticketId: ticket.id,
+                        })
+                      }
+                    />
+                  </View>
                 ))}
               </View>
             ) : (
@@ -160,6 +296,17 @@ function TicketListScreen() {
           </View>
         </ResponsiveContent>
       </ScrollView>
+
+      {hasTickets && visibleMonth ? (
+        <Animated.View
+          pointerEvents="none"
+          style={[styles.monthOverlay, { opacity: monthOverlayOpacity }]}
+          accessible={false}
+          importantForAccessibility="no-hide-descendants"
+        >
+          <AppText style={styles.monthOverlayText}>{visibleMonth}</AppText>
+        </Animated.View>
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -261,6 +408,25 @@ const styles = StyleSheet.create({
   },
   ticketList: {
     gap: 16,
+  },
+  monthOverlay: {
+    position: 'absolute',
+    top: '50%',
+    alignSelf: 'center',
+    marginTop: -22,
+    minWidth: 64,
+    height: 44,
+    paddingHorizontal: 14,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(17, 17, 17, 0.76)',
+  },
+  monthOverlayText: {
+    fontSize: 16,
+    fontFamily: fonts.bold,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   emptyTicketCard: {
     position: 'relative',
