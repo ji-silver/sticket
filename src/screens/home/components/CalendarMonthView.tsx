@@ -199,16 +199,22 @@ function CalendarMonthView({
         }}
       >
         <View style={styles.calendarDayTopRow}>
-          <View style={styles.calendarDate}>
-            {hasAttendance ? (
+          <View
+            style={[
+              styles.calendarDate,
+              isToday && styles.calendarTodayDate,
+              isToday && hasAttendance && styles.calendarTodayAttendanceDate,
+            ]}
+          >
+            {hasAttendance && !isToday ? (
               <View style={styles.calendarAttendanceDate} />
             ) : null}
 
             <AppText
               style={[
                 styles.calendarDayNumber,
-                isToday && styles.calendarTodayText,
                 isInactive && styles.calendarInactiveText,
+                isToday && styles.calendarTodayText,
               ]}
             >
               {date.day}
@@ -310,21 +316,34 @@ const styles = StyleSheet.create({
   },
 
   calendarDayTopRow: {
-    height: 14,
+    height: 18,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
 
   calendarDate: {
-    height: 14,
+    minWidth: 18,
+    height: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
+  calendarTodayDate: {
+    width: 18,
+    borderRadius: 9,
+    borderCurve: 'continuous',
+    backgroundColor: colors.primary,
+  },
+
+  calendarTodayAttendanceDate: {
+    borderWidth: 2,
+    borderColor: colors.accentYellow,
+  },
+
   calendarAttendanceDate: {
     position: 'absolute',
-    top: 0,
+    top: '50%',
     left: '50%',
     width: 14,
     height: 14,
@@ -334,6 +353,9 @@ const styles = StyleSheet.create({
     transform: [
       {
         translateX: -7,
+      },
+      {
+        translateY: -7,
       },
     ],
   },
@@ -347,7 +369,8 @@ const styles = StyleSheet.create({
   },
 
   calendarTodayText: {
-    color: colors.primary,
+    color: colors.onPrimary,
+    fontFamily: fonts.bold,
   },
 
   calendarInactiveText: {
