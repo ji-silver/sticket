@@ -1,4 +1,11 @@
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  Alert,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Plus } from 'lucide-react-native';
 import DiarySection from './components/DiarySection.tsx';
@@ -199,8 +206,16 @@ function HomeScreen() {
         <View style={styles.header}>
           <View style={styles.headerRow}>
             <View>
-              <AppText style={styles.logo}>STICKET</AppText>
-              <AppText style={styles.subtitle}>내가 모은 스포츠 티켓북</AppText>
+              <View style={styles.logoFrame}>
+                <Image
+                  source={require('../../assets/auth/logo.png')}
+                  style={styles.logo}
+                  resizeMode="contain"
+                  accessible
+                  accessibilityRole="image"
+                  accessibilityLabel="STICKET 로고"
+                />
+              </View>
             </View>
 
             {hasDiaries && (
@@ -279,19 +294,7 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#F1F1F1',
   },
-  logo: {
-    fontSize: 20,
-    fontFamily: fonts.black,
-    fontWeight: '900',
-    color: colors.primary,
-  },
-  subtitle: {
-    marginTop: 4,
-    fontSize: 12,
-    fontFamily: fonts.medium,
-    fontWeight: '500',
-    color: colors.textTertiary,
-  },
+
   addButton: {
     height: 42,
     paddingHorizontal: 14,
@@ -311,5 +314,15 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bold,
     fontWeight: '700',
     color: colors.onPrimary,
+  },
+
+  logoFrame: {
+    width: 40,
+    height: 40,
+    overflow: 'hidden',
+  },
+  logo: {
+    width: '100%',
+    height: '100%',
   },
 });

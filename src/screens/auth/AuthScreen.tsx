@@ -52,7 +52,7 @@ function AuthScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.content}>
         <View style={styles.hero}>
-          <AppText style={styles.brandText}>STICKET</AppText>
+          <AppText style={styles.brandText}>스티켓</AppText>
           <AppText style={styles.title}>
             직관의 순간을 티켓처럼 남겨보세요
           </AppText>
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   },
   brandText: {
     fontSize: 34,
-    fontFamily: fonts.black,
+    fontFamily: fonts.logo,
     color: colors.primary,
   },
   title: {

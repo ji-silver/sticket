@@ -1,4 +1,11 @@
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  StatusBar,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import AppText from '../../components/common/AppText.tsx';
@@ -12,11 +19,19 @@ function LoadingScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+
       <View style={styles.content}>
-        <AppText style={styles.brandText}>STICKET</AppText>
-        <AppText style={styles.description}>
-          직관의 순간을 티켓처럼 남겨보세요
-        </AppText>
+        <View style={styles.logoFrame}>
+          <Image
+            source={require('../../assets/auth/logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
+            accessible
+            accessibilityRole="image"
+            accessibilityLabel="STICKET 로고"
+          />
+        </View>
       </View>
 
       <View style={styles.loadingArea}>
@@ -60,18 +75,18 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
+    paddingHorizontal: 24,
   },
-  brandText: {
-    fontSize: 38,
-    fontFamily: fonts.black,
-    color: colors.primary,
+  logoFrame: {
+    width: 120,
+    height: 120,
+    overflow: 'hidden',
   },
-  description: {
-    fontSize: 15,
-    fontFamily: fonts.regular,
-    color: colors.textSecondary,
+  logo: {
+    width: '100%',
+    height: '100%',
   },
+
   loadingArea: {
     minHeight: 96,
     alignItems: 'center',
