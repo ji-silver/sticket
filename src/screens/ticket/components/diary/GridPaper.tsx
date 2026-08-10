@@ -6,19 +6,23 @@ import { colors } from '../../../../styles/colors.ts';
 const GRID_SIZE = 20;
 const GRID_LINE_COLOR = '#7A8793';
 
-function GridPaper() {
+interface GridPaperProps {
+  spacing?: number;
+}
+
+function GridPaper({ spacing = GRID_SIZE }: GridPaperProps) {
   return (
     <View pointerEvents="none" style={styles.container}>
       <Svg width="100%" height="100%">
         <Defs>
           <Pattern
             id="diaryGrid"
-            width={GRID_SIZE}
-            height={GRID_SIZE}
+            width={spacing}
+            height={spacing}
             patternUnits="userSpaceOnUse"
           >
             <Path
-              d={`M ${GRID_SIZE} 0 V ${GRID_SIZE} H 0`}
+              d={`M ${spacing} 0 V ${spacing} H 0`}
               fill="none"
               stroke={GRID_LINE_COLOR}
               strokeWidth={StyleSheet.hairlineWidth}

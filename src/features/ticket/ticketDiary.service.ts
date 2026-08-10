@@ -69,7 +69,9 @@ function parseTicketDiaryData(value: unknown): TicketDiaryData {
   if (
     !isRecord(value) ||
     value.version !== TICKET_DIARY_VERSION ||
-    (value.paperType !== 'plain' && value.paperType !== 'grid') ||
+    (value.paperType !== 'plain' &&
+      value.paperType !== 'grid' &&
+      value.paperType !== 'lined') ||
     !Array.isArray(value.items) ||
     (value.drawingPath !== null && typeof value.drawingPath !== 'string')
   ) {

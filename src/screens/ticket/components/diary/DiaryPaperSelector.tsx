@@ -2,10 +2,11 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import AppText from '../../../../components/common/AppText.tsx';
 import { colors } from '../../../../styles/colors.ts';
 import GridPaper from './GridPaper.tsx';
+import LinedPaper from './LinedPaper.tsx';
 
 export const DIARY_PAPER_SELECTOR_HEIGHT = 140;
 
-export type PaperType = 'plain' | 'grid';
+export type PaperType = 'plain' | 'grid' | 'lined';
 
 interface DiaryPaperSelectorProps {
   paperType: PaperType;
@@ -68,7 +69,7 @@ function DiaryPaperSelector({ paperType, onSelect }: DiaryPaperSelectorProps) {
               paperType === 'grid' && styles.selectedPreview,
             ]}
           >
-            <GridPaper />
+            <GridPaper spacing={8} />
           </View>
 
           <AppText
@@ -77,6 +78,38 @@ function DiaryPaperSelector({ paperType, onSelect }: DiaryPaperSelectorProps) {
             color={paperType === 'grid' ? colors.primary : colors.textSecondary}
           >
             모눈
+          </AppText>
+        </Pressable>
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="가로줄 속지"
+          accessibilityState={{
+            selected: paperType === 'lined',
+          }}
+          onPress={() => onSelect('lined')}
+          style={({ pressed }) => [
+            styles.option,
+            pressed && styles.pressedOption,
+          ]}
+        >
+          <View
+            style={[
+              styles.preview,
+              paperType === 'lined' && styles.selectedPreview,
+            ]}
+          >
+            <LinedPaper spacing={8} />
+          </View>
+
+          <AppText
+            size={12}
+            weight={paperType === 'lined' ? 'semiBold' : 'regular'}
+            color={
+              paperType === 'lined' ? colors.primary : colors.textSecondary
+            }
+          >
+            가로줄
           </AppText>
         </Pressable>
       </View>

@@ -7,6 +7,7 @@ import {
 import type { ReactNode, RefObject } from 'react';
 import AppText from '../../../../components/common/AppText.tsx';
 import GridPaper from './GridPaper.tsx';
+import LinedPaper from './LinedPaper.tsx';
 import DiaryDrawingCanvas, {
   type DiaryDrawingCanvasRef,
 } from './DiaryDrawingCanvas.tsx';
@@ -113,6 +114,7 @@ export default function DiaryCanvasArea({
                 onPress={onDeselectDiaryItem}
               >
                 {paperType === 'grid' ? <GridPaper /> : null}
+                {paperType === 'lined' ? <LinedPaper /> : null}
               </Pressable>
 
               {items.slice(0, drawingIndex).map(renderDiaryItem)}

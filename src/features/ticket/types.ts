@@ -42,7 +42,7 @@ export interface Ticket {
 
 export const TICKET_DIARY_VERSION = 1 as const;
 
-export type TicketDiaryPaperType = 'plain' | 'grid';
+export type TicketDiaryPaperType = 'plain' | 'grid' | 'lined';
 
 export type TicketDiaryMatrix = [
   number,
