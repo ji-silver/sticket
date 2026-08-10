@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import {
+  type LayoutChangeEvent,
   KeyboardAvoidingView,
   ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppSnackbar from '../../../components/common/AppSnackbar.tsx';
 import AppText from '../../../components/common/AppText.tsx';
 import { useAuth } from '../../../features/auth/AuthProvider.tsx';
@@ -14,6 +16,10 @@ import { Ticket } from '../../../features/ticket/types.ts';
 import TicketLineupSection from './TicketLineupSection.tsx';
 import TicketReviewSection from './TicketReviewSection.tsx';
 import TicketVisitInfoSection from './TicketVisitInfoSection.tsx';
+import {
+  DIARY_BOTTOM_TOOLBAR_HEIGHT,
+  getDiaryPageLayout,
+} from './diary/diaryLayout.ts';
 
 interface TicketRecordPageProps {
   ticket: Ticket;
@@ -41,6 +47,7 @@ const teamColors: Record<string, string> = {
 };
 
 function TicketRecordPage({ ticket }: TicketRecordPageProps) {
+  const insets = useSafeAreaInsets();
   const { profile } = useAuth();
   const favoriteTeamName = profile?.favorite_team?.short_name;
   const matchDateText = formatMatchDate(ticket.matchDate);
@@ -64,7 +71,17 @@ function TicketRecordPage({ ticket }: TicketRecordPageProps) {
       ? styles.matchResultTextDraw
       : null;
   const [snackbarMessage, setSnackbarMessage] = useState<string | null>(null);
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const snackbarTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const { pageWidth } = getDiaryPageLayout(
+    containerSize,
+    containerSize.height - insets.bottom - DIARY_BOTTOM_TOOLBAR_HEIGHT,
+  );
+
+  const handleContainerLayout = ({ nativeEvent }: LayoutChangeEvent) => {
+    setContainerSize(nativeEvent.layout);
+  };
 
   useEffect(
     () => () => {
@@ -85,10 +102,17 @@ function TicketRecordPage({ ticket }: TicketRecordPageProps) {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior="padding">
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior="padding"
+      onLayout={handleContainerLayout}
+    >
       <ScrollView
         style={styles.content}
-        contentContainerStyle={styles.contentContainer}
+        contentContainerStyle={[
+          styles.contentContainer,
+          pageWidth > 0 && { width: pageWidth },
+        ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
@@ -248,10 +272,14 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.background,
   },
   contentContainer: {
+    flexGrow: 1,
+    width: '100%',
+    alignSelf: 'center',
     paddingBottom: 40,
+    backgroundColor: colors.surface,
   },
   lineupArea: {
     paddingHorizontal: 24,

@@ -59,15 +59,16 @@ import {
   uploadTicketDiaryDrawing,
   uploadTicketDiaryPhoto,
 } from '../../../../features/ticket/ticketDiary.service.ts';
+import {
+  getDiaryPageLayout,
+  REFERENCE_DIARY_PAGE_HEIGHT,
+  REFERENCE_DIARY_PAGE_WIDTH,
+} from './diaryLayout.ts';
 
 const MAXIMUM_DIARY_PHOTO_COUNT = 2;
 const AUTOSAVE_DELAY_MS = 800;
 const AUTOSAVE_ERROR_MESSAGE = '변경 내용을 저장하지 못했어요';
 const DRAWING_LAYER_ID = '__drawing__';
-const MAX_DIARY_PAGE_WIDTH = 640;
-const DIARY_PAGE_HORIZONTAL_INSET = 32;
-const PHONE_LAYOUT_MAX_DIMENSION = 500;
-const REFERENCE_DIARY_PAGE_HEIGHT = 587;
 
 interface TicketDiaryPageProps {
   ticketId: string;
@@ -402,35 +403,16 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
   });
 
   const [editorSize] = useState<EditorSize>({
-    width: 393,
+    width: REFERENCE_DIARY_PAGE_WIDTH,
     height: 524,
   });
 
   const isLandscape = editorWrapperSize.width > editorWrapperSize.height;
 
-  const shortestEditorDimension = Math.min(
-    editorWrapperSize.width,
-    editorWrapperSize.height,
-  );
-
-  const longestEditorDimension = Math.max(
-    editorWrapperSize.width,
-    editorWrapperSize.height,
-  );
-
-  const isPhoneLayout =
-    shortestEditorDimension > 0 &&
-    shortestEditorDimension <= PHONE_LAYOUT_MAX_DIMENSION &&
-    longestEditorDimension <= 1000;
-
-  const pageHorizontalInset = isPhoneLayout ? 0 : DIARY_PAGE_HORIZONTAL_INSET;
-
   const availableEditorHeight = Math.max(0, editorCanvasRegionSize.height);
-
-  const pageWidth = Math.min(
-    Math.max(0, editorWrapperSize.width - pageHorizontalInset),
-    MAX_DIARY_PAGE_WIDTH,
-    availableEditorHeight * (editorSize.width / REFERENCE_DIARY_PAGE_HEIGHT),
+  const { isPhoneLayout, pageWidth } = getDiaryPageLayout(
+    editorWrapperSize,
+    availableEditorHeight,
   );
   const editorScale = Math.max(0.01, pageWidth / editorSize.width);
   const displayedEditorWidth = pageWidth;

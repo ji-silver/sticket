@@ -9,6 +9,7 @@ import {
 } from 'lucide-react-native';
 import AppText from '../../../../components/common/AppText.tsx';
 import { colors } from '../../../../styles/colors.ts';
+import { DIARY_BOTTOM_TOOLBAR_HEIGHT } from './diaryLayout.ts';
 
 const DIARY_TOOLS = [
   {
@@ -106,7 +107,7 @@ const styles = StyleSheet.create({
   toolbar: {
     width: '100%',
     flexDirection: 'row',
-    height: 72,
+    height: DIARY_BOTTOM_TOOLBAR_HEIGHT,
     paddingHorizontal: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
