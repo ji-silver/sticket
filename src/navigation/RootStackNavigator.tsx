@@ -1,4 +1,6 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Alert, Pressable, StyleSheet } from 'react-native';
+import { X } from 'lucide-react-native';
 import BottomTabNavigator from './BottomTabNavigator.tsx';
 import AddDiaryScreen from '../screens/diary/AddDiaryScreen.tsx';
 import TicketListScreen from '../screens/ticket/TicketListScreen.tsx';
@@ -42,6 +44,33 @@ export type RootStackParamList = {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+function ProfileSetupExitButton() {
+  const { signOut } = useAuth();
+  const handleCancelProfileSetup = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('로그인을 취소하지 못했습니다.', error);
+      Alert.alert('로그인을 취소하지 못했어요', '잠시 후 다시 시도해 주세요.');
+    }
+  };
+
+  return (
+    <Pressable
+      onPress={handleCancelProfileSetup}
+      style={({ pressed }) => [
+        styles.closeButton,
+        pressed && styles.closeButtonPressed,
+      ]}
+      hitSlop={8}
+      accessibilityRole="button"
+      accessibilityLabel="다른 계정으로 로그인"
+    >
+      <X size={22} color={colors.text} strokeWidth={2.2} />
+    </Pressable>
+  );
+}
+
 function RootStackNavigator() {
   const { status } = useAuth();
   const canUseApp = status === 'authenticated';
@@ -63,7 +92,7 @@ function RootStackNavigator() {
           options={{
             headerShown: true,
             title: '',
-            headerBackButtonDisplayMode: 'minimal',
+            headerLeft: ProfileSetupExitButton,
             headerShadowVisible: false,
             headerTintColor: colors.text,
             headerStyle: {
@@ -89,3 +118,17 @@ function RootStackNavigator() {
 }
 
 export default RootStackNavigator;
+
+const styles = StyleSheet.create({
+  closeButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderCurve: 'continuous',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeButtonPressed: {
+    backgroundColor: colors.primarySoft,
+  },
+});
