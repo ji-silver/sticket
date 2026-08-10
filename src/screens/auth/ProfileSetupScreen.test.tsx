@@ -1,7 +1,5 @@
 import React from 'react';
 import {
-  act,
-  cleanup,
   fireEvent,
   render,
   screen,
@@ -13,10 +11,6 @@ import { saveProfile } from '../../features/profile/profile.service';
 import { useAuth } from '../../features/auth/AuthProvider';
 
 jest.spyOn(Alert, 'alert').mockImplementation(() => {});
-
-afterEach(() => {
-  cleanup();
-});
 
 jest.mock('../../features/auth/AuthProvider', () => ({
   useAuth: jest.fn(),
@@ -57,9 +51,7 @@ describe('ProfileSetupScreen', () => {
     });
   });
 
-  const setup = async () => {
-    return render(<ProfileSetupScreen />);
-  };
+  const setup = () => render(<ProfileSetupScreen />);
 
   describe('화면 초기화 및 렌더링', () => {
     it('기존 프로필 데이터가 없으면, 닉네임과 응원 구단이 비어있는 상태로 렌더링된다', async () => {
@@ -94,7 +86,7 @@ describe('ProfileSetupScreen', () => {
       expect(startButton).toBeDisabled();
 
       const nicknameInput = screen.getByLabelText('닉네임');
-      fireEvent.changeText(nicknameInput, '스티켓');
+      await fireEvent.changeText(nicknameInput, '스티켓');
 
       await waitFor(() => {
         expect(startButton).toBeDisabled();
@@ -108,10 +100,10 @@ describe('ProfileSetupScreen', () => {
         screen.getByLabelText('프로필 설정 완료하고 시작하기');
 
       const teamSelectButton = screen.getByLabelText('응원 구단 선택');
-      fireEvent.press(teamSelectButton);
+      await fireEvent.press(teamSelectButton);
 
       const mockTeamOption = await screen.findByText('두산 베어스 선택');
-      fireEvent.press(mockTeamOption);
+      await fireEvent.press(mockTeamOption);
 
       await waitFor(() => {
         expect(startButton).toBeDisabled();
@@ -130,17 +122,19 @@ describe('ProfileSetupScreen', () => {
       await setup();
 
       const nicknameInput = screen.getByLabelText('닉네임');
-      fireEvent.changeText(nicknameInput, '스티켓유저');
+      await fireEvent.changeText(nicknameInput, '스티켓유저');
       await screen.findByDisplayValue('스티켓유저');
 
       const teamSelectButton = screen.getByLabelText('응원 구단 선택');
-      fireEvent.press(teamSelectButton);
+      await fireEvent.press(teamSelectButton);
 
       const mockTeamOption = await screen.findByText('두산 베어스 선택');
-      fireEvent.press(mockTeamOption);
+      await fireEvent.press(mockTeamOption);
 
-      fireEvent.press(screen.getByLabelText('필수 이용약관 동의'));
-      fireEvent.press(screen.getByLabelText('필수 개인정보 처리방침 동의'));
+      await fireEvent.press(screen.getByLabelText('필수 이용약관 동의'));
+      await fireEvent.press(
+        screen.getByLabelText('필수 개인정보 처리방침 동의'),
+      );
 
       await waitFor(() => {
         expect(
@@ -148,10 +142,9 @@ describe('ProfileSetupScreen', () => {
         ).not.toBeDisabled();
       });
 
-      const startButton = screen.getByLabelText('프로필 설정 완료하고 시작하기');
-      await act(async () => {
-        fireEvent.press(startButton);
-      });
+      const startButton =
+        screen.getByLabelText('프로필 설정 완료하고 시작하기');
+      await fireEvent.press(startButton);
 
       await waitFor(() => {
         expect(saveProfile).toHaveBeenCalledWith({
@@ -177,17 +170,19 @@ describe('ProfileSetupScreen', () => {
       await setup();
 
       const nicknameInput = screen.getByLabelText('닉네임');
-      fireEvent.changeText(nicknameInput, '스티켓유저');
+      await fireEvent.changeText(nicknameInput, '스티켓유저');
       await screen.findByDisplayValue('스티켓유저');
 
       const teamSelectButton = screen.getByLabelText('응원 구단 선택');
-      fireEvent.press(teamSelectButton);
+      await fireEvent.press(teamSelectButton);
 
       const mockTeamOption = await screen.findByText('두산 베어스 선택');
-      fireEvent.press(mockTeamOption);
+      await fireEvent.press(mockTeamOption);
 
-      fireEvent.press(screen.getByLabelText('필수 이용약관 동의'));
-      fireEvent.press(screen.getByLabelText('필수 개인정보 처리방침 동의'));
+      await fireEvent.press(screen.getByLabelText('필수 이용약관 동의'));
+      await fireEvent.press(
+        screen.getByLabelText('필수 개인정보 처리방침 동의'),
+      );
 
       await waitFor(() => {
         expect(
@@ -195,10 +190,9 @@ describe('ProfileSetupScreen', () => {
         ).not.toBeDisabled();
       });
 
-      const startButton = screen.getByLabelText('프로필 설정 완료하고 시작하기');
-      await act(async () => {
-        fireEvent.press(startButton);
-      });
+      const startButton =
+        screen.getByLabelText('프로필 설정 완료하고 시작하기');
+      await fireEvent.press(startButton);
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith(
