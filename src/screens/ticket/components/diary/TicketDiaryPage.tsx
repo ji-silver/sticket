@@ -353,6 +353,7 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
   const drawingBase64Ref = useRef<string | null>(null);
   const drawingStoragePathRef = useRef<string | null>(null);
   const uploadedDrawingRevisionRef = useRef(0);
+  const shouldSaveDrawingImmediatelyRef = useRef(false);
   const uploadedPhotoPathByIdRef = useRef(new Map<string, string>());
   const managedStoragePathsRef = useRef(new Set<string>());
   const latestSnapshotRef = useRef<DiarySaveSnapshot | null>(null);
@@ -722,6 +723,16 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
 
     nextSnapshotVersionRef.current = snapshot.version;
     latestSnapshotRef.current = snapshot;
+
+    if (shouldSaveDrawingImmediatelyRef.current) {
+      shouldSaveDrawingImmediatelyRef.current = false;
+
+      enqueueDiarySaveRef.current(snapshot).catch(error => {
+        showAutosaveErrorRef.current(error);
+      });
+
+      return;
+    }
 
     const autosaveTimer = setTimeout(() => {
       enqueueDiarySaveRef.current(snapshot).catch(error => {
@@ -1157,9 +1168,8 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
   const handleSelectLayer = (layerId: string) => {
     if (layerId === DRAWING_LAYER_ID) {
       finishCurrentTextEditing();
-      setIsLayerPanelVisible(false);
       setSelectedItem(null);
-      setSelectedTool('drawing');
+      setSelectedTool(null);
       return;
     }
 
@@ -1253,11 +1263,14 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
       drawingBase64Ref.current = drawingBase64;
       setDrawingRevision(currentRevision => currentRevision + 1);
     } catch (error) {
+      shouldSaveDrawingImmediatelyRef.current = false;
       showAutosaveError(error);
     }
   };
 
-  const handleFinishDrawing = () => {
+  const handleFinishDrawing = async () => {
+    shouldSaveDrawingImmediatelyRef.current = true;
+    await handleDrawingChange();
     setSelectedTool(null);
   };
 
