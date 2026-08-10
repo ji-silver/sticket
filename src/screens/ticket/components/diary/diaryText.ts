@@ -2,7 +2,7 @@ import { colors } from '../../../../styles/colors.ts';
 import { clamp, type EditorSize } from './photoTransform.ts';
 
 export const MINIMUM_TEXT_WIDTH = 96;
-export const MINIMUM_TEXT_HEIGHT = 42;
+export const MINIMUM_TEXT_HEIGHT = 37;
 const DEFAULT_TEXT_WIDTH = 220;
 
 type DiaryTextAlign = 'left' | 'center' | 'right';
@@ -52,7 +52,7 @@ export function createDiaryText(editorSize: EditorSize): DiaryText | null {
     rotation: 0,
     style: {
       color: colors.text,
-      fontSize: 24,
+      fontSize: 18,
       align: 'center',
       isBold: false,
       hasUnderline: false,

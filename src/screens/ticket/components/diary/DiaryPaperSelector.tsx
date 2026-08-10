@@ -69,7 +69,7 @@ function DiaryPaperSelector({ paperType, onSelect }: DiaryPaperSelectorProps) {
               paperType === 'grid' && styles.selectedPreview,
             ]}
           >
-            <GridPaper spacing={8} />
+            <GridPaper />
           </View>
 
           <AppText
@@ -99,7 +99,7 @@ function DiaryPaperSelector({ paperType, onSelect }: DiaryPaperSelectorProps) {
               paperType === 'lined' && styles.selectedPreview,
             ]}
           >
-            <LinedPaper spacing={8} />
+            <LinedPaper />
           </View>
 
           <AppText
