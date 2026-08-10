@@ -248,7 +248,7 @@ async function restoreDiaryItems(
 
           size,
         );
-      } catch (error) {}
+      } catch {}
     }),
   );
 

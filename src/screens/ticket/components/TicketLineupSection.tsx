@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
   position: {
     fontSize: 12,
     fontFamily: fonts.bold,
-    color: colors.secondary,
+    color: colors.textSecondary,
   },
   playerName: {
     fontSize: 15,

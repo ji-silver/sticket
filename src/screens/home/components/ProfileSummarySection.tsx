@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 12,
     fontFamily: fonts.regular,
-    color: colors.secondary,
+    color: colors.textSecondary,
   },
 
   nickname: {
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
     width: 48,
     fontSize: 12,
     fontFamily: fonts.regular,
-    color: colors.secondary,
+    color: colors.textSecondary,
   },
 
   teamName: {
