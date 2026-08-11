@@ -203,11 +203,10 @@ function CalendarMonthView({
             style={[
               styles.calendarDate,
               isToday && styles.calendarTodayDate,
-              isToday && hasAttendance && styles.calendarTodayAttendanceDate,
             ]}
           >
             {hasAttendance && !isToday ? (
-              <View style={styles.calendarAttendanceDate} />
+              <View pointerEvents="none" style={styles.calendarAttendanceDate} />
             ) : null}
 
             <AppText
@@ -219,6 +218,10 @@ function CalendarMonthView({
             >
               {date.day}
             </AppText>
+
+            {hasAttendance && isToday ? (
+              <View pointerEvents="none" style={styles.calendarAttendanceDot} />
+            ) : null}
           </View>
 
           {firstGame ? (
@@ -323,6 +326,7 @@ const styles = StyleSheet.create({
   },
 
   calendarDate: {
+    position: 'relative',
     minWidth: 18,
     height: 18,
     alignItems: 'center',
@@ -336,28 +340,29 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
 
-  calendarTodayAttendanceDate: {
-    borderWidth: 2,
-    borderColor: colors.accentYellow,
-  },
-
   calendarAttendanceDate: {
     position: 'absolute',
-    top: '50%',
-    left: '50%',
+    top: 2,
+    left: 2,
     width: 14,
     height: 14,
     borderRadius: 7,
     borderCurve: 'continuous',
     backgroundColor: colors.accentYellow,
-    transform: [
-      {
-        translateX: -7,
-      },
-      {
-        translateY: -7,
-      },
-    ],
+  },
+
+  calendarAttendanceDot: {
+    position: 'absolute',
+    right: -3,
+    top: -2,
+    width: 7,
+    height: 7,
+    borderWidth: 1,
+    borderColor: colors.surface,
+    borderRadius: 3.5,
+    borderCurve: 'continuous',
+    backgroundColor: colors.accentYellow,
+    zIndex: 2,
   },
 
   calendarDayNumber: {
