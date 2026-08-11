@@ -2,21 +2,24 @@ import { StyleSheet, View } from 'react-native';
 import Svg, { Line, Rect } from 'react-native-svg';
 import { colors } from '../../../../styles/colors.ts';
 import {
-  REFERENCE_DIARY_PAGE_HEIGHT,
-  REFERENCE_DIARY_PAGE_WIDTH,
+  getDiaryPageSize,
+  getDiaryPaperSpacing,
 } from './diaryLayout.ts';
+import type { EditorSize } from './photoTransform.ts';
 
-const LINE_SPACING = 28;
-const PREVIEW_LINE_SPACING = 9;
-const LINE_COLOR = '#E1E4E8';
+const LINE_COLOR = '#E8EAED';
 const LINE_INDEXES = Array.from({ length: 40 }, (_, index) => index + 1);
 
 interface LinedPaperProps {
   isPreview?: boolean;
+  pageSize?: EditorSize;
 }
 
-function LinedPaper({ isPreview = false }: LinedPaperProps) {
-  const lineSpacing = isPreview ? PREVIEW_LINE_SPACING : LINE_SPACING;
+function LinedPaper({
+  isPreview = false,
+  pageSize = getDiaryPageSize('portrait'),
+}: LinedPaperProps) {
+  const lineSpacing = getDiaryPaperSpacing(pageSize, isPreview).line;
 
   return (
     <View pointerEvents="none" style={styles.container}>
@@ -26,7 +29,7 @@ function LinedPaper({ isPreview = false }: LinedPaperProps) {
         viewBox={
           isPreview
             ? undefined
-            : `0 0 ${REFERENCE_DIARY_PAGE_WIDTH} ${REFERENCE_DIARY_PAGE_HEIGHT}`
+            : `0 0 ${pageSize.width} ${pageSize.height}`
         }
         preserveAspectRatio="none"
       >

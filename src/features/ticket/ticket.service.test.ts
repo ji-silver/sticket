@@ -10,6 +10,7 @@ import { supabase } from '../../lib/supabase.ts';
 import {
   deleteTicket,
   getTickets,
+  setTicketPageOrientation,
   updateTicketOriginalPhoto,
 } from './ticket.service.ts';
 
@@ -24,6 +25,7 @@ describe('getTickets', () => {
           memo: null,
           foods: [],
           original_photo_path: null,
+          page_orientation: 'landscape',
           created_at: '2026-08-05T00:00:00Z',
           game: {
             game_date: '2026-08-05',
@@ -55,6 +57,7 @@ describe('getTickets', () => {
     const tickets = await getTickets();
 
     expect(tickets[0].isCancelled).toBe(true);
+    expect(tickets[0].pageOrientation).toBe('landscape');
     expect(tickets[0].awayLineup).toEqual([
       {
         battingOrder: 1,
@@ -62,6 +65,26 @@ describe('getTickets', () => {
         playerName: '홍창기',
       },
     ]);
+  });
+});
+
+describe('setTicketPageOrientation', () => {
+  it('아직 방향이 없는 티켓에 최초 방향만 저장한다', async () => {
+    const maybeSingle = jest.fn().mockResolvedValue({
+      data: { page_orientation: 'landscape' },
+      error: null,
+    });
+    const select = jest.fn().mockReturnValue({ maybeSingle });
+    const is = jest.fn().mockReturnValue({ select });
+    const eq = jest.fn().mockReturnValue({ is });
+    const update = jest.fn().mockReturnValue({ eq });
+
+    (supabase.from as jest.Mock).mockReturnValue({ update });
+
+    await expect(
+      setTicketPageOrientation('ticket-1', 'landscape'),
+    ).resolves.toBe('landscape');
+    expect(is).toHaveBeenCalledWith('page_orientation', null);
   });
 });
 

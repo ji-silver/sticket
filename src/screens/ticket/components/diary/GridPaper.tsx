@@ -3,21 +3,24 @@ import Svg, { Defs, Path, Pattern, Rect } from 'react-native-svg';
 
 import { colors } from '../../../../styles/colors.ts';
 import {
-  REFERENCE_DIARY_PAGE_HEIGHT,
-  REFERENCE_DIARY_PAGE_WIDTH,
+  getDiaryPageSize,
+  getDiaryPaperSpacing,
 } from './diaryLayout.ts';
+import type { EditorSize } from './photoTransform.ts';
 
-const GRID_SIZE = 20;
-const PREVIEW_GRID_SIZE = 8;
-const GRID_LINE_COLOR = '#7A8793';
-const PREVIEW_GRID_LINE_COLOR = '#D9DEE3';
+const GRID_LINE_COLOR = '#9AA4AE';
+const PREVIEW_GRID_LINE_COLOR = '#E2E6EA';
 
 interface GridPaperProps {
   isPreview?: boolean;
+  pageSize?: EditorSize;
 }
 
-function GridPaper({ isPreview = false }: GridPaperProps) {
-  const gridSize = isPreview ? PREVIEW_GRID_SIZE : GRID_SIZE;
+function GridPaper({
+  isPreview = false,
+  pageSize = getDiaryPageSize('portrait'),
+}: GridPaperProps) {
+  const gridSize = getDiaryPaperSpacing(pageSize, isPreview).grid;
 
   return (
     <View pointerEvents="none" style={styles.container}>
@@ -27,7 +30,7 @@ function GridPaper({ isPreview = false }: GridPaperProps) {
         viewBox={
           isPreview
             ? undefined
-            : `0 0 ${REFERENCE_DIARY_PAGE_WIDTH} ${REFERENCE_DIARY_PAGE_HEIGHT}`
+            : `0 0 ${pageSize.width} ${pageSize.height}`
         }
         preserveAspectRatio="none"
       >

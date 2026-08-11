@@ -3,6 +3,8 @@ import AppText from '../../../../components/common/AppText.tsx';
 import { colors } from '../../../../styles/colors.ts';
 import GridPaper from './GridPaper.tsx';
 import LinedPaper from './LinedPaper.tsx';
+import type { TicketDiaryOrientation } from '../../../../features/ticket/types.ts';
+import { getDiaryPageSize } from './diaryLayout.ts';
 
 export const DIARY_PAPER_SELECTOR_HEIGHT = 140;
 
@@ -10,10 +12,21 @@ export type PaperType = 'plain' | 'grid' | 'lined';
 
 interface DiaryPaperSelectorProps {
   paperType: PaperType;
+  orientation: TicketDiaryOrientation;
   onSelect: (paperType: PaperType) => void;
 }
 
-function DiaryPaperSelector({ paperType, onSelect }: DiaryPaperSelectorProps) {
+function DiaryPaperSelector({
+  paperType,
+  orientation,
+  onSelect,
+}: DiaryPaperSelectorProps) {
+  const pageSize = getDiaryPageSize(orientation);
+  const previewOrientationStyle =
+    orientation === 'landscape'
+      ? styles.landscapePreview
+      : styles.portraitPreview;
+
   return (
     <View style={styles.container}>
       <AppText size={13} weight="semiBold" color={colors.text}>
@@ -33,12 +46,15 @@ function DiaryPaperSelector({ paperType, onSelect }: DiaryPaperSelectorProps) {
             pressed && styles.pressedOption,
           ]}
         >
-          <View
-            style={[
-              styles.preview,
-              paperType === 'plain' && styles.selectedPreview,
-            ]}
-          />
+          <View style={styles.previewSlot}>
+            <View
+              style={[
+                styles.preview,
+                previewOrientationStyle,
+                paperType === 'plain' && styles.selectedPreview,
+              ]}
+            />
+          </View>
 
           <AppText
             size={12}
@@ -63,13 +79,16 @@ function DiaryPaperSelector({ paperType, onSelect }: DiaryPaperSelectorProps) {
             pressed && styles.pressedOption,
           ]}
         >
-          <View
-            style={[
-              styles.preview,
-              paperType === 'grid' && styles.selectedPreview,
-            ]}
-          >
-            <GridPaper isPreview />
+          <View style={styles.previewSlot}>
+            <View
+              style={[
+                styles.preview,
+                previewOrientationStyle,
+                paperType === 'grid' && styles.selectedPreview,
+              ]}
+            >
+              <GridPaper isPreview pageSize={pageSize} />
+            </View>
           </View>
 
           <AppText
@@ -93,13 +112,16 @@ function DiaryPaperSelector({ paperType, onSelect }: DiaryPaperSelectorProps) {
             pressed && styles.pressedOption,
           ]}
         >
-          <View
-            style={[
-              styles.preview,
-              paperType === 'lined' && styles.selectedPreview,
-            ]}
-          >
-            <LinedPaper isPreview />
+          <View style={styles.previewSlot}>
+            <View
+              style={[
+                styles.preview,
+                previewOrientationStyle,
+                paperType === 'lined' && styles.selectedPreview,
+              ]}
+            >
+              <LinedPaper isPreview pageSize={pageSize} />
+            </View>
           </View>
 
           <AppText
@@ -141,7 +163,7 @@ const styles = StyleSheet.create({
   },
 
   option: {
-    width: 64,
+    width: 72,
     alignItems: 'center',
     gap: 6,
   },
@@ -150,15 +172,30 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
 
-  preview: {
-    width: 56,
+  previewSlot: {
+    width: 72,
     height: 72,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  preview: {
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 4,
     borderCurve: 'continuous',
     backgroundColor: colors.surface,
+  },
+
+  portraitPreview: {
+    width: 56,
+    height: 72,
+  },
+
+  landscapePreview: {
+    width: 72,
+    height: 48,
   },
 
   selectedPreview: {
