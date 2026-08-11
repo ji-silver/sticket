@@ -1,8 +1,26 @@
 import {
+  applyTransformations,
   getDisplayedPhotoPoint,
   getInitialPhotoSize,
   type Matrix3,
 } from './photoTransform.ts';
+
+describe('applyTransformations', () => {
+  it('축소되고 회전된 이미지도 드래그한 거리만큼 이동한다', () => {
+    const savedMatrix: Matrix3 = [0, 0.5, 0, -0.5, 0, 0, 30, 40, 1];
+
+    const movedMatrix = applyTransformations(
+      { x: 20, y: 10 },
+      1,
+      0,
+      { x: 0, y: 0 },
+      savedMatrix,
+    );
+
+    expect(movedMatrix[6]).toBe(50);
+    expect(movedMatrix[7]).toBe(50);
+  });
+});
 
 describe('getInitialPhotoSize', () => {
   it('작은 원본도 다이어리 절반 크기로 확대한다', () => {

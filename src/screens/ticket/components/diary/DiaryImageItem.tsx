@@ -270,6 +270,8 @@ function DiaryImageItem({
 
   const panGesture = usePanGesture({
     averageTouches: true,
+    minDistance: 2,
+    enableTrackpadTwoFingerGesture: true,
     requireToFail: handleGestures,
 
     onActivate: () => {

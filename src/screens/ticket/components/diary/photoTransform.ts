@@ -128,7 +128,6 @@ export function applyTransformations(
 
   let matrix = identity3();
 
-  matrix = multiply3(matrix, translate3(translation.x, translation.y));
   matrix = multiply3(matrix, translate3(origin.x, origin.y));
   matrix = multiply3(matrix, scale3(scaleValue, scaleValue));
   matrix = multiply3(matrix, translate3(-origin.x, -origin.y));
@@ -136,7 +135,10 @@ export function applyTransformations(
   matrix = multiply3(matrix, rotate3(rotationValue));
   matrix = multiply3(matrix, translate3(-origin.x, -origin.y));
 
-  return multiply3(savedTransform, matrix);
+  return multiply3(
+    translate3(translation.x, translation.y),
+    multiply3(savedTransform, matrix),
+  );
 }
 
 export function getMaximumPhotoScale(
