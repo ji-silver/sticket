@@ -9,6 +9,7 @@ import {
 } from '@supabase/supabase-js';
 
 import { supabase } from '../../lib/supabase';
+import { requestGoogleSignIn } from './auth.service';
 
 type AuthProvider = 'apple' | 'google';
 
@@ -48,7 +49,7 @@ function getConnectedProviders(session: Session) {
 }
 
 async function reauthenticateAndRevokeGoogle(session: Session) {
-  const response = await GoogleSignin.signIn();
+  const response = await requestGoogleSignIn();
 
   if (!isSuccessResponse(response)) {
     return false;

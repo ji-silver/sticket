@@ -7,14 +7,18 @@ import { appleAuth } from '@invertase/react-native-apple-authentication';
 import { publicConfig } from '../../config/publicConfig';
 import { supabase } from '../../lib/supabase';
 
-GoogleSignin.configure({
-  webClientId: publicConfig.googleWebClientId,
-  iosClientId: publicConfig.googleIosClientId,
-  offlineAccess: false,
-});
+export function requestGoogleSignIn() {
+  GoogleSignin.configure({
+    webClientId: publicConfig.googleWebClientId,
+    iosClientId: publicConfig.googleIosClientId,
+    offlineAccess: false,
+  });
+
+  return GoogleSignin.signIn();
+}
 
 export async function signInWithGoogle() {
-  const response = await GoogleSignin.signIn();
+  const response = await requestGoogleSignIn();
 
   if (!isSuccessResponse(response)) {
     return null;
