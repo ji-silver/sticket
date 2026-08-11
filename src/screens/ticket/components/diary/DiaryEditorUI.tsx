@@ -34,6 +34,7 @@ export function DiaryEditorOverlayUI({
   );
 
   const paperType = useDiaryStore(state => state.paperType);
+  const orientation = useDiaryStore(state => state.orientation);
 
   return (
     <>
@@ -47,7 +48,11 @@ export function DiaryEditorOverlayUI({
       ) : null}
 
       {selectedTool === 'paper' ? (
-        <DiaryPaperSelector paperType={paperType} onSelect={onSelectPaper} />
+        <DiaryPaperSelector
+          paperType={paperType}
+          orientation={orientation}
+          onSelect={onSelectPaper}
+        />
       ) : null}
     </>
   );

@@ -19,10 +19,13 @@ import TicketVisitInfoSection from './TicketVisitInfoSection.tsx';
 import {
   DIARY_BOTTOM_TOOLBAR_HEIGHT,
   getDiaryPageLayout,
+  getDiaryPageSize,
 } from './diary/diaryLayout.ts';
+import type { TicketDiaryOrientation } from '../../../features/ticket/types.ts';
 
 interface TicketRecordPageProps {
   ticket: Ticket;
+  orientation: TicketDiaryOrientation;
 }
 
 type MatchResult = 'win' | 'lose' | 'draw';
@@ -46,7 +49,10 @@ const teamColors: Record<string, string> = {
   두산: '#1A1748',
 };
 
-function TicketRecordPage({ ticket }: TicketRecordPageProps) {
+function TicketRecordPage({
+  ticket,
+  orientation,
+}: TicketRecordPageProps) {
   const insets = useSafeAreaInsets();
   const { profile } = useAuth();
   const favoriteTeamName = profile?.favorite_team?.short_name;
@@ -77,6 +83,7 @@ function TicketRecordPage({ ticket }: TicketRecordPageProps) {
   const { pageWidth } = getDiaryPageLayout(
     containerSize,
     containerSize.height - insets.bottom - DIARY_BOTTOM_TOOLBAR_HEIGHT,
+    getDiaryPageSize(orientation),
   );
 
   const handleContainerLayout = ({ nativeEvent }: LayoutChangeEvent) => {

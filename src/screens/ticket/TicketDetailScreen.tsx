@@ -13,8 +13,11 @@ import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
 import TicketDiaryPage from './components/diary/TicketDiaryPage.tsx';
 import TicketRecordPage from './components/TicketRecordPage.tsx';
+import TicketPageOrientationSheet from './components/TicketPageOrientationSheet.tsx';
 import { useDeleteTicket } from '../../features/ticket/api/useDeleteTicket';
 import { useGetTickets } from '../../features/ticket/api/useGetTickets';
+import { useSetTicketPageOrientation } from '../../features/ticket/api/useSetTicketPageOrientation.ts';
+import type { TicketDiaryOrientation } from '../../features/ticket/types.ts';
 
 type TicketDetailNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type TicketDetailRouteProp = RouteProp<RootStackParamList, 'TicketDetail'>;
@@ -33,6 +36,14 @@ function TicketDetailScreen() {
   const [isDeleteDialogVisible, setIsDeleteDialogVisible] = useState(false);
   const { mutateAsync: removeTicket, isPending: isDeleting } =
     useDeleteTicket();
+  const {
+    mutateAsync: savePageOrientation,
+    data: savedPageOrientation,
+    isPending: isSavingPageOrientation,
+  } = useSetTicketPageOrientation();
+
+  const pageOrientation =
+    savedPageOrientation ?? ticket?.pageOrientation ?? null;
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -63,6 +74,20 @@ function TicketDetailScreen() {
     } catch (error) {
       console.error('티켓을 삭제하지 못했습니다.', error);
       Alert.alert('티켓을 삭제하지 못했어요', '잠시 후 다시 시도해 주세요.');
+    }
+  };
+
+  const handleConfirmPageOrientation = async (
+    orientation: TicketDiaryOrientation,
+  ) => {
+    try {
+      await savePageOrientation({ ticketId, orientation });
+    } catch (error) {
+      console.error('페이지 방향을 저장하지 못했습니다.', error);
+      Alert.alert(
+        '페이지 방향을 저장하지 못했어요',
+        '잠시 후 다시 시도해 주세요.',
+      );
     }
   };
 
@@ -136,7 +161,10 @@ function TicketDetailScreen() {
       </View>
 
       <View style={[styles.page, activeTab !== 'record' && styles.hidden]}>
-        <TicketRecordPage ticket={ticket} />
+        <TicketRecordPage
+          ticket={ticket}
+          orientation={pageOrientation ?? 'portrait'}
+        />
       </View>
 
       {hasOpenedDiary ? (
@@ -144,6 +172,12 @@ function TicketDetailScreen() {
           <TicketDiaryPage key={ticket.id} ticketId={ticket.id} />
         </View>
       ) : null}
+
+      <TicketPageOrientationSheet
+        visible={pageOrientation === null}
+        isSaving={isSavingPageOrientation}
+        onConfirm={handleConfirmPageOrientation}
+      />
 
       <ConfirmDialog
         visible={isDeleteDialogVisible}

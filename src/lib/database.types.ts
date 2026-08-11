@@ -240,6 +240,7 @@ export type Database = {
           id: string
           memo: string | null
           original_photo_path: string | null
+          page_orientation: string | null
           rating: number | null
           seat_name: string | null
           ticket_book_id: string
@@ -253,6 +254,7 @@ export type Database = {
           id?: string
           memo?: string | null
           original_photo_path?: string | null
+          page_orientation?: string | null
           rating?: number | null
           seat_name?: string | null
           ticket_book_id: string
@@ -266,6 +268,7 @@ export type Database = {
           id?: string
           memo?: string | null
           original_photo_path?: string | null
+          page_orientation?: string | null
           rating?: number | null
           seat_name?: string | null
           ticket_book_id?: string

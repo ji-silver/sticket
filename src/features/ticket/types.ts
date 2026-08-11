@@ -20,6 +20,7 @@ export interface LineupPlayer {
 
 export interface Ticket {
   id: string;
+  pageOrientation: TicketDiaryOrientation | null;
   matchDate: string;
   matchTime: string;
   stadiumName: string;
@@ -43,6 +44,8 @@ export interface Ticket {
 export const TICKET_DIARY_VERSION = 1 as const;
 
 export type TicketDiaryPaperType = 'plain' | 'grid' | 'lined';
+
+export type TicketDiaryOrientation = 'portrait' | 'landscape';
 
 export type TicketDiaryMatrix = [
   number,
@@ -110,6 +113,7 @@ export type SavedDiaryItem =
 
 export interface TicketDiaryData {
   version: typeof TICKET_DIARY_VERSION;
+  orientation: TicketDiaryOrientation;
   paperType: TicketDiaryPaperType;
   items: SavedDiaryItem[];
   drawingIndex: number;

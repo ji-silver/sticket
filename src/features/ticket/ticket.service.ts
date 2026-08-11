@@ -2,7 +2,12 @@ import { decode } from 'base64-arraybuffer';
 
 import { supabase } from '../../lib/supabase.ts';
 import { getTodayInKorea } from '../../lib/date.ts';
-import type { BaseballPosition, LineupPlayer } from './types';
+import type {
+  BaseballPosition,
+  LineupPlayer,
+  Ticket,
+  TicketDiaryOrientation,
+} from './types';
 import {
   getTicketDiaryFilePaths,
   removeTicketDiaryFiles,
@@ -169,7 +174,7 @@ export async function createTicket({
 
 // ticket 테이블 조회
 // game:games!tickets_game_key_fkey는 tickets 테이블의 game_key 컬럼과 games 테이블의 key 컬럼을 조인하는 것
-export async function getTickets() {
+export async function getTickets(): Promise<Ticket[]> {
   const { data, error } = await supabase
     .from('tickets')
     .select(
@@ -180,6 +185,7 @@ export async function getTickets() {
         memo,
         foods,
         original_photo_path,
+        page_orientation,
         created_at,
 
         game:games!tickets_game_key_fkey (
@@ -243,6 +249,11 @@ export async function getTickets() {
       }
       return {
         id: ticket.id,
+        pageOrientation:
+          ticket.page_orientation === 'portrait' ||
+          ticket.page_orientation === 'landscape'
+            ? (ticket.page_orientation as TicketDiaryOrientation)
+            : null,
         matchDate: game.game_date,
         matchTime: game.start_time?.slice(0, 5) ?? '시간 미정',
         stadiumName: game.stadium_name ?? '경기장 미정',
@@ -273,6 +284,31 @@ export async function getTickets() {
 
       return secondTicket.matchTime.localeCompare(firstTicket.matchTime);
     });
+}
+
+export async function setTicketPageOrientation(
+  ticketId: string,
+  orientation: TicketDiaryOrientation,
+) {
+  const { data, error } = await supabase
+    .from('tickets')
+    .update({
+      page_orientation: orientation,
+    })
+    .eq('id', ticketId)
+    .is('page_orientation', null)
+    .select('page_orientation')
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data?.page_orientation) {
+    throw new Error('페이지 방향이 이미 설정되어 있습니다.');
+  }
+
+  return data.page_orientation as TicketDiaryOrientation;
 }
 
 function parseLineup(value: unknown): LineupPlayer[] {

@@ -23,6 +23,7 @@ interface DiaryCanvasAreaProps {
   displayedEditorWidth: number;
   displayedEditorHeight: number;
   editorSize: EditorSize;
+  pageSize: EditorSize;
   editorScale: number;
   displayScaleY: number;
   isPhoneLayout: boolean;
@@ -47,6 +48,7 @@ export default function DiaryCanvasArea({
   displayedEditorWidth,
   displayedEditorHeight,
   editorSize,
+  pageSize,
   editorScale,
   displayScaleY,
   isPhoneLayout,
@@ -67,6 +69,7 @@ export default function DiaryCanvasArea({
   children,
 }: DiaryCanvasAreaProps) {
   const paperType = useDiaryStore(state => state.paperType);
+  const orientation = useDiaryStore(state => state.orientation);
   const items = useDiaryStore(state => state.items);
   const drawingIndex = useDiaryStore(state => state.drawingIndex);
   const selectedTool = useDiaryStore(state => state.selectedTool);
@@ -113,13 +116,18 @@ export default function DiaryCanvasArea({
                 style={styles.editorBackground}
                 onPress={onDeselectDiaryItem}
               >
-                {paperType === 'grid' ? <GridPaper /> : null}
-                {paperType === 'lined' ? <LinedPaper /> : null}
+                {paperType === 'grid' ? (
+                  <GridPaper pageSize={pageSize} />
+                ) : null}
+                {paperType === 'lined' ? (
+                  <LinedPaper pageSize={pageSize} />
+                ) : null}
               </Pressable>
 
               {items.slice(0, drawingIndex).map(renderDiaryItem)}
 
               <DiaryDrawingCanvas
+                key={orientation}
                 ref={drawingCanvasRef}
                 logicalSize={editorSize}
                 displayScale={editorScale}

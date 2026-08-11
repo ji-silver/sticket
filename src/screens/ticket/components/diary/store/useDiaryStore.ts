@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { DiaryItem, SelectedDiaryItem } from '../TicketDiaryPage.tsx';
 import type { PaperType } from '../DiaryPaperSelector.tsx';
 import type { DiaryToolId } from '../DiaryBottomToolbar.tsx';
+import type { TicketDiaryOrientation } from '../../../../../features/ticket/types.ts';
 
 import { DIARY_STICKER_PACKS } from '../diaryStickerPacks.ts';
 
@@ -11,6 +12,7 @@ interface InitializeDiaryPayload {
   items: DiaryItem[];
   drawingIndex: number;
   paperType: PaperType;
+  orientation: TicketDiaryOrientation;
 }
 
 interface DiaryState {
@@ -18,6 +20,7 @@ interface DiaryState {
   selectedItem: SelectedDiaryItem;
   drawingIndex: number;
   paperType: PaperType;
+  orientation: TicketDiaryOrientation;
   selectedTool: DiaryToolId | null;
   isLayerPanelVisible: boolean;
   selectedStickerPackId: string;
@@ -43,6 +46,7 @@ const createInitialState = () => ({
   selectedItem: null as SelectedDiaryItem,
   drawingIndex: 0,
   paperType: 'plain' as PaperType,
+  orientation: 'portrait' as TicketDiaryOrientation,
   selectedTool: null as DiaryToolId | null,
   isLayerPanelVisible: false,
   selectedStickerPackId: DIARY_STICKER_PACKS[0]?.id ?? '',
@@ -92,11 +96,12 @@ export const useDiaryStore = create<DiaryState>(set => ({
       editingTextId: resolve(arg, state.editingTextId),
     })),
 
-  initializeDiary: ({ items, drawingIndex, paperType }) =>
+  initializeDiary: ({ items, drawingIndex, paperType, orientation }) =>
     set({
       items,
       drawingIndex,
       paperType,
+      orientation,
       selectedItem: null,
       editingTextId: null,
       selectedTool: null,

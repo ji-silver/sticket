@@ -54,6 +54,7 @@ function readBlobAsBase64(blob: Blob): Promise<string> {
 export function createEmptyTicketDiaryData(): TicketDiaryData {
   return {
     version: TICKET_DIARY_VERSION,
+    orientation: 'portrait',
     paperType: 'plain',
     items: [],
     drawingIndex: 0,
@@ -69,6 +70,9 @@ function parseTicketDiaryData(value: unknown): TicketDiaryData {
   if (
     !isRecord(value) ||
     value.version !== TICKET_DIARY_VERSION ||
+    (value.orientation !== undefined &&
+      value.orientation !== 'portrait' &&
+      value.orientation !== 'landscape') ||
     (value.paperType !== 'plain' &&
       value.paperType !== 'grid' &&
       value.paperType !== 'lined') ||
@@ -86,6 +90,8 @@ function parseTicketDiaryData(value: unknown): TicketDiaryData {
   ) {
     return {
       ...(value as unknown as TicketDiaryData),
+      orientation:
+        value.orientation === 'landscape' ? 'landscape' : 'portrait',
       drawingIndex: Math.min(
         savedItems.length,
         Math.max(0, value.drawingIndex),
@@ -99,6 +105,8 @@ function parseTicketDiaryData(value: unknown): TicketDiaryData {
 
   return {
     ...(value as unknown as TicketDiaryData),
+    orientation:
+      value.orientation === 'landscape' ? 'landscape' : 'portrait',
     items: [...photos, ...foregroundItems],
     drawingIndex: photos.length,
   };
@@ -130,7 +138,7 @@ export async function getTicketDiaryData(
 ): Promise<TicketDiaryData> {
   const { data, error } = await supabase
     .from('tickets')
-    .select('diary_data')
+    .select('diary_data, page_orientation')
     .eq('id', ticketId)
     .single();
 
@@ -139,9 +147,15 @@ export async function getTicketDiaryData(
   }
 
   const diaryData = parseTicketDiaryData(data.diary_data);
+  const orientation =
+    data.page_orientation === 'portrait' ||
+    data.page_orientation === 'landscape'
+      ? data.page_orientation
+      : diaryData.orientation;
 
   return {
     ...diaryData,
+    orientation,
     items: diaryData.items.filter(
       item =>
         item.type !== 'photo' ||

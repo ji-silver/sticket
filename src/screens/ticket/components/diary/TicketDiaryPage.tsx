@@ -48,6 +48,7 @@ import {
 import {
   type SavedDiaryItem,
   TICKET_DIARY_VERSION,
+  type TicketDiaryOrientation,
 } from '../../../../features/ticket/types.ts';
 
 import {
@@ -60,9 +61,9 @@ import {
   uploadTicketDiaryPhoto,
 } from '../../../../features/ticket/ticketDiary.service.ts';
 import {
+  getDiaryEditorSize,
   getDiaryPageLayout,
-  REFERENCE_DIARY_PAGE_HEIGHT,
-  REFERENCE_DIARY_PAGE_WIDTH,
+  getDiaryPageSize,
 } from './diaryLayout.ts';
 
 const MAXIMUM_DIARY_PHOTO_COUNT = 2;
@@ -105,6 +106,7 @@ export type SelectedDiaryItem =
 
 interface DiarySaveSnapshot {
   version: number;
+  orientation: TicketDiaryOrientation;
   paperType: PaperType;
   items: DiaryItem[];
   drawingIndex: number;
@@ -382,6 +384,7 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
 
   const paperType = useDiaryStore(state => state.paperType);
   const setPaperType = useDiaryStore(state => state.setPaperType);
+  const orientation = useDiaryStore(state => state.orientation);
   const items = useDiaryStore(state => state.items);
   const setItems = useDiaryStore(state => state.setItems);
   const drawingIndex = useDiaryStore(state => state.drawingIndex);
@@ -403,10 +406,8 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
     height: 0,
   });
 
-  const [editorSize] = useState<EditorSize>({
-    width: REFERENCE_DIARY_PAGE_WIDTH,
-    height: 524,
-  });
+  const pageSize = getDiaryPageSize(orientation);
+  const editorSize = getDiaryEditorSize(orientation);
 
   const isLandscape = editorWrapperSize.width > editorWrapperSize.height;
 
@@ -414,17 +415,15 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
   const { isPhoneLayout, pageWidth } = getDiaryPageLayout(
     editorWrapperSize,
     availableEditorHeight,
+    pageSize,
   );
   const editorScale = Math.max(0.01, pageWidth / editorSize.width);
   const displayedEditorWidth = pageWidth;
-  const displayedEditorHeight = REFERENCE_DIARY_PAGE_HEIGHT * editorScale;
-  const displayScaleY =
-    editorScale * (REFERENCE_DIARY_PAGE_HEIGHT / editorSize.height);
+  const displayedEditorHeight =
+    pageSize.height * (pageWidth / pageSize.width);
+  const displayScaleY = displayedEditorHeight / editorSize.height;
   const activeEditorSize = editorSize;
-  const layerPanelEditorSize: EditorSize = {
-    width: editorSize.width,
-    height: REFERENCE_DIARY_PAGE_HEIGHT,
-  };
+  const layerPanelEditorSize: EditorSize = pageSize;
 
   const selectedText =
     selectedItem?.type === 'text'
@@ -501,6 +500,7 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
 
     await updateTicketDiaryData(ticketId, {
       version: TICKET_DIARY_VERSION,
+      orientation: snapshot.orientation,
       paperType: snapshot.paperType,
       items: savedItems,
       drawingIndex: snapshot.items
@@ -630,10 +630,19 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
         }
 
         initializeDiary({
+          orientation: diaryData.orientation,
           paperType: diaryData.paperType,
           items: restoredItems,
           drawingIndex: diaryData.drawingIndex,
         });
+
+        await new Promise<void>(resolve => {
+          requestAnimationFrame(() => resolve());
+        });
+
+        if (!isActive) {
+          return;
+        }
 
         if (!drawingCanvasRef.current) {
           throw new Error('그림 캔버스를 불러올 수 없습니다.');
@@ -714,6 +723,7 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
 
     const snapshot: DiarySaveSnapshot = {
       version: nextSnapshotVersionRef.current + 1,
+      orientation,
       paperType,
       items,
       drawingIndex,
@@ -743,7 +753,7 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
     return () => {
       clearTimeout(autosaveTimer);
     };
-  }, [drawingIndex, drawingRevision, isLoading, items, paperType]);
+  }, [drawingIndex, drawingRevision, isLoading, items, orientation, paperType]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', nextAppState => {
@@ -1352,6 +1362,7 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
           displayedEditorWidth={displayedEditorWidth}
           displayedEditorHeight={displayedEditorHeight}
           editorSize={editorSize}
+          pageSize={pageSize}
           editorScale={editorScale}
           displayScaleY={displayScaleY}
           isPhoneLayout={isPhoneLayout}
