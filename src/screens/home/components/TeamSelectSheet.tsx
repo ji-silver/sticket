@@ -6,16 +6,16 @@ import { colors } from '../../../styles/colors.ts';
 import { fonts } from '../../../styles/fonts.ts';
 
 const KBO_TEAMS = [
-  'SSG 랜더스',
-  'LG 트윈스',
   '두산 베어스',
-  'KIA 타이거즈',
-  '삼성 라이온즈',
   '롯데 자이언츠',
-  '한화 이글스',
+  '삼성 라이온즈',
   '키움 히어로즈',
+  '한화 이글스',
+  'KIA 타이거즈',
   'KT 위즈',
+  'LG 트윈스',
   'NC 다이노스',
+  'SSG 랜더스',
 ];
 
 interface TeamSelectSheetProps {
