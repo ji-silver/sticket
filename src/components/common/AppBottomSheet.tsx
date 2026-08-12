@@ -5,6 +5,7 @@ import {
   Modal,
   Pressable,
   StyleSheet,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { X } from 'lucide-react-native';
@@ -41,6 +42,7 @@ function AppBottomSheet({
   onClosed,
 }: AppBottomSheetProps) {
   const { bottom } = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
   const [isPresented, setIsPresented] = useState(visible);
   const progress = useRef(new Animated.Value(visible ? 1 : 0)).current;
 
@@ -110,6 +112,13 @@ function AppBottomSheet({
             },
           ]}
         >
+          {keyboardAvoiding ? (
+            <View
+              pointerEvents="none"
+              style={[styles.keyboardUnderlay, { height: windowHeight }]}
+            />
+          ) : null}
+
           <View style={styles.header}>
             <View style={styles.headerCopy}>
               <AppText style={styles.title}>{title}</AppText>
@@ -153,6 +162,13 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     backgroundColor: 'rgba(0, 0, 0, 0.32)',
+  },
+  keyboardUnderlay: {
+    position: 'absolute',
+    top: '100%',
+    right: 0,
+    left: 0,
+    backgroundColor: colors.surface,
   },
   sheet: {
     maxHeight: '90%',

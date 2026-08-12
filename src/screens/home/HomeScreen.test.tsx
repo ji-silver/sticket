@@ -225,6 +225,10 @@ describe('HomeScreen', () => {
         expect(screen.getByText('기존 버킷리스트')).toBeVisible();
       });
 
+      expect(
+        screen.getByText('기존 버킷리스트').props.numberOfLines,
+      ).toBeUndefined();
+
       const checkbox = screen.getByRole('checkbox', {
         name: '기존 버킷리스트 완료',
       });
@@ -236,7 +240,7 @@ describe('HomeScreen', () => {
       });
     });
 
-    it('수정 버튼을 누르고 새 버킷리스트를 추가하면 생성 API가 호출된다', async () => {
+    it('추가 버튼을 누르고 새 버킷리스트를 추가하면 생성 API가 호출된다', async () => {
       const user = userEvent.setup();
       mockCreateBucketMutateAsync.mockResolvedValueOnce({
         id: 'bucket-2',
@@ -249,11 +253,10 @@ describe('HomeScreen', () => {
       await render(<HomeScreen />);
 
       await waitFor(() => {
-        expect(screen.getByText('수정')).toBeVisible();
+        expect(screen.getByRole('button', { name: '추가' })).toBeVisible();
       });
 
-      const editButton = screen.getByText('수정');
-      await user.press(editButton);
+      await user.press(screen.getByRole('button', { name: '추가' }));
 
       const input = screen.getByLabelText('새 버킷리스트 목표');
       await user.type(input, '새로운 직관 목표');
@@ -269,18 +272,22 @@ describe('HomeScreen', () => {
       });
     });
 
-    it('버킷리스트 편집 모달에서 항목의 삭제 버튼을 누르면 삭제 API가 호출된다', async () => {
+    it('버킷리스트 제목을 눌러 항목을 삭제하고 실행 취소할 수 있다', async () => {
       const user = userEvent.setup();
       mockDeleteBucketMutateAsync.mockResolvedValueOnce(true);
+      mockRestoreBucketMutateAsync.mockResolvedValueOnce(true);
 
       await render(<HomeScreen />);
 
       await waitFor(() => {
-        expect(screen.getByText('수정')).toBeVisible();
+        expect(
+          screen.getByRole('button', { name: '기존 버킷리스트 수정' }),
+        ).toBeVisible();
       });
 
-      const editButton = screen.getByText('수정');
-      await user.press(editButton);
+      await user.press(
+        screen.getByRole('button', { name: '기존 버킷리스트 수정' }),
+      );
 
       const deleteButton = screen.getByRole('button', {
         name: '기존 버킷리스트 삭제',
@@ -288,6 +295,19 @@ describe('HomeScreen', () => {
       await user.press(deleteButton);
 
       expect(mockDeleteBucketMutateAsync).toHaveBeenCalledWith('bucket-1');
+
+      const undoButton = await screen.findByRole('button', {
+        name: '버킷리스트 삭제 실행 취소',
+      });
+      await user.press(undoButton);
+
+      expect(mockRestoreBucketMutateAsync).toHaveBeenCalledWith({
+        id: 'bucket-1',
+        ticketBookId: 'ticket-1',
+        title: '기존 버킷리스트',
+        isCompleted: false,
+        displayOrder: 0,
+      });
     });
   });
 });

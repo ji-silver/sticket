@@ -201,6 +201,7 @@ function HomeScreen() {
       {/* SafeAreaView 안전 영역을 위에만 적용하기 */}
       <ScrollView
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.scrollContent}
       >
         <View style={styles.header}>
