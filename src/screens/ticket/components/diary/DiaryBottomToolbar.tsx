@@ -61,12 +61,14 @@ function DiaryBottomToolbar({
         {DIARY_TOOLS.map(tool => {
           const Icon = tool.icon;
           const isSelected = selectedTool === tool.id;
+          const isLayerPanelActive = isSelected && tool.id === 'layers';
 
           return (
             <Pressable
               key={tool.id}
               accessibilityRole="button"
               accessibilityLabel={`${tool.label} 도구`}
+              accessibilityState={{ selected: isSelected }}
               onPress={() => onPressTool(tool.id)}
               style={({ pressed }) => [
                 styles.toolButton,
@@ -77,12 +79,19 @@ function DiaryBottomToolbar({
                 style={[
                   styles.iconContainer,
                   isSelected && styles.selectedIconContainer,
+                  isLayerPanelActive && styles.activeLayerIconContainer,
                 ]}
               >
                 <Icon
                   size={22}
                   strokeWidth={2}
-                  color={isSelected ? colors.primary : colors.textSecondary}
+                  color={
+                    isLayerPanelActive
+                      ? colors.onPrimary
+                      : isSelected
+                      ? colors.primary
+                      : colors.textSecondary
+                  }
                 />
               </View>
 
@@ -142,5 +151,9 @@ const styles = StyleSheet.create({
 
   selectedIconContainer: {
     backgroundColor: colors.primarySoft,
+  },
+
+  activeLayerIconContainer: {
+    backgroundColor: colors.primary,
   },
 });

@@ -9,6 +9,7 @@ import {
 import {
   GripVertical,
   ImageIcon,
+  Layers,
   Pencil,
   Sticker,
   Type,
@@ -241,9 +242,16 @@ function DiaryLayerPanel({
       ]}
     >
       <View style={styles.header}>
-        <AppText size={14} weight="semiBold">
-          {items.length}개
-        </AppText>
+        <View
+          accessible
+          accessibilityLabel={`레이어 ${items.length}개`}
+          style={styles.headerTitle}
+        >
+          <Layers size={15} color={colors.primary} strokeWidth={2.2} />
+          <AppText size={13} weight="semiBold">
+            레이어
+          </AppText>
+        </View>
 
         <Pressable
           accessibilityRole="button"
@@ -287,7 +295,7 @@ export default DiaryLayerPanel;
 const styles = StyleSheet.create({
   panel: {
     overflow: 'hidden',
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 16,
     borderCurve: 'continuous',
@@ -323,6 +331,13 @@ const styles = StyleSheet.create({
     paddingRight: 2,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
+    backgroundColor: colors.primary50,
+  },
+
+  headerTitle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
   },
 
   closeButton: {
@@ -343,13 +358,16 @@ const styles = StyleSheet.create({
     height: LAYER_ROW_HEIGHT,
     flexDirection: 'row',
     alignItems: 'center',
+    borderLeftWidth: 3,
+    borderLeftColor: 'transparent',
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
     backgroundColor: colors.surface,
   },
 
   selectedLayerRow: {
-    backgroundColor: colors.primarySoft,
+    borderLeftColor: colors.primary,
+    backgroundColor: colors.primary50,
   },
 
   layerContent: {
