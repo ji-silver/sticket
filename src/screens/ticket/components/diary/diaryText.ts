@@ -2,7 +2,7 @@ import { colors } from '../../../../styles/colors.ts';
 import { clamp, type EditorSize } from './photoTransform.ts';
 
 export const MINIMUM_TEXT_WIDTH = 96;
-export const MINIMUM_TEXT_HEIGHT = 37;
+export const MINIMUM_TEXT_HEIGHT = 32;
 const DEFAULT_TEXT_WIDTH = 220;
 
 type DiaryTextAlign = 'left' | 'center' | 'right';

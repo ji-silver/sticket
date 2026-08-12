@@ -511,7 +511,8 @@ function DiaryTextItem({
     lineHeight: lineHeight * safeDisplayScale,
     minHeight: MINIMUM_TEXT_HEIGHT * safeDisplayScale,
     paddingHorizontal: 10 * safeDisplayScale,
-    paddingVertical: 7 * safeDisplayScale,
+    paddingTop: 5 * safeDisplayScale,
+    paddingBottom: 2 * safeDisplayScale,
     textAlign: textItem.style.align,
     textDecorationLine,
     fontFamily,
@@ -575,7 +576,7 @@ function DiaryTextItem({
           onChangeText={onChangeText}
           onSelectionChange={handleTextSelectionChange}
           onBlur={handleTextInputBlur}
-          style={[styles.text, styles.textInput, commonTextStyle]}
+          style={[styles.text, styles.textContent, commonTextStyle]}
         />
       ) : (
         <Text
@@ -585,7 +586,7 @@ function DiaryTextItem({
           accessibilityState={{
             selected: isSelected,
           }}
-          style={[styles.text, commonTextStyle]}
+          style={[styles.text, styles.textContent, commonTextStyle]}
         >
           {textItem.text}
         </Text>
@@ -684,9 +685,10 @@ const styles = StyleSheet.create({
     width: '100%',
     minHeight: MINIMUM_TEXT_HEIGHT,
     paddingHorizontal: 10,
-    paddingVertical: 7,
+    paddingTop: 5,
+    paddingBottom: 2,
     includeFontPadding: false,
-    textAlignVertical: 'center',
+    textAlignVertical: 'top',
   },
 
   textMeasure: {
@@ -696,7 +698,7 @@ const styles = StyleSheet.create({
     opacity: 0,
   },
 
-  textInput: {
+  textContent: {
     position: 'absolute',
     top: 0,
     right: 0,

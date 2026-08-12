@@ -1,6 +1,7 @@
 import {
   type LayoutChangeEvent,
   Pressable,
+  ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
@@ -28,8 +29,8 @@ interface DiaryCanvasAreaProps {
   pageSize: EditorSize;
   editorScale: number;
   displayScaleY: number;
-  isPhoneLayout: boolean;
   isLandscape: boolean;
+  isTextEditing: boolean;
   layerPanelEditorSize: EditorSize;
   layerPanelItems: DiaryLayerPanelItem[];
   selectedLayerId: string | null;
@@ -53,8 +54,8 @@ export default function DiaryCanvasArea({
   pageSize,
   editorScale,
   displayScaleY,
-  isPhoneLayout,
   isLandscape,
+  isTextEditing,
   layerPanelEditorSize,
   layerPanelItems,
   selectedLayerId,
@@ -79,11 +80,12 @@ export default function DiaryCanvasArea({
 
   return (
     <View style={styles.editorWrapper} onLayout={onEditorWrapperLayout}>
-      <View
-        style={[
-          styles.editorCanvasRegion,
-          isPhoneLayout && styles.phoneCanvasRegion,
-        ]}
+      <ScrollView
+        style={styles.editorCanvasRegion}
+        contentContainerStyle={styles.editorCanvasContent}
+        scrollEnabled={isTextEditing}
+        showsVerticalScrollIndicator={isTextEditing}
+        keyboardShouldPersistTaps="always"
         onLayout={onEditorCanvasRegionLayout}
       >
         <View
@@ -191,7 +193,7 @@ export default function DiaryCanvasArea({
             onClose={onCloseLayerPanel}
           />
         ) : null}
-      </View>
+      </ScrollView>
 
       {children}
     </View>
@@ -207,12 +209,12 @@ const styles = StyleSheet.create({
 
   editorCanvasRegion: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
     width: '100%',
   },
 
-  phoneCanvasRegion: {
+  editorCanvasContent: {
+    flexGrow: 1,
+    alignItems: 'center',
     justifyContent: 'center',
   },
 

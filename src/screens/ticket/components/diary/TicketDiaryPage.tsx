@@ -161,18 +161,25 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
     width: 0,
     height: 0,
   });
+  const editingPageWidthRef = useRef(0);
 
   const pageSize = getDiaryPageSize(orientation);
   const editorSize = getDiaryEditorSize(orientation);
 
-  const isLandscape = editorWrapperSize.width > editorWrapperSize.height;
+  const isLandscape = orientation === 'landscape';
 
   const availableEditorHeight = Math.max(0, editorCanvasRegionSize.height);
-  const { isPhoneLayout, pageWidth } = getDiaryPageLayout(
+  const { pageWidth: measuredPageWidth } = getDiaryPageLayout(
     editorWrapperSize,
     availableEditorHeight,
     pageSize,
   );
+  const shouldKeepEditingPageSize =
+    editingTextId !== null || Keyboard.isVisible();
+  const pageWidth =
+    shouldKeepEditingPageSize && editingPageWidthRef.current > 0
+      ? editingPageWidthRef.current
+      : measuredPageWidth;
   const editorScale = Math.max(0.01, pageWidth / editorSize.width);
   const displayedEditorWidth = pageWidth;
   const displayedEditorHeight = pageSize.height * (pageWidth / pageSize.width);
@@ -332,6 +339,7 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
 
   const handleAddText = () => {
     finishCurrentTextEditing();
+    editingPageWidthRef.current = pageWidth;
 
     const newText = createDiaryText(activeEditorSize);
 
@@ -371,6 +379,8 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
   };
 
   const handleStartTextEditing = (textId: string) => {
+    editingPageWidthRef.current = pageWidth;
+
     setSelectedItem({
       type: 'text',
       id: textId,
@@ -707,8 +717,8 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
           pageSize={pageSize}
           editorScale={editorScale}
           displayScaleY={displayScaleY}
-          isPhoneLayout={isPhoneLayout}
           isLandscape={isLandscape}
+          isTextEditing={editingTextId !== null}
           layerPanelEditorSize={layerPanelEditorSize}
           layerPanelItems={layerPanelItems}
           selectedLayerId={selectedLayerId}
