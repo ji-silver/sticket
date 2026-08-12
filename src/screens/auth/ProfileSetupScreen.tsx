@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Check, ChevronRight } from 'lucide-react-native';
-
+import AppButton from '../../components/common/AppButton.tsx';
 import AppText from '../../components/common/AppText.tsx';
 import TeamSelectSheet from '../home/components/TeamSelectSheet.tsx';
 import { colors } from '../../styles/colors.ts';
@@ -214,7 +214,7 @@ function ProfileSetupScreen() {
             </AppText>
           </Pressable>
 
-          <Pressable
+          <AppButton
             style={({ pressed }) => [
               styles.startButton,
               (!isFormValid || isSaving) && styles.startButtonDisabled,
@@ -236,7 +236,7 @@ function ProfileSetupScreen() {
             >
               {isSaving ? '저장 중' : '시작하기'}
             </AppText>
-          </Pressable>
+          </AppButton>
         </View>
       </KeyboardAvoidingView>
 
@@ -367,8 +367,6 @@ const styles = StyleSheet.create({
   },
   startButton: {
     height: 54,
-    borderRadius: 18,
-    borderCurve: 'continuous',
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',

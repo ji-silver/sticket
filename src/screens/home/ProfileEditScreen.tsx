@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import AppButton from '../../components/common/AppButton.tsx';
 import AppText from '../../components/common/AppText.tsx';
 import ScreenHeader from '../../components/common/ScreenHeader.tsx';
 import { useAuth } from '../../features/auth/AuthProvider.tsx';
@@ -133,7 +134,7 @@ function ProfileEditScreen() {
         </ScrollView>
 
         <View style={styles.footer}>
-          <Pressable
+          <AppButton
             style={({ pressed }) => [
               styles.saveButton,
               (!isFormValid || updateProfileMutation.isPending) &&
@@ -159,7 +160,7 @@ function ProfileEditScreen() {
             >
               {updateProfileMutation.isPending ? '저장 중' : '저장'}
             </AppText>
-          </Pressable>
+          </AppButton>
         </View>
       </KeyboardAvoidingView>
 
@@ -253,8 +254,6 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     height: 54,
-    borderRadius: 18,
-    borderCurve: 'continuous',
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',

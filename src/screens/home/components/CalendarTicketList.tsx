@@ -1,5 +1,6 @@
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { Plus } from 'lucide-react-native';
+import AppButton from '../../../components/common/AppButton.tsx';
 import AppText from '../../../components/common/AppText.tsx';
 import EmptyCard from '../../../components/common/EmptyCard.tsx';
 import TicketCard from '../../ticket/components/TicketCard.tsx';
@@ -112,7 +113,7 @@ function CalendarTicketList({
                 </AppText>
 
                 {selectedDate <= today && game.status !== 'CANCELLED' ? (
-                  <Pressable
+                  <AppButton
                     style={({ pressed }) => [
                       styles.addTicketButton,
                       styles.teamGameAddButton,
@@ -131,7 +132,7 @@ function CalendarTicketList({
                     <AppText style={styles.addTicketButtonText}>
                       티켓 추가
                     </AppText>
-                  </Pressable>
+                  </AppButton>
                 ) : null}
               </View>
             );
@@ -152,7 +153,7 @@ function CalendarTicketList({
           style={styles.emptyCard}
         >
           {selectedDate <= today ? (
-            <Pressable
+            <AppButton
               style={({ pressed }) => [
                 styles.addTicketButton,
                 pressed && styles.addTicketButtonPressed,
@@ -164,7 +165,7 @@ function CalendarTicketList({
               <Plus size={15} color={colors.onPrimary} strokeWidth={2.6} />
 
               <AppText style={styles.addTicketButtonText}>티켓 추가</AppText>
-            </Pressable>
+            </AppButton>
           ) : null}
         </EmptyCard>
       )}
@@ -264,8 +265,6 @@ const styles = StyleSheet.create({
   addTicketButton: {
     height: 38,
     paddingHorizontal: 15,
-    borderRadius: 19,
-    borderCurve: 'continuous',
     backgroundColor: colors.primary,
     flexDirection: 'row',
     alignItems: 'center',

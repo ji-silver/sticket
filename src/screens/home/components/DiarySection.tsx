@@ -12,6 +12,7 @@ import { MoreHorizontal, Plus } from 'lucide-react-native';
 import DiaryCover from '../../../components/DiaryCover';
 import type { Diary } from '../types';
 import { fonts } from '../../../styles/fonts.ts';
+import AppButton from '../../../components/common/AppButton.tsx';
 import AppText from '../../../components/common/AppText.tsx';
 import { colors } from '../../../styles/colors.ts';
 
@@ -146,10 +147,10 @@ function EmptyDiaryState({ onPressAddDiary }: { onPressAddDiary: () => void }) {
         아직 만든 티켓북이 없어요
       </AppText>
 
-      <Pressable style={styles.emptyDiaryButton} onPress={onPressAddDiary}>
+      <AppButton style={styles.emptyDiaryButton} onPress={onPressAddDiary}>
         <Plus size={16} color={colors.onPrimary} strokeWidth={2.5} />
         <AppText style={styles.emptyDiaryButtonText}>티켓북 만들기</AppText>
-      </Pressable>
+      </AppButton>
     </View>
   );
 }
@@ -264,7 +265,6 @@ const styles = StyleSheet.create({
     marginTop: 22,
     height: 46,
     paddingHorizontal: 18,
-    borderRadius: 23,
     backgroundColor: colors.primary,
     flexDirection: 'row',
     alignItems: 'center',

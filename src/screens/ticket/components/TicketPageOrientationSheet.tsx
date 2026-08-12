@@ -1,5 +1,6 @@
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { useState } from 'react';
+import AppButton from '../../../components/common/AppButton.tsx';
 import AppBottomSheet from '../../../components/common/AppBottomSheet.tsx';
 import AppText from '../../../components/common/AppText.tsx';
 import type { TicketDiaryOrientation } from '../../../features/ticket/types.ts';
@@ -78,7 +79,7 @@ export default function TicketPageOrientationSheet({
         })}
       </View>
 
-      <Pressable
+      <AppButton
         accessibilityRole="button"
         accessibilityLabel="페이지 방향 선택 완료"
         disabled={isSaving}
@@ -94,7 +95,7 @@ export default function TicketPageOrientationSheet({
         ) : (
           <AppText style={styles.confirmLabel}>선택 완료</AppText>
         )}
-      </Pressable>
+      </AppButton>
     </AppBottomSheet>
   );
 }
@@ -158,8 +159,6 @@ const styles = StyleSheet.create({
   confirmButton: {
     height: 54,
     marginTop: 20,
-    borderRadius: 16,
-    borderCurve: 'continuous',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.primary,

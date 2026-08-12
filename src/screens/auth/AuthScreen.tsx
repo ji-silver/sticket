@@ -1,6 +1,7 @@
-import { Alert, Image, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Image, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
+import AppButton from '../../components/common/AppButton.tsx';
 import AppText from '../../components/common/AppText.tsx';
 import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
@@ -60,7 +61,7 @@ function AuthScreen() {
       </View>
 
       <View style={styles.loginArea}>
-        <Pressable
+        <AppButton
           style={({ pressed }) => [
             styles.loginButton,
             styles.appleButton,
@@ -81,9 +82,9 @@ function AuthScreen() {
           <AppText style={styles.appleButtonText}>
             {loadingProvider === 'apple' ? '로그인 중...' : 'Apple로 계속하기'}
           </AppText>
-        </Pressable>
+        </AppButton>
 
-        <Pressable
+        <AppButton
           style={({ pressed }) => [
             styles.loginButton,
             styles.googleButton,
@@ -107,7 +108,7 @@ function AuthScreen() {
               ? '로그인 중...'
               : 'Google로 계속하기'}
           </AppText>
-        </Pressable>
+        </AppButton>
       </View>
     </SafeAreaView>
   );
@@ -148,8 +149,6 @@ const styles = StyleSheet.create({
   },
   loginButton: {
     height: 54,
-    borderRadius: 18,
-    borderCurve: 'continuous',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

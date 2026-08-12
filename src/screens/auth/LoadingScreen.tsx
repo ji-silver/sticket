@@ -1,13 +1,12 @@
 import {
   ActivityIndicator,
   Image,
-  Pressable,
   StatusBar,
   StyleSheet,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
+import AppButton from '../../components/common/AppButton.tsx';
 import AppText from '../../components/common/AppText.tsx';
 import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
@@ -40,7 +39,7 @@ function LoadingScreen() {
             <AppText style={styles.errorText}>
               {errorMessage || '로그인 정보를 확인하지 못했어요.'}
             </AppText>
-            <Pressable
+            <AppButton
               style={({ pressed }) => [
                 styles.retryButton,
                 pressed && styles.retryButtonPressed,
@@ -50,7 +49,7 @@ function LoadingScreen() {
               accessibilityLabel="로그인 정보 다시 불러오기"
             >
               <AppText style={styles.retryButtonText}>다시 시도</AppText>
-            </Pressable>
+            </AppButton>
           </View>
         ) : (
           <ActivityIndicator
@@ -106,7 +105,6 @@ const styles = StyleSheet.create({
   retryButton: {
     minHeight: 40,
     paddingHorizontal: 18,
-    borderRadius: 14,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',

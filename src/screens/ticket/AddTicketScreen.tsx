@@ -2,13 +2,13 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
-  Pressable,
   ScrollView,
   StyleSheet,
   TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AppButton from '../../components/common/AppButton.tsx';
 import AppText from '../../components/common/AppText.tsx';
 import { fonts } from '../../styles/fonts.ts';
 import { useNavigation, useRoute } from '@react-navigation/core';
@@ -220,7 +220,7 @@ function AddTicketScreen() {
               { paddingHorizontal: horizontalPadding },
             ]}
           >
-            <Pressable
+            <AppButton
               disabled={isSaveDisabled}
               onPress={handleAddTicket}
               style={({ pressed }) => [
@@ -246,7 +246,7 @@ function AddTicketScreen() {
                   티켓 추가
                 </AppText>
               )}
-            </Pressable>
+            </AppButton>
           </ResponsiveContent>
         </View>
       </KeyboardAvoidingView>
@@ -320,8 +320,6 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     height: 54,
-    borderRadius: 18,
-    borderCurve: 'continuous',
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',

@@ -21,6 +21,7 @@ import ColorPicker, {
   Panel1,
   Preview,
 } from 'reanimated-color-picker';
+import AppButton from '../../../../components/common/AppButton.tsx';
 import AppBottomSheet from '../../../../components/common/AppBottomSheet.tsx';
 import AppText from '../../../../components/common/AppText.tsx';
 import { colors } from '../../../../styles/colors.ts';
@@ -289,7 +290,7 @@ function DiaryTextToolbar({ textItem, onChangeStyle }: DiaryTextToolbarProps) {
               </AppText>
             </Pressable>
 
-            <Pressable
+            <AppButton
               accessibilityRole="button"
               accessibilityLabel="색상 적용"
               onPress={() => setColorPickerVisible(false)}
@@ -301,7 +302,7 @@ function DiaryTextToolbar({ textItem, onChangeStyle }: DiaryTextToolbarProps) {
               <AppText size={13} weight="semiBold" color={colors.onPrimary}>
                 완료
               </AppText>
-            </Pressable>
+            </AppButton>
           </View>
         }
       >
@@ -469,7 +470,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 18,
     backgroundColor: colors.primary,
   },
 

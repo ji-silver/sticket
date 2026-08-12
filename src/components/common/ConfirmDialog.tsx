@@ -7,6 +7,7 @@ import {
 } from 'react-native';
 import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
+import AppButton from './AppButton.tsx';
 import AppText from './AppText.tsx';
 
 interface ConfirmDialogProps {
@@ -70,7 +71,7 @@ function ConfirmDialog({
           ) : null}
 
           <View style={styles.actions}>
-            <Pressable
+            <AppButton
               style={({ pressed }) => [
                 styles.button,
                 styles.cancelButton,
@@ -82,9 +83,9 @@ function ConfirmDialog({
               accessibilityState={{ disabled: isLoading }}
             >
               <AppText style={styles.cancelButtonText}>{cancelLabel}</AppText>
-            </Pressable>
+            </AppButton>
 
-            <Pressable
+            <AppButton
               style={({ pressed }) => [
                 styles.button,
                 styles.confirmButton,
@@ -103,7 +104,7 @@ function ConfirmDialog({
                   {confirmLabel}
                 </AppText>
               )}
-            </Pressable>
+            </AppButton>
           </View>
         </View>
       </View>
@@ -157,8 +158,6 @@ const styles = StyleSheet.create({
   button: {
     flex: 1,
     height: 48,
-    borderRadius: 14,
-    borderCurve: 'continuous',
     alignItems: 'center',
     justifyContent: 'center',
   },

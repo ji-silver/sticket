@@ -1,11 +1,4 @@
-import {
-  Alert,
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { Alert, Image, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Plus } from 'lucide-react-native';
 import DiarySection from './components/DiarySection.tsx';
@@ -17,6 +10,7 @@ import DiaryActionSheet from './components/DiaryActionSheet.tsx';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
 import { fonts } from '../../styles/fonts.ts';
+import AppButton from '../../components/common/AppButton.tsx';
 import AppText from '../../components/common/AppText.tsx';
 import { colors } from '../../styles/colors.ts';
 import { useGetTicketBooks } from '../../features/ticket-book/api/useGetTicketBooks';
@@ -220,10 +214,10 @@ function HomeScreen() {
             </View>
 
             {hasDiaries && (
-              <Pressable style={styles.addButton} onPress={handlePressAddDiary}>
+              <AppButton style={styles.addButton} onPress={handlePressAddDiary}>
                 <Plus size={16} color={colors.onPrimary} strokeWidth={2.5} />
                 <AppText style={styles.addButtonText}>다이어리 추가</AppText>
-              </Pressable>
+              </AppButton>
             )}
           </View>
 

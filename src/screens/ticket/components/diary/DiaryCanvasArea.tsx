@@ -5,6 +5,8 @@ import {
   View,
 } from 'react-native';
 import type { ReactNode, RefObject } from 'react';
+import { Check } from 'lucide-react-native';
+import AppButton from '../../../../components/common/AppButton.tsx';
 import AppText from '../../../../components/common/AppText.tsx';
 import GridPaper from './GridPaper.tsx';
 import LinedPaper from './LinedPaper.tsx';
@@ -144,7 +146,7 @@ export default function DiaryCanvasArea({
               </View>
 
               {selectedTool === 'drawing' ? (
-                <Pressable
+                <AppButton
                   accessibilityRole="button"
                   accessibilityLabel="드로잉 완료"
                   hitSlop={8}
@@ -154,10 +156,11 @@ export default function DiaryCanvasArea({
                     pressed && styles.pressedDrawingDoneButton,
                   ]}
                 >
-                  <AppText size={14} weight="semiBold" color={colors.primary}>
+                  <Check size={16} color={colors.onPrimary} strokeWidth={2.5} />
+                  <AppText size={14} weight="bold" color={colors.onPrimary}>
                     완료
                   </AppText>
-                </Pressable>
+                </AppButton>
               ) : null}
             </View>
           </View>
@@ -248,23 +251,20 @@ const styles = StyleSheet.create({
 
   drawingDoneButton: {
     position: 'absolute',
-    top: 12,
-    right: 12,
+    top: 16,
+    right: 16,
     zIndex: 1,
-    minWidth: 60,
-    height: 40,
-    paddingHorizontal: 14,
+    height: 44,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    borderRadius: 10,
-    borderCurve: 'continuous',
-    backgroundColor: colors.surface,
+    gap: 6,
+    backgroundColor: colors.primary,
   },
 
   pressedDrawingDoneButton: {
-    backgroundColor: colors.primarySoft,
+    backgroundColor: colors.primaryPressed,
   },
 
   foregroundItems: {

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, TextInput } from 'react-native';
 import { Bucket } from '../types.ts';
+import AppButton from '../../../components/common/AppButton.tsx';
 import AppBottomSheet from '../../../components/common/AppBottomSheet.tsx';
 import AppText from '../../../components/common/AppText.tsx';
 import { colors } from '../../../styles/colors.ts';
@@ -108,7 +109,7 @@ function BucketEditModal({
         }
       />
 
-      <Pressable
+      <AppButton
         style={({ pressed }) => [
           styles.saveButton,
           !canSave && styles.buttonDisabled,
@@ -129,7 +130,7 @@ function BucketEditModal({
             ? '저장'
             : '추가'}
         </AppText>
-      </Pressable>
+      </AppButton>
 
       {isEditing ? (
         <Pressable
@@ -170,8 +171,6 @@ const styles = StyleSheet.create({
   saveButton: {
     height: 52,
     marginTop: 12,
-    borderRadius: 16,
-    borderCurve: 'continuous',
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',

@@ -5,6 +5,7 @@ import DiaryCover from '../../components/DiaryCover.tsx';
 import { useState } from 'react';
 import ImagePicker from 'react-native-image-crop-picker';
 import { fonts } from '../../styles/fonts.ts';
+import AppButton from '../../components/common/AppButton.tsx';
 import AppText from '../../components/common/AppText.tsx';
 import FilterChip from '../../components/common/FilterChip.tsx';
 import { colors } from '../../styles/colors.ts';
@@ -335,7 +336,7 @@ function AddDiaryScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Pressable
+        <AppButton
           style={[
             styles.createButton,
             (!isSelectedSportReady ||
@@ -373,7 +374,7 @@ function AddDiaryScreen() {
               ? '수정하기'
               : '티켓북 만들기'}
           </AppText>
-        </Pressable>
+        </AppButton>
       </View>
     </SafeAreaView>
   );
@@ -502,7 +503,6 @@ const styles = StyleSheet.create({
   },
   createButton: {
     height: 54,
-    borderRadius: 18,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',

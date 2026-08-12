@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Plus, X } from 'lucide-react-native';
+import AppButton from '../../../components/common/AppButton.tsx';
 import AppText from '../../../components/common/AppText.tsx';
 import InlineActionButton from '../../../components/common/InlineActionButton.tsx';
 import { useUpdateTicketFoods } from '../../../features/ticket/api/useUpdateTicketFoods.ts';
@@ -319,7 +320,7 @@ function TicketReviewSection({
                 accessibilityLabel="야구장 푸드 이름"
               />
 
-              <Pressable
+              <AppButton
                 style={({ pressed }) => [
                   styles.foodAddButton,
                   !canAddFood && styles.foodAddButtonDisabled,
@@ -336,7 +337,7 @@ function TicketReviewSection({
                   color={canAddFood ? colors.onPrimary : colors.textSecondary}
                   strokeWidth={2.6}
                 />
-              </Pressable>
+              </AppButton>
             </View>
           ) : null}
         </View>
@@ -518,8 +519,6 @@ const styles = StyleSheet.create({
   foodAddButton: {
     width: 44,
     height: 44,
-    borderRadius: 14,
-    borderCurve: 'continuous',
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',

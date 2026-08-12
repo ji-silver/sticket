@@ -5,7 +5,6 @@ import {
   Animated,
   NativeScrollEvent,
   NativeSyntheticEvent,
-  Pressable,
   ScrollView,
   StyleSheet,
   View,
@@ -14,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Plus } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/core';
 import { fonts } from '../../styles/fonts.ts';
+import AppButton from '../../components/common/AppButton.tsx';
 import AppText from '../../components/common/AppText.tsx';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
@@ -331,10 +331,10 @@ function EmptyTicketState({
           첫 직관 티켓을 추가해보세요
         </AppText>
 
-        <Pressable style={styles.emptyTicketButton} onPress={onPressAddTicket}>
+        <AppButton style={styles.emptyTicketButton} onPress={onPressAddTicket}>
           <Plus size={15} color={colors.onPrimary} strokeWidth={2.7} />
           <AppText style={styles.emptyTicketButtonText}>티켓 추가</AppText>
-        </Pressable>
+        </AppButton>
       </View>
     </View>
   );
@@ -486,7 +486,6 @@ const styles = StyleSheet.create({
     height: 40,
     marginTop: 22,
     paddingHorizontal: 16,
-    borderRadius: 20,
     backgroundColor: colors.primary,
     flexDirection: 'row',
     alignItems: 'center',

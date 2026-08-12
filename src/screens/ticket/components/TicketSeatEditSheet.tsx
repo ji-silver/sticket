@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, TextInput } from 'react-native';
-
+import { Alert, StyleSheet, TextInput } from 'react-native';
+import AppButton from '../../../components/common/AppButton.tsx';
 import AppBottomSheet from '../../../components/common/AppBottomSheet.tsx';
 import AppText from '../../../components/common/AppText.tsx';
 import { useUpdateTicketSeat } from '../../../features/ticket/api/useUpdateTicketSeat.ts';
@@ -78,7 +78,7 @@ function TicketSeatEditSheet({
         accessibilityLabel="좌석 정보"
       />
 
-      <Pressable
+      <AppButton
         style={({ pressed }) => [
           styles.saveButton,
           updateTicketSeatMutation.isPending && styles.saveButtonDisabled,
@@ -98,7 +98,7 @@ function TicketSeatEditSheet({
         <AppText style={styles.saveButtonText}>
           {updateTicketSeatMutation.isPending ? '저장 중' : '저장'}
         </AppText>
-      </Pressable>
+      </AppButton>
     </AppBottomSheet>
   );
 }
@@ -122,8 +122,6 @@ const styles = StyleSheet.create({
   saveButton: {
     height: 52,
     marginTop: 12,
-    borderRadius: 16,
-    borderCurve: 'continuous',
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
