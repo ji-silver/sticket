@@ -38,6 +38,7 @@ function AppText({
   return (
     <Text
       {...props}
+      allowFontScaling={false}
       style={[
         styles.text,
         {

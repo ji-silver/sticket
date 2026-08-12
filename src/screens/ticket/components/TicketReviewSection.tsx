@@ -179,6 +179,7 @@ function TicketReviewSection({
           {isEditingRecord ? (
             <View>
               <TextInput
+                allowFontScaling={false}
                 value={recordDraft}
                 onChangeText={handleChangeRecordDraft}
                 maxLength={300}
@@ -304,6 +305,7 @@ function TicketReviewSection({
           {isAddingFood ? (
             <View style={styles.foodInputRow}>
               <TextInput
+                allowFontScaling={false}
                 value={foodDraft}
                 onChangeText={setFoodDraft}
                 style={styles.foodInput}

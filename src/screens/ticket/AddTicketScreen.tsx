@@ -185,6 +185,7 @@ function AddTicketScreen() {
 
                 <View style={styles.seatInputCard}>
                   <TextInput
+                    allowFontScaling={false}
                     maxLength={100}
                     value={seatName}
                     onChangeText={setSeatName}

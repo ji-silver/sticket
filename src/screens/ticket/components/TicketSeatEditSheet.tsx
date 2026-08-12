@@ -63,6 +63,7 @@ function TicketSeatEditSheet({
       closeAccessibilityLabel="좌석 정보 닫기"
     >
       <TextInput
+        allowFontScaling={false}
         value={seatDraft}
         onChangeText={setSeatDraft}
         style={styles.input}

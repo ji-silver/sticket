@@ -549,6 +549,7 @@ function DiaryTextItem({
   const content = (
     <Animated.View style={[styles.textBox, textBoxAnimatedStyle]}>
       <Text
+        allowFontScaling={false}
         accessible={false}
         pointerEvents="none"
         onLayout={handleTextMeasureLayout}
@@ -559,6 +560,7 @@ function DiaryTextItem({
 
       {isEditing ? (
         <TextInput
+          allowFontScaling={false}
           key={textInputStyleKey}
           ref={textInputRef}
           autoFocus
@@ -577,6 +579,7 @@ function DiaryTextItem({
         />
       ) : (
         <Text
+          allowFontScaling={false}
           accessible
           accessibilityLabel={`다이어리 텍스트 ${textItem.text}`}
           accessibilityState={{

@@ -100,6 +100,7 @@ function ProfileSetupScreen() {
                 ]}
               >
                 <TextInput
+                  allowFontScaling={false}
                   value={nickname}
                   onChangeText={setNickname}
                   onBlur={() => setHasBlurredNickname(true)}

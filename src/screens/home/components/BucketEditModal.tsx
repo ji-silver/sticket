@@ -178,6 +178,7 @@ function BucketEditModal({
     >
       <View style={styles.addInputRow}>
         <TextInput
+          allowFontScaling={false}
           style={styles.addInput}
           value={newBucketTitle}
           onChangeText={setNewBucketTitle}
@@ -318,6 +319,7 @@ function BucketEditRow({
       </Pressable>
 
       <TextInput
+        allowFontScaling={false}
         value={title}
         onChangeText={onChangeTitle}
         onEndEditing={onCommitTitle}

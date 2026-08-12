@@ -86,6 +86,7 @@ function ProfileEditScreen() {
 
             <View style={styles.inputCard}>
               <TextInput
+                allowFontScaling={false}
                 value={nickname}
                 onChangeText={setNickname}
                 style={styles.nicknameInput}
