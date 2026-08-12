@@ -21,9 +21,11 @@
   <img src="./docs/images/sticket1.png" width="200" alt="티켓 목록 화면" />
   <img src="./docs/images/sticket2.png" width="200" alt="다이어리 화면" />
   <img src="./docs/images/sticket3.png" width="200" alt="티켓북 화면" />
+</p>
+
+<p align="center">
   <img src="./docs/images/sticket4.png" width="200" alt="캘린더 화면" />
   <img src="./docs/images/sticket5.png" width="200" alt="경기 기록 화면" />
-
 </p>
 
 ## 지원 종목
