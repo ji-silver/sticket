@@ -106,6 +106,39 @@ describe('AddTicketScreen', () => {
   });
 
   describe('달력 및 경기 연동', () => {
+    it('응원 구단 경기를 목록의 가장 위에 표시한다', async () => {
+      mockUseAuth.mockReturnValue({
+        profile: { favorite_team: { short_name: 'LG' } },
+      });
+      (getGamesByDate as jest.Mock).mockResolvedValueOnce([
+        {
+          id: 'other-game',
+          awayTeamName: '키움',
+          homeTeamName: 'KIA',
+          time: '18:30',
+          stadiumName: '광주',
+        },
+        {
+          id: 'favorite-game',
+          awayTeamName: '두산',
+          homeTeamName: 'LG',
+          time: '18:30',
+          stadiumName: '잠실',
+        },
+      ]);
+
+      await setup();
+      fireEvent.press(screen.getByText('Mock Date 1'));
+
+      const gameButtons = await screen.findAllByRole('button', {
+        name: /원정 대/,
+      });
+
+      expect(gameButtons[0].props.accessibilityLabel).toMatch(
+        /두산 원정 대 LG 홈/,
+      );
+    });
+
     it('응원 구단 경기가 하나면 자동 선택하고 다른 경기로 변경할 수 있다', async () => {
       mockUseAuth.mockReturnValue({
         profile: { favorite_team: { short_name: 'LG' } },

@@ -70,6 +70,17 @@ function AddTicketScreen() {
     }
   }, [games, favoriteTeamName, selectedGameId]);
 
+  const displayedGames = [...games].sort((firstGame, secondGame) => {
+    const isFirstFavoriteTeamGame =
+      firstGame.awayTeamName === favoriteTeamName ||
+      firstGame.homeTeamName === favoriteTeamName;
+    const isSecondFavoriteTeamGame =
+      secondGame.awayTeamName === favoriteTeamName ||
+      secondGame.homeTeamName === favoriteTeamName;
+
+    return Number(isSecondFavoriteTeamGame) - Number(isFirstFavoriteTeamGame);
+  });
+
   const [seatName, setSeatName] = useState('');
   const [originalTicketImage, setOriginalTicketImage] =
     useState<SelectedOriginalTicketImage | null>(null);
@@ -168,7 +179,7 @@ function AddTicketScreen() {
 
             {selectedDate && !isCalendarOpen && (
               <AddTicketGameSection
-                games={games}
+                games={displayedGames}
                 isLoadingGames={isLoadingGames}
                 gameLoadError={gameLoadError}
                 selectedGameId={selectedGameId}
