@@ -12,6 +12,7 @@ export function useCreateTicket() {
       Promise.all([
         queryClient.invalidateQueries({ queryKey: TICKETS_QUERY_KEY }),
         queryClient.invalidateQueries({ queryKey: TICKET_BOOKS_QUERY_KEY }),
+        queryClient.invalidateQueries({ queryKey: ['attendanceSummary'] }),
       ]),
   });
 }
