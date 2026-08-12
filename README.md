@@ -1,97 +1,187 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+<p align="center">
+  <img src="./src/assets/auth/ticket_logo.png" width="140" alt="Sticket 로고" />
+</p>
 
-# Getting Started
+<h1 align="center">스티켓</h1>
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+<p align="center">
+  직관의 순간을 티켓처럼 남기는 iOS 스포츠 기록 앱
+</p>
 
-## Step 1: Start Metro
+## 소개
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+스티켓은 스포츠팬이 현장에서 본 경기를 티켓으로 기록하고, 그날의 추억을 다이어리로 꾸밀 수 있는 React Native iOS 앱입니다. 경기 일정과 연동해 직관 기록을 간편하게 남기고, 캘린더와 시즌
+통계로 나의 응원 여정을 다시 돌아볼 수 있습니다.
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+현재 MVP는 KBO 야구 기록을 지원하며, 이후 축구, 농구, 배구 등으로 확장할 예정입니다.
 
-```sh
-# Using npm
-npm start
+## 미리보기
 
-# OR using Yarn
-yarn start
+<p align="center">
+  <img src="./docs/images/sticket1.png" width="200" alt="티켓 목록 화면" />
+  <img src="./docs/images/sticket2.png" width="200" alt="다이어리 화면" />
+  <img src="./docs/images/sticket3.png" width="200" alt="티켓북 화면" />
+  <img src="./docs/images/sticket4.png" width="200" alt="캘린더 화면" />
+  <img src="./docs/images/sticket5.png" width="200" alt="경기 기록 화면" />
+
+</p>
+
+## 지원 종목
+
+| 종목 | 상태       |
+|----|----------|
+| 야구 | MVP 지원 중 |
+| 축구 | 지원 예정    |
+| 농구 | 지원 예정    |
+| 배구 | 지원 예정    |
+
+## 주요 기능
+
+- **직관 티켓**: 경기, 경기장, 좌석, 라인업, 만족도, 메모와 경기장 음식을 기록합니다.
+- **원본 티켓 보관**: 지류 티켓이나 모바일 티켓 이미지를 함께 저장합니다.
+- **다이어리**: 사진, 스티커, 텍스트와 손그림으로 경기의 추억을 꾸밉니다.
+- **캘린더**: 날짜별 우리팀 경기 일정과 직관 기록을 한눈에 확인합니다.
+- **직관 통계**: 응원팀의 시즌 직관 경기 수와 승률을 보여줍니다.
+- **버킷리스트**: 이루고 싶은 직관 목표를 추가하고 관리합니다.
+- **소셜 로그인**: Apple 및 Google 계정으로 로그인하고 데이터를 동기화합니다.
+
+## 기술 스택
+
+| 영역             | 기술                                                 |
+|----------------|----------------------------------------------------|
+| App            | React Native 0.86, React 19, TypeScript            |
+| Navigation     | React Navigation                                   |
+| Server state   | TanStack Query                                     |
+| Local state    | Zustand                                            |
+| Backend        | Supabase Auth, PostgreSQL, Storage, Edge Functions |
+| Native         | PencilKit, Image Crop Picker, Reanimated           |
+| Test           | Jest, React Native Testing Library                 |
+| Data collector | Playwright, GitHub Actions                         |
+
+## 동작 구조
+
+```text
+React Native iOS App
+├── Apple / Google OAuth
+├── Supabase Auth
+├── Supabase PostgreSQL + RLS
+├── Supabase Storage
+└── Supabase Edge Functions
+
+GitHub Actions
+└── Playwright KBO Collector
+    └── 경기 일정·상태·라인업 동기화
 ```
 
-## Step 2: Build and run your app
+서버 데이터는 TanStack Query로 조회 및 캐싱하고, 화면의 일시적인 편집 상태는 Zustand 또는 컴포넌트 상태로 관리합니다. 데이터 접근 로직은 도메인별 `features` 서비스에 모으고
+Supabase
+RLS로 사용자 데이터 접근을 제한합니다.
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+## 프로젝트 구조
 
-### Android
-
-```sh
-# Using npm
-npm run android
-
-# OR using Yarn
-yarn android
+```text
+.
+├── src/
+│   ├── components/       # 공통 UI 컴포넌트
+│   ├── config/           # 공개 클라이언트 설정
+│   ├── features/         # 도메인별 API, 서비스와 타입
+│   ├── lib/              # Supabase 클라이언트와 공통 유틸리티
+│   ├── navigation/       # Stack 및 Bottom Tab 내비게이션
+│   └── screens/          # 인증, 홈, 캘린더, 티켓과 다이어리 화면
+├── collector/            # KBO 경기 데이터 수집기
+├── supabase/
+│   ├── functions/        # Edge Functions
+│   └── migrations/       # 스키마, RLS와 Storage 마이그레이션
+└── ios/                  # iOS 네이티브 프로젝트
 ```
 
-### iOS
+## 시작하기
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+### 요구사항
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+- Node.js 22.11 이상
+- npm
+- iOS: macOS, Xcode, Ruby 3.4.10, CocoaPods
 
-```sh
+React Native 네이티브 개발 환경은 [공식 환경 설정 문서](https://reactnative.dev/docs/set-up-your-environment)를 참고하세요.
+
+### 설치
+
+```bash
+git clone https://github.com/ji-silver/sticket.git
+cd sticket
+npm ci
+```
+
+iOS를 실행한다면 CocoaPods 의존성을 설치합니다.
+
+```bash
 bundle install
+cd ios && bundle exec pod install && cd ..
 ```
 
-Then, and every time you update your native dependencies, run:
+### 실행
 
-```sh
-bundle exec pod install
+먼저 Metro를 실행합니다.
+
+```bash
+npm start
 ```
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+다른 터미널에서 iOS 앱을 실행합니다.
 
-```sh
-# Using npm
+```bash
 npm run ios
-
-# OR using Yarn
-yarn ios
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+### 인증 설정
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+앱의 Supabase publishable key와 OAuth client ID는 공개 클라이언트 설정인 `src/config/publicConfig.ts`에서 관리합니다. Apple 또는 Google 로그인을 다른
+앱 식별자나 Supabase 프로젝트로 실행하려면 다음 설정도 일치시켜야 합니다.
 
-## Step 3: Modify your app
+- Supabase Auth의 Apple·Google provider 설정
+- Google OAuth의 iOS·Web client ID와 URL scheme
+- Apple Developer의 Sign in with Apple capability
+- iOS bundle identifier
 
-Now that you have successfully run the app, let's make changes!
+관리자 키와 private key는 앱이나 Git 저장소에 포함하지 않습니다.
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+## 지원 환경
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+- iOS 15.1 이상
+- PencilKit 기반 손그림 지원
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+## KBO 데이터 수집
 
-## Congratulations! :tada:
+`collector`는 Playwright로 KBO 경기 일정, 경기 상태와 라인업을 수집해 Supabase에 동기화합니다. 앱 개발만 할 때는 실행할 필요가 없습니다.
 
-You've successfully run and modified your React Native App. :partying_face:
+```bash
+cd collector
+npm ci
+npx playwright install chromium
+```
 
-### Now what?
+`collector/.env`에 다음 운영 비밀 값이 필요합니다.
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
+```dotenv
+SUPABASE_URL=
+SUPABASE_SECRET_KEY=
+```
 
-# Troubleshooting
+```bash
+npm run collect                    # 최근 경기 상태 수집
+npm run collect:schedule:upcoming  # 예정 경기 일정 수집
+npm run backfill                   # 과거 데이터 수집
+npm test                           # 수집 로직 검사
+```
 
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+운영 환경에서는 `.github/workflows/collect-kbo.yml`이 정해진 시간에 수집기를 실행합니다.
 
-# Learn More
+## 품질 확인
 
-To learn more about React Native, take a look at the following resources:
+```bash
+npm run lint
+npm test -- --runInBand
+```
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+현재 테스트는 인증, 프로필, 티켓북, 직관 기록, 버킷리스트와 다이어리 편집의 주요 동작을 검증합니다.
