@@ -170,27 +170,35 @@ function TicketVisitInfoSection({
     <>
       <View style={styles.area}>
         <View style={styles.card}>
-          <View style={styles.blockHeader}>
-            <AppText style={styles.blockTitle}>좌석</AppText>
-
-            <InlineActionButton
-              label={seatName ? '수정' : '입력'}
-              tone="primary"
-              onPress={() => setIsSeatSheetVisible(true)}
-              accessibilityLabel={
-                seatName
-                  ? `좌석 정보 ${seatName}, 수정하기`
-                  : '좌석 정보 입력하기'
-              }
-            />
-          </View>
-
-          <AppText
-            style={[styles.seatValue, !seatName && styles.placeholderText]}
-            numberOfLines={2}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={
+              seatName
+                ? `좌석 정보 ${seatName}, 수정하기`
+                : '좌석 정보 추가하기'
+            }
+            onPress={() => setIsSeatSheetVisible(true)}
+            style={({ pressed }) => [
+              styles.seatBlock,
+              pressed && styles.pressedSeatBlock,
+            ]}
           >
-            {seatName ?? '좌석을 입력해 주세요'}
-          </AppText>
+            <View style={styles.blockHeader}>
+              <AppText style={styles.blockTitle}>좌석 정보</AppText>
+
+              <View style={styles.seatAction}>
+                <AppText style={styles.seatActionText}>
+                  {seatName ? '수정' : '추가'}
+                </AppText>
+              </View>
+            </View>
+
+            <AppText
+              style={[styles.seatValue, !seatName && styles.placeholderText]}
+            >
+              {seatName ?? '오늘 앉은 좌석을 남겨보세요'}
+            </AppText>
+          </Pressable>
 
           <View style={styles.divider} />
 
@@ -215,7 +223,14 @@ function TicketVisitInfoSection({
         visible={isSeatSheetVisible}
         ticketId={ticketId}
         seatName={seatName}
-        onSaved={setSeatName}
+        onSaved={savedSeatName => {
+          setSeatName(savedSeatName);
+          onFeedback(
+            savedSeatName
+              ? '좌석 정보를 저장했어요.'
+              : '좌석 정보를 삭제했어요.',
+          );
+        }}
         onClose={() => setIsSeatSheetVisible(false)}
       />
 
@@ -391,6 +406,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  seatBlock: {
+    minHeight: 56,
+  },
+  pressedSeatBlock: {
+    opacity: 0.6,
+  },
+  seatAction: {
+    minHeight: 44,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  seatActionText: {
+    fontSize: 14,
+    fontFamily: fonts.bold,
+    color: colors.primary,
   },
   blockTitle: {
     fontSize: 17,

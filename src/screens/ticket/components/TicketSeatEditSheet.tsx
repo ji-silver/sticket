@@ -23,6 +23,9 @@ function TicketSeatEditSheet({
   onClose,
 }: TicketSeatEditSheetProps) {
   const [seatDraft, setSeatDraft] = useState(seatName ?? '');
+  const [pendingAction, setPendingAction] = useState<'save' | 'delete' | null>(
+    null,
+  );
   const updateTicketSeatMutation = useUpdateTicketSeat();
 
   useEffect(() => {
@@ -31,28 +34,40 @@ function TicketSeatEditSheet({
     }
   }, [seatName, visible]);
 
-  const handleSave = async () => {
+  const updateSeat = async (
+    nextSeatName: string,
+    action: 'save' | 'delete',
+  ) => {
     if (updateTicketSeatMutation.isPending) {
       return;
     }
 
+    setPendingAction(action);
+
     try {
       const savedSeatName = await updateTicketSeatMutation.mutateAsync({
         ticketId,
-        seatName: seatDraft,
+        seatName: nextSeatName,
       });
 
       onSaved(savedSeatName);
       onClose();
     } catch (error) {
-      console.error('좌석 정보를 저장하지 못했습니다.', error);
+      const actionLabel = action === 'delete' ? '삭제' : '저장';
+
+      console.error(`좌석 정보를 ${actionLabel}하지 못했습니다.`, error);
 
       Alert.alert(
-        '좌석 정보를 저장하지 못했어요',
+        `좌석 정보를 ${actionLabel}하지 못했어요`,
         '잠시 후 다시 시도해 주세요.',
       );
+    } finally {
+      setPendingAction(null);
     }
   };
+
+  const handleSave = () => updateSeat(seatDraft, 'save');
+  const handleDelete = () => updateSeat('', 'delete');
 
   return (
     <AppBottomSheet
@@ -96,9 +111,31 @@ function TicketSeatEditSheet({
         }}
       >
         <AppText style={styles.saveButtonText}>
-          {updateTicketSeatMutation.isPending ? '저장 중' : '저장'}
+          {pendingAction === 'save' ? '저장 중' : '저장'}
         </AppText>
       </AppButton>
+
+      {seatName ? (
+        <AppButton
+          style={({ pressed }) => [
+            styles.deleteButton,
+            pressed &&
+              !updateTicketSeatMutation.isPending &&
+              styles.deleteButtonPressed,
+          ]}
+          onPress={handleDelete}
+          disabled={updateTicketSeatMutation.isPending}
+          accessibilityLabel="좌석 정보 삭제"
+          accessibilityState={{
+            disabled: updateTicketSeatMutation.isPending,
+            busy: pendingAction === 'delete',
+          }}
+        >
+          <AppText style={styles.deleteButtonText}>
+            {pendingAction === 'delete' ? '삭제 중' : '좌석 정보 삭제'}
+          </AppText>
+        </AppButton>
+      ) : null}
     </AppBottomSheet>
   );
 }
@@ -139,5 +176,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: fonts.bold,
     color: colors.onPrimary,
+  },
+
+  deleteButton: {
+    height: 48,
+    marginTop: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  deleteButtonPressed: {
+    opacity: 0.55,
+  },
+
+  deleteButtonText: {
+    fontSize: 15,
+    fontFamily: fonts.bold,
+    color: colors.error,
   },
 });
