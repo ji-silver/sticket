@@ -161,22 +161,14 @@ function BucketListSection({
 
       <View style={styles.bucketCard}>
         {isBucketEmpty ? (
-          <Pressable
-            style={({ pressed }) => [
-              styles.emptyBucketBox,
-              pressed && styles.buttonPressed,
-            ]}
-            onPress={openAddBucket}
-            accessibilityRole="button"
-            accessibilityLabel="첫 직관 목표 추가"
-          >
+          <View style={styles.emptyBucketBox}>
             <View style={styles.emptyIcon}>
               <Plus size={18} color={colors.primary} strokeWidth={2.5} />
             </View>
             <AppText style={styles.emptyBucketTitle}>
               첫 직관 목표를 추가해보세요
             </AppText>
-          </Pressable>
+          </View>
         ) : (
           <>
             {visibleBuckets.map((bucket, index) => (

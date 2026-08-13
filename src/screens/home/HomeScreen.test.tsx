@@ -272,6 +272,10 @@ describe('HomeScreen', () => {
 
     it('추가 버튼을 누르고 새 버킷리스트를 추가하면 생성 API가 호출된다', async () => {
       const user = userEvent.setup();
+      (useGetBucketList as jest.Mock).mockReturnValue({
+        data: [],
+        isError: false,
+      });
       mockCreateBucketMutateAsync.mockResolvedValueOnce({
         id: 'bucket-2',
         ticketBookId: 'ticket-1',
@@ -285,6 +289,9 @@ describe('HomeScreen', () => {
       await waitFor(() => {
         expect(screen.getByRole('button', { name: '추가' })).toBeVisible();
       });
+      expect(
+        screen.queryByRole('button', { name: '첫 직관 목표 추가' }),
+      ).toBeNull();
 
       await user.press(screen.getByRole('button', { name: '추가' }));
 
