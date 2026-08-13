@@ -15,7 +15,6 @@ describe('BucketEditModal', () => {
   const mockOnClose = jest.fn();
   const mockOnAddBucket = jest.fn();
   const mockOnUpdateBucket = jest.fn();
-  const mockOnDeleteBucket = jest.fn();
 
   const mockBucket: Bucket = {
     id: 'b1',
@@ -37,7 +36,6 @@ describe('BucketEditModal', () => {
         onClose={mockOnClose}
         onAddBucket={mockOnAddBucket}
         onUpdateBucket={mockOnUpdateBucket}
-        onDeleteBucket={mockOnDeleteBucket}
         pending={false}
       />,
     );
@@ -74,14 +72,9 @@ describe('BucketEditModal', () => {
     expect(Alert.alert).toHaveBeenCalledWith('내용을 입력해 주세요');
   });
 
-  it('기존 목표를 삭제하면 시트를 닫는다', async () => {
-    const user = userEvent.setup();
-    mockOnDeleteBucket.mockResolvedValueOnce(true);
+  it('수정 시트에는 삭제 동작을 중복 노출하지 않는다', async () => {
     await setup();
 
-    await user.press(screen.getByRole('button', { name: '기존 목표 삭제' }));
-
-    expect(mockOnDeleteBucket).toHaveBeenCalledWith('b1');
-    expect(mockOnClose).toHaveBeenCalled();
+    expect(screen.queryByText('삭제하기')).toBeNull();
   });
 });

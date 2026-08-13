@@ -184,6 +184,36 @@ describe('HomeScreen', () => {
 
       expect(mockNavigate).toHaveBeenCalledWith('AddDiary');
     });
+
+    it('기록이 있는 티켓북은 메뉴에서 삭제하지 않는다', async () => {
+      const user = userEvent.setup();
+      (useGetTicketBooks as jest.Mock).mockReturnValue({
+        data: [
+          {
+            id: 'ticket-1',
+            sport: 'baseball',
+            recordCount: 1,
+            coverColor: '#DF9EAF',
+            coverPattern: 'solid',
+          },
+        ],
+        isLoading: false,
+        isError: false,
+      });
+
+      await render(<HomeScreen />);
+
+      await user.press(
+        await screen.findByRole('button', { name: '야구 티켓북 메뉴' }),
+      );
+      await user.press(screen.getByRole('button', { name: '티켓북 삭제하기' }));
+
+      expect(Alert.alert).toHaveBeenCalledWith(
+        '삭제할 수 없어요',
+        '기록이 있는 티켓북은 삭제할 수 없어요.',
+      );
+      expect(mockDeleteTicketBookMutateAsync).not.toHaveBeenCalled();
+    });
   });
 
   describe('버킷리스트 인터랙션 및 서버 연동 로직', () => {
@@ -272,7 +302,28 @@ describe('HomeScreen', () => {
       });
     });
 
-    it('버킷리스트 제목을 눌러 항목을 삭제하고 실행 취소할 수 있다', async () => {
+    it('버킷리스트 메뉴에서 수정 화면을 열 수 있다', async () => {
+      const user = userEvent.setup();
+
+      await render(<HomeScreen />);
+
+      expect(
+        screen.queryByRole('button', { name: '기존 버킷리스트 수정' }),
+      ).toBeNull();
+
+      await user.press(
+        await screen.findByRole('button', {
+          name: '기존 버킷리스트 메뉴',
+        }),
+      );
+      await user.press(
+        screen.getByRole('button', { name: '버킷리스트 수정하기' }),
+      );
+
+      expect(await screen.findByLabelText('버킷리스트 내용')).toBeVisible();
+    });
+
+    it('버킷리스트 메뉴에서 항목을 삭제하고 실행 취소할 수 있다', async () => {
       const user = userEvent.setup();
       mockDeleteBucketMutateAsync.mockResolvedValueOnce(true);
       mockRestoreBucketMutateAsync.mockResolvedValueOnce(true);
@@ -281,16 +332,16 @@ describe('HomeScreen', () => {
 
       await waitFor(() => {
         expect(
-          screen.getByRole('button', { name: '기존 버킷리스트 수정' }),
+          screen.getByRole('button', { name: '기존 버킷리스트 메뉴' }),
         ).toBeVisible();
       });
 
       await user.press(
-        screen.getByRole('button', { name: '기존 버킷리스트 수정' }),
+        screen.getByRole('button', { name: '기존 버킷리스트 메뉴' }),
       );
 
       const deleteButton = screen.getByRole('button', {
-        name: '기존 버킷리스트 삭제',
+        name: '버킷리스트 삭제하기',
       });
       await user.press(deleteButton);
 

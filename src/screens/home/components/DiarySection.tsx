@@ -60,6 +60,8 @@ function DiarySection({
             style={styles.sectionMenuButton}
             onPress={() => onPressDiaryMenu(diaries[selectedIndex])}
             hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={`${diaries[selectedIndex].title} 티켓북 메뉴`}
           >
             <MoreHorizontal size={22} color="#777777" strokeWidth={2.5} />
           </Pressable>

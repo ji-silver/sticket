@@ -6,11 +6,12 @@ import { Bucket, Diary } from './types.ts';
 import BucketListSection from './components/BucketListSection.tsx';
 import { useNavigation } from '@react-navigation/core';
 import { useEffect, useState } from 'react';
-import DiaryActionSheet from './components/DiaryActionSheet.tsx';
+import EditDeleteActionSheet from './components/EditDeleteActionSheet.tsx';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
 import { fonts } from '../../styles/fonts.ts';
 import AppButton from '../../components/common/AppButton.tsx';
+import AppSnackbar from '../../components/common/AppSnackbar.tsx';
 import AppText from '../../components/common/AppText.tsx';
 import { colors } from '../../styles/colors.ts';
 import { useGetTicketBooks } from '../../features/ticket-book/api/useGetTicketBooks';
@@ -36,6 +37,10 @@ function HomeScreen() {
 
   const [selectedDiaryIndex, setSelectedDiaryIndex] = useState(0);
   const [menuDiary, setMenuDiary] = useState<Diary | null>(null);
+  const [lastDeletedBucket, setLastDeletedBucket] = useState<Bucket | null>(
+    null,
+  );
+  const [isRestoringBucket, setIsRestoringBucket] = useState(false);
 
   const {
     data: ticketBooks = [],
@@ -86,6 +91,14 @@ function HomeScreen() {
       Alert.alert('홈 정보를 불러오지 못했어요', '잠시 후 다시 시도해 주세요.');
     }
   }, [isTicketBooksError, isBucketListError]);
+
+  useEffect(() => {
+    if (lastDeletedBucket === null || isRestoringBucket) return;
+
+    const timeoutId = setTimeout(() => setLastDeletedBucket(null), 3000);
+
+    return () => clearTimeout(timeoutId);
+  }, [isRestoringBucket, lastDeletedBucket]);
 
   const handlePressAddDiary = () => {
     navigation.navigate('AddDiary');
@@ -153,6 +166,7 @@ function HomeScreen() {
   const handleDeleteBucket = async (bucket: Bucket) => {
     try {
       await deleteBucketMutation.mutateAsync(bucket.id);
+      setLastDeletedBucket(bucket);
       return true;
     } catch (error) {
       console.error('버킷리스트를 삭제하지 못했습니다.', error);
@@ -164,17 +178,22 @@ function HomeScreen() {
     }
   };
 
-  const handleRestoreBucket = async (bucket: Bucket, _index: number) => {
+  const handleUndoDeleteBucket = async () => {
+    if (lastDeletedBucket === null) return;
+
+    setIsRestoringBucket(true);
+
     try {
-      await restoreBucketMutation.mutateAsync(bucket);
-      return true;
+      await restoreBucketMutation.mutateAsync(lastDeletedBucket);
+      setLastDeletedBucket(null);
     } catch (error) {
       console.error('삭제한 버킷리스트를 복원하지 못했습니다.', error);
       Alert.alert(
         '버킷리스트를 복원하지 못했어요',
         '잠시 후 다시 시도해 주세요.',
       );
-      return false;
+    } finally {
+      setIsRestoringBucket(false);
     }
   };
 
@@ -243,24 +262,49 @@ function HomeScreen() {
             onToggleBucket={handleToggleBucket}
             onUpdateBucketTitle={handleUpdateBucketTitle}
             onDeleteBucket={handleDeleteBucket}
-            onRestoreBucket={handleRestoreBucket}
           />
         )}
       </ScrollView>
 
-      <DiaryActionSheet
+      <EditDeleteActionSheet
         visible={menuDiary !== null}
-        diary={menuDiary}
+        targetName="티켓북"
         onClose={() => setMenuDiary(null)}
-        onEditDiary={diary => {
+        onEdit={() => {
+          if (menuDiary === null) return;
+
+          const diary = menuDiary;
           setMenuDiary(null);
           navigation.navigate('AddDiary', { ticketBook: diary });
         }}
-        onDeleteDiary={diaryId => {
+        onDelete={() => {
+          if (menuDiary === null) return;
+
+          if (menuDiary.recordCount > 0) {
+            Alert.alert(
+              '삭제할 수 없어요',
+              '기록이 있는 티켓북은 삭제할 수 없어요.',
+            );
+            return;
+          }
+
+          const diaryId = menuDiary.id;
           setMenuDiary(null);
           handleDeleteDiary(diaryId);
         }}
       />
+
+      {lastDeletedBucket !== null ? (
+        <AppSnackbar
+          message="버킷리스트를 삭제했어요"
+          horizontalInset={24}
+          bottomOffset={12}
+          actionLabel="실행 취소"
+          actionAccessibilityLabel="버킷리스트 삭제 실행 취소"
+          actionLoading={isRestoringBucket}
+          onAction={handleUndoDeleteBucket}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }

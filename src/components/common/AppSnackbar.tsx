@@ -7,6 +7,7 @@ import AppText from './AppText.tsx';
 interface AppSnackbarProps {
   message: string;
   horizontalInset?: number;
+  bottomOffset?: number;
   actionLabel?: string;
   actionAccessibilityLabel?: string;
   actionLoading?: boolean;
@@ -16,6 +17,7 @@ interface AppSnackbarProps {
 function AppSnackbar({
   message,
   horizontalInset = 0,
+  bottomOffset,
   actionLabel,
   actionAccessibilityLabel = actionLabel,
   actionLoading = false,
@@ -30,7 +32,7 @@ function AppSnackbar({
         styles.container,
         {
           right: horizontalInset,
-          bottom: Math.max(bottom, 12),
+          bottom: bottomOffset ?? Math.max(bottom, 12),
           left: horizontalInset,
         },
         !hasAction && styles.messageOnly,

@@ -16,7 +16,7 @@ import AppText from './AppText.tsx';
 
 interface AppBottomSheetProps {
   visible: boolean;
-  title: string;
+  title?: string;
   onClose: () => void;
   children: ReactNode;
   description?: string;
@@ -45,6 +45,9 @@ function AppBottomSheet({
   const { height: windowHeight } = useWindowDimensions();
   const [isPresented, setIsPresented] = useState(visible);
   const progress = useRef(new Animated.Value(visible ? 1 : 0)).current;
+  const onClosedRef = useRef(onClosed);
+
+  onClosedRef.current = onClosed;
 
   useEffect(() => {
     if (!isPresented) {
@@ -61,6 +64,7 @@ function AppBottomSheet({
     }).start(({ finished }) => {
       if (finished && !visible) {
         setIsPresented(false);
+        onClosedRef.current?.();
       }
     });
   }, [isPresented, progress, visible]);
@@ -71,7 +75,6 @@ function AppBottomSheet({
       transparent
       animationType="none"
       onRequestClose={onClose}
-      onDismiss={onClosed}
     >
       <KeyboardAvoidingView
         enabled={keyboardAvoiding}
@@ -119,30 +122,41 @@ function AppBottomSheet({
             />
           ) : null}
 
-          <View style={styles.header}>
-            <View style={styles.headerCopy}>
-              <AppText style={styles.title}>{title}</AppText>
+          {title !== undefined ||
+          description !== undefined ||
+          headerRight !== undefined ||
+          showCloseButton ? (
+            <View style={styles.header}>
+              <View style={styles.headerCopy}>
+                {title !== undefined ? (
+                  <AppText style={styles.title}>{title}</AppText>
+                ) : null}
 
-              {description !== undefined ? (
-                <AppText style={styles.description}>{description}</AppText>
-              ) : null}
+                {description !== undefined ? (
+                  <AppText style={styles.description}>{description}</AppText>
+                ) : null}
+              </View>
+
+              {headerRight ??
+                (showCloseButton ? (
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.closeButton,
+                      pressed && styles.pressed,
+                    ]}
+                    onPress={onClose}
+                    accessibilityRole="button"
+                    accessibilityLabel={closeAccessibilityLabel}
+                  >
+                    <X
+                      size={22}
+                      color={colors.textSecondary}
+                      strokeWidth={2.2}
+                    />
+                  </Pressable>
+                ) : null)}
             </View>
-
-            {headerRight ??
-              (showCloseButton ? (
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.closeButton,
-                    pressed && styles.pressed,
-                  ]}
-                  onPress={onClose}
-                  accessibilityRole="button"
-                  accessibilityLabel={closeAccessibilityLabel}
-                >
-                  <X size={22} color={colors.textSecondary} strokeWidth={2.2} />
-                </Pressable>
-              ) : null)}
-          </View>
+          ) : null}
 
           <View style={[styles.content, large && styles.flexContent]}>
             {children}

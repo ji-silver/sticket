@@ -1,13 +1,19 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Bucket } from '../types.ts';
-import { Check, ChevronDown, ChevronUp, Plus } from 'lucide-react-native';
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  MoreHorizontal,
+  Plus,
+} from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import BucketEditModal from './BucketEditModal.tsx';
 import { fonts } from '../../../styles/fonts.ts';
 import AppText from '../../../components/common/AppText.tsx';
-import AppSnackbar from '../../../components/common/AppSnackbar.tsx';
 import InlineActionButton from '../../../components/common/InlineActionButton.tsx';
 import { colors } from '../../../styles/colors.ts';
+import EditDeleteActionSheet from './EditDeleteActionSheet.tsx';
 
 interface BucketListSectionProps {
   diaryId: string;
@@ -17,7 +23,6 @@ interface BucketListSectionProps {
   onToggleBucket: (bucket: Bucket) => Promise<boolean>;
   onUpdateBucketTitle: (bucket: Bucket, title: string) => Promise<boolean>;
   onDeleteBucket: (bucket: Bucket) => Promise<boolean>;
-  onRestoreBucket: (bucket: Bucket, index: number) => Promise<boolean>;
 }
 
 function BucketListSection({
@@ -28,19 +33,15 @@ function BucketListSection({
   onToggleBucket,
   onUpdateBucketTitle,
   onDeleteBucket,
-  onRestoreBucket,
 }: BucketListSectionProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditorVisible, setIsEditorVisible] = useState(false);
   const [editingBucket, setEditingBucket] = useState<Bucket | null>(null);
+  const [actionBucket, setActionBucket] = useState<Bucket | null>(null);
+  const [queuedEditBucket, setQueuedEditBucket] = useState<Bucket | null>(null);
   const [pendingBucketIds, setPendingBucketIds] = useState<Set<string>>(
     new Set(),
   );
-  const [isRestoring, setIsRestoring] = useState(false);
-  const [lastDeletedBucket, setLastDeletedBucket] = useState<{
-    bucket: Bucket;
-    index: number;
-  } | null>(null);
 
   const visibleBuckets = isExpanded ? buckets : buckets.slice(0, 5);
   const canToggle = buckets.length > 5;
@@ -50,17 +51,10 @@ function BucketListSection({
     setIsExpanded(false);
     setIsEditorVisible(false);
     setEditingBucket(null);
+    setActionBucket(null);
+    setQueuedEditBucket(null);
     setPendingBucketIds(new Set());
-    setLastDeletedBucket(null);
   }, [diaryId]);
-
-  useEffect(() => {
-    if (lastDeletedBucket === null || isRestoring) return;
-
-    const timeoutId = setTimeout(() => setLastDeletedBucket(null), 3000);
-
-    return () => clearTimeout(timeoutId);
-  }, [isRestoring, lastDeletedBucket]);
 
   const runBucketMutation = async (
     bucketId: string,
@@ -112,42 +106,12 @@ function BucketListSection({
 
   const handleDeleteBucket = async (id: string) => {
     const bucket = findBucket(id);
-    const index = buckets.findIndex(item => item.id === id);
 
-    if (!bucket || index < 0) {
+    if (!bucket) {
       return false;
     }
 
-    const didDelete = await runBucketMutation(id, () => onDeleteBucket(bucket));
-
-    if (didDelete) {
-      setLastDeletedBucket({ bucket, index });
-    }
-
-    return didDelete;
-  };
-
-  const handleRestoreBucket = (bucket: Bucket, index: number) => {
-    return runBucketMutation(bucket.id, () => onRestoreBucket(bucket, index));
-  };
-
-  const handleUndoDelete = async () => {
-    if (lastDeletedBucket === null) return;
-
-    setIsRestoring(true);
-
-    try {
-      const didRestore = await handleRestoreBucket(
-        lastDeletedBucket.bucket,
-        lastDeletedBucket.index,
-      );
-
-      if (didRestore) {
-        setLastDeletedBucket(null);
-      }
-    } finally {
-      setIsRestoring(false);
-    }
+    return runBucketMutation(id, () => onDeleteBucket(bucket));
   };
 
   const openAddBucket = () => {
@@ -155,9 +119,27 @@ function BucketListSection({
     setIsEditorVisible(true);
   };
 
-  const openEditBucket = (bucket: Bucket) => {
-    setEditingBucket(bucket);
+  const handlePressActionEdit = () => {
+    if (actionBucket === null) return;
+
+    setQueuedEditBucket(actionBucket);
+    setActionBucket(null);
+  };
+
+  const handleActionSheetClosed = () => {
+    if (queuedEditBucket === null) return;
+
+    setEditingBucket(queuedEditBucket);
     setIsEditorVisible(true);
+    setQueuedEditBucket(null);
+  };
+
+  const handlePressActionDelete = async () => {
+    if (actionBucket === null) return;
+
+    const bucketId = actionBucket.id;
+    setActionBucket(null);
+    await handleDeleteBucket(bucketId);
   };
 
   return (
@@ -203,7 +185,7 @@ function BucketListSection({
                 bucket={bucket}
                 isLast={index === visibleBuckets.length - 1}
                 onToggleBucket={handleToggleBucket}
-                onEditBucket={openEditBucket}
+                onOpenMenu={setActionBucket}
                 disabled={pendingBucketIds.has(bucket.id)}
               />
             ))}
@@ -237,21 +219,19 @@ function BucketListSection({
         onClose={() => setIsEditorVisible(false)}
         onAddBucket={handleAddBucket}
         onUpdateBucket={handleUpdateBucket}
-        onDeleteBucket={handleDeleteBucket}
         pending={
           editingBucket !== null && pendingBucketIds.has(editingBucket.id)
         }
       />
 
-      {lastDeletedBucket !== null ? (
-        <AppSnackbar
-          message="버킷리스트를 삭제했어요"
-          actionLabel="실행 취소"
-          actionAccessibilityLabel="버킷리스트 삭제 실행 취소"
-          actionLoading={isRestoring}
-          onAction={handleUndoDelete}
-        />
-      ) : null}
+      <EditDeleteActionSheet
+        visible={actionBucket !== null}
+        targetName="버킷리스트"
+        onClose={() => setActionBucket(null)}
+        onClosed={handleActionSheetClosed}
+        onEdit={handlePressActionEdit}
+        onDelete={handlePressActionDelete}
+      />
     </View>
   );
 }
@@ -260,13 +240,13 @@ function BucketListItem({
   bucket,
   isLast,
   onToggleBucket,
-  onEditBucket,
+  onOpenMenu,
   disabled,
 }: {
   bucket: Bucket;
   isLast: boolean;
   onToggleBucket: (id: string) => Promise<boolean>;
-  onEditBucket: (bucket: Bucket) => void;
+  onOpenMenu: (bucket: Bucket) => void;
   disabled: boolean;
 }) {
   return (
@@ -294,17 +274,7 @@ function BucketListItem({
         </View>
       </Pressable>
 
-      <Pressable
-        style={({ pressed }) => [
-          styles.bucketItemTitleButton,
-          pressed && !disabled && styles.buttonPressed,
-        ]}
-        onPress={() => onEditBucket(bucket)}
-        disabled={disabled}
-        accessibilityRole="button"
-        accessibilityLabel={`${bucket.title} 수정`}
-        accessibilityState={{ disabled }}
-      >
+      <View style={styles.bucketItemTitle}>
         <AppText
           style={[
             styles.bucketItemText,
@@ -313,6 +283,20 @@ function BucketListItem({
         >
           {bucket.title}
         </AppText>
+      </View>
+
+      <Pressable
+        style={({ pressed }) => [
+          styles.itemMenuButton,
+          pressed && !disabled && styles.buttonPressed,
+        ]}
+        onPress={() => onOpenMenu(bucket)}
+        disabled={disabled}
+        accessibilityRole="button"
+        accessibilityLabel={`${bucket.title} 메뉴`}
+        accessibilityState={{ disabled }}
+      >
+        <MoreHorizontal size={20} color="#777777" strokeWidth={2.4} />
       </Pressable>
     </View>
   );
@@ -409,10 +393,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  bucketItemTitleButton: {
+  bucketItemTitle: {
     flex: 1,
     minHeight: 52,
     paddingVertical: 5,
+    justifyContent: 'center',
+  },
+  itemMenuButton: {
+    width: 44,
+    height: 44,
+    marginRight: -12,
+    alignItems: 'center',
     justifyContent: 'center',
   },
   checkBoxCompleted: {
