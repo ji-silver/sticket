@@ -82,10 +82,14 @@ function TicketListScreen() {
   const ticketCount = tickets.length;
   const hasTickets = ticketCount > 0;
 
-  if (error) {
+  useEffect(() => {
+    if (!error) {
+      return;
+    }
+
     console.error('티켓 목록을 불러오지 못했습니다.', error);
     Alert.alert('티켓 목록을 불러오지 못했어요', '잠시 후 다시 시도해 주세요.');
-  }
+  }, [error]);
 
   const seasons = Array.from(
     new Set(tickets.map(ticket => new Date(ticket.matchDate).getFullYear())),

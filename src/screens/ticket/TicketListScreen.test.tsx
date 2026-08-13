@@ -1,6 +1,6 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '../../test-utils';
-import { Alert } from 'react-native';
+import { Alert, Button } from 'react-native';
 import { useNavigation } from '@react-navigation/core';
 import TicketListScreen, {
   getTicketIndexAtScrollOffset,
@@ -38,6 +38,20 @@ jest.mock('./components/TicketCard.tsx', () => {
     );
   };
 });
+
+function RerenderHarness() {
+  const [, setRenderCount] = React.useState(0);
+
+  return (
+    <>
+      <TicketListScreen />
+      <Button
+        title="테스트 재렌더링"
+        onPress={() => setRenderCount(count => count + 1)}
+      />
+    </>
+  );
+}
 
 describe('TicketListScreen', () => {
   const mockNavigate = jest.fn();
@@ -173,7 +187,7 @@ describe('TicketListScreen', () => {
         new Error('Network Error'),
       );
 
-      await setup();
+      await render(<RerenderHarness />);
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith(
@@ -181,6 +195,10 @@ describe('TicketListScreen', () => {
           '잠시 후 다시 시도해 주세요.',
         );
       });
+
+      fireEvent.press(screen.getByText('테스트 재렌더링'));
+
+      expect(Alert.alert).toHaveBeenCalledTimes(1);
     });
   });
 });
