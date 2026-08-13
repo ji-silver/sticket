@@ -7,6 +7,8 @@ import {
 } from 'react-native';
 import { useRef, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AppText from '../../../../components/common/AppText.tsx';
+import InlineActionButton from '../../../../components/common/InlineActionButton.tsx';
 import { colors } from '../../../../styles/colors.ts';
 import DiaryCanvasArea from './DiaryCanvasArea.tsx';
 import DiaryEditorUI, {
@@ -126,6 +128,8 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
   const drawingCanvasRef = useRef<DiaryDrawingCanvasRef>(null);
   const {
     isLoading,
+    hasLoadError,
+    retryLoadDiary,
     isSavingBeforeLeave,
     snackbarMessage,
     hasDrawing,
@@ -701,6 +705,37 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
     );
   };
 
+  if (hasLoadError) {
+    return (
+      <SafeAreaView
+        style={[styles.container, styles.loadErrorContainer]}
+        edges={['bottom']}
+      >
+        <AppText
+          size={17}
+          weight="semiBold"
+          align="center"
+          accessibilityRole="alert"
+        >
+          다이어리를 불러오지 못했어요
+        </AppText>
+        <AppText
+          size={14}
+          color={colors.textSecondary}
+          align="center"
+          lineHeight={20}
+        >
+          네트워크 상태를 확인하고 다시 시도해 주세요.
+        </AppText>
+        <InlineActionButton
+          label="다시 시도"
+          tone="primary"
+          onPress={retryLoadDiary}
+        />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView
       style={styles.container}
@@ -765,5 +800,12 @@ const styles = StyleSheet.create({
 
   keyboardAvoidingContainer: {
     flex: 1,
+  },
+
+  loadErrorContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingHorizontal: 24,
   },
 });

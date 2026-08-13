@@ -1,5 +1,5 @@
-import { Alert, AppState, Image } from 'react-native';
-import { useEffect, useRef, useState, type RefObject } from 'react';
+import { AppState, Image } from 'react-native';
+import { type RefObject, useEffect, useRef, useState } from 'react';
 import {
   type NavigationAction,
   useNavigation,
@@ -232,6 +232,8 @@ export function useTicketDiaryPersistence({
 }: UseTicketDiaryPersistenceParams) {
   const navigation = useNavigation();
   const [isLoading, setIsLoading] = useState(true);
+  const [hasLoadError, setHasLoadError] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSavingBeforeLeave, setIsSavingBeforeLeave] = useState(false);
   const [isLeaveApproved, setIsLeaveApproved] = useState(false);
@@ -470,6 +472,7 @@ export function useTicketDiaryPersistence({
 
     async function loadDiary() {
       setIsLoading(true);
+      setHasLoadError(false);
       isAutosaveReadyRef.current = false;
       hasLoadedDiaryRef.current = false;
       latestSnapshotRef.current = null;
@@ -571,11 +574,7 @@ export function useTicketDiaryPersistence({
         drawingCanvasRef.current?.clear();
 
         console.error('다이어리를 불러오지 못했습니다.', error);
-
-        Alert.alert(
-          '다이어리를 불러오지 못했어요',
-          '잠시 후 다시 시도해 주세요.',
-        );
+        setHasLoadError(true);
       } finally {
         if (isActive) {
           setIsLoading(false);
@@ -588,7 +587,7 @@ export function useTicketDiaryPersistence({
     return () => {
       isActive = false;
     };
-  }, [ticketId, drawingCanvasRef, initializeDiary, resetDiary]);
+  }, [ticketId, loadAttempt, drawingCanvasRef, initializeDiary, resetDiary]);
 
   useEffect(() => {
     if (isLoading || !hasLoadedDiaryRef.current) {
@@ -716,8 +715,7 @@ export function useTicketDiaryPersistence({
 
       if (drawingBase64Ref.current === null) {
         const lastPhotoIndex = items.reduce(
-          (result, item, index) =>
-            item.type === 'photo' ? index + 1 : result,
+          (result, item, index) => (item.type === 'photo' ? index + 1 : result),
           0,
         );
 
@@ -738,8 +736,16 @@ export function useTicketDiaryPersistence({
     setSelectedTool(null);
   };
 
+  const retryLoadDiary = () => {
+    setHasLoadError(false);
+    setIsLoading(true);
+    setLoadAttempt(currentAttempt => currentAttempt + 1);
+  };
+
   return {
     isLoading,
+    hasLoadError,
+    retryLoadDiary,
     isSavingBeforeLeave,
     snackbarMessage,
     hasDrawing: drawingBase64Ref.current !== null,
