@@ -1,6 +1,10 @@
 import { decode } from 'base64-arraybuffer';
 import { supabase } from '../../lib/supabase';
-import { TicketBook, TicketBookSport, TicketBookCoverPattern } from './types';
+import {
+  getTicketDiaryFilePaths,
+  removeTicketDiaryFiles,
+} from '../ticket/ticketDiary.service';
+import { TicketBook, TicketBookCoverPattern, TicketBookSport } from './types';
 
 const COVER_BUCKET = 'ticket-book-covers';
 const ORIGINAL_TICKET_BUCKET = 'ticket-originals';
@@ -234,12 +238,16 @@ export async function deleteTicketBook(ticketBookId: string) {
 
   const { data: tickets, error: ticketError } = await supabase
     .from('tickets')
-    .select('original_photo_path')
+    .select('id, original_photo_path, diary_data')
     .eq('ticket_book_id', ticketBookId);
 
   if (ticketError) {
     throw ticketError;
   }
+
+  const diaryFilePaths = tickets.flatMap(ticket =>
+    getTicketDiaryFilePaths(ticket.diary_data, ticket.id),
+  );
 
   const { data, error } = await supabase
     .from('ticket_books')
@@ -265,6 +273,12 @@ export async function deleteTicketBook(ticketBookId: string) {
     if (removeError) {
       console.error('원본 티켓 사진을 정리하지 못했습니다.', removeError);
     }
+  }
+
+  try {
+    await removeTicketDiaryFiles(diaryFilePaths);
+  } catch (removeError) {
+    console.error('티켓 다이어리 파일을 정리하지 못했습니다.', removeError);
   }
 
   if (data.cover_photo_path) {
