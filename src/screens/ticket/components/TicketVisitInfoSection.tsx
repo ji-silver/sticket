@@ -170,27 +170,18 @@ function TicketVisitInfoSection({
     <>
       <View style={styles.area}>
         <View style={styles.card}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={
-              seatName
-                ? `좌석 정보 ${seatName}, 수정하기`
-                : '좌석 정보 추가하기'
-            }
-            onPress={() => setIsSeatSheetVisible(true)}
-            style={({ pressed }) => [
-              styles.seatBlock,
-              pressed && styles.pressedSeatBlock,
-            ]}
-          >
+          <View style={styles.seatBlock}>
             <View style={styles.blockHeader}>
               <AppText style={styles.blockTitle}>좌석 정보</AppText>
 
-              <View style={styles.seatAction}>
-                <AppText style={styles.seatActionText}>
-                  {seatName ? '수정' : '추가'}
-                </AppText>
-              </View>
+              <InlineActionButton
+                label={seatName ? '수정' : '추가'}
+                tone="primary"
+                onPress={() => setIsSeatSheetVisible(true)}
+                accessibilityLabel={
+                  seatName ? '좌석 정보 수정' : '좌석 정보 추가'
+                }
+              />
             </View>
 
             <AppText
@@ -198,7 +189,7 @@ function TicketVisitInfoSection({
             >
               {seatName ?? '오늘 앉은 좌석을 남겨보세요'}
             </AppText>
-          </Pressable>
+          </View>
 
           <View style={styles.divider} />
 
@@ -409,20 +400,6 @@ const styles = StyleSheet.create({
   },
   seatBlock: {
     minHeight: 56,
-  },
-  pressedSeatBlock: {
-    opacity: 0.6,
-  },
-  seatAction: {
-    minHeight: 44,
-    paddingHorizontal: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  seatActionText: {
-    fontSize: 14,
-    fontFamily: fonts.bold,
-    color: colors.primary,
   },
   blockTitle: {
     fontSize: 17,
