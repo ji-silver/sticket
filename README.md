@@ -8,6 +8,12 @@
   직관의 순간을 티켓처럼 남기는 iOS 스포츠 기록 앱
 </p>
 
+<p align="center">
+  <a href="https://apps.apple.com/kr/app/%EC%8A%A4%ED%8B%B0%EC%BC%93/id6800050133">
+    <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" height="54" alt="App Store에서 다운로드" />
+  </a>
+</p>
+
 ## 소개
 
 스티켓은 스포츠팬이 현장에서 본 경기를 티켓으로 기록하고, 그날의 추억을 다이어리로 꾸밀 수 있는 React Native iOS 앱입니다. 경기 일정과 연동해 직관 기록을 간편하게 남기고, 캘린더와 시즌
