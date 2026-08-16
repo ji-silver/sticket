@@ -74,6 +74,7 @@ function BucketEditModal({
       closeAccessibilityLabel="버킷리스트 편집 닫기"
     >
       <TextInput
+        allowFontScaling={false}
         value={draft}
         onChangeText={setDraft}
         style={styles.input}
