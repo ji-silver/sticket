@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  fireEvent,
   render,
   screen,
   userEvent,
@@ -312,7 +313,7 @@ describe('HomeScreen', () => {
     it('버킷리스트 메뉴에서 수정 화면을 열 수 있다', async () => {
       const user = userEvent.setup();
 
-      await render(<HomeScreen />);
+      const view = await render(<HomeScreen />);
 
       expect(
         screen.queryByRole('button', { name: '기존 버킷리스트 수정' }),
@@ -326,6 +327,13 @@ describe('HomeScreen', () => {
       await user.press(
         screen.getByRole('button', { name: '버킷리스트 수정하기' }),
       );
+
+      const actionSheetModal = view.container
+        .queryAll(node => node.props.onDismiss !== undefined)
+        .at(0);
+
+      expect(actionSheetModal).toBeDefined();
+      fireEvent(actionSheetModal!, 'dismiss');
 
       expect(await screen.findByLabelText('버킷리스트 내용')).toBeVisible();
     });
