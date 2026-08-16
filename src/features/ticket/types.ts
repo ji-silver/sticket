@@ -34,6 +34,7 @@ export interface Ticket {
   awayTeamName: string;
   homeScore: number | null;
   awayScore: number | null;
+  gameStatus: string;
   isCancelled: boolean;
   awayLineup: LineupPlayer[];
   homeLineup: LineupPlayer[];

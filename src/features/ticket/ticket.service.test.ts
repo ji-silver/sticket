@@ -57,6 +57,7 @@ describe('getTickets', () => {
     const tickets = await getTickets();
 
     expect(tickets[0].isCancelled).toBe(true);
+    expect(tickets[0].gameStatus).toBe('CANCELLED');
     expect(tickets[0].pageOrientation).toBe('landscape');
     expect(tickets[0].awayLineup).toEqual([
       {

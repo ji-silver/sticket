@@ -57,21 +57,28 @@ function TicketRecordPage({
   const { profile } = useAuth();
   const favoriteTeamName = profile?.favorite_team?.short_name;
   const matchDateText = formatMatchDate(ticket.matchDate);
-  const awayScoreText = ticket.awayScore ?? '-';
-  const homeScoreText = ticket.homeScore ?? '-';
+  const isFinished = ticket.gameStatus === 'FINISHED';
+  const isInProgress = ticket.gameStatus === 'IN_PROGRESS';
+  const awayScoreText = isFinished ? ticket.awayScore ?? '-' : '-';
+  const homeScoreText = isFinished ? ticket.homeScore ?? '-' : '-';
   const matchResult =
-    !ticket.isCancelled && favoriteTeamName
+    isFinished && favoriteTeamName
       ? getFavoriteTeamMatchResult(ticket, favoriteTeamName)
       : null;
   const matchResultText = matchResult ? matchResultLabels[matchResult] : null;
+  const matchStatusText = isInProgress ? '경기 진행 중' : matchResultText;
   const matchResultBadgeStyle =
-    matchResult === 'lose'
+    isInProgress
+      ? styles.matchResultBadgeProgress
+      : matchResult === 'lose'
       ? styles.matchResultBadgeLose
       : matchResult === 'draw'
       ? styles.matchResultBadgeDraw
       : null;
   const matchResultTextStyle =
-    matchResult === 'lose'
+    isInProgress
+      ? styles.matchResultTextProgress
+      : matchResult === 'lose'
       ? styles.matchResultTextLose
       : matchResult === 'draw'
       ? styles.matchResultTextDraw
@@ -138,8 +145,8 @@ function TicketRecordPage({
                 : `원정 ${ticket.awayTeamName} ${awayScoreText} 대 홈 ${
                     ticket.homeTeamName
                   } ${homeScoreText}${
-                    matchResultText && favoriteTeamName
-                      ? `, 응원 구단 ${favoriteTeamName} 기준 ${matchResultText}`
+                    matchStatusText
+                      ? `, ${matchStatusText}`
                       : ''
                   }`
             }
@@ -195,13 +202,13 @@ function TicketRecordPage({
             </View>
           </View>
 
-          {matchResultText ? (
+          {matchStatusText ? (
             <View style={[styles.matchResultBadge, matchResultBadgeStyle]}>
               <AppText
                 style={[styles.matchResultText, matchResultTextStyle]}
                 numberOfLines={1}
               >
-                {matchResultText}
+                {matchStatusText}
               </AppText>
             </View>
           ) : null}
@@ -391,5 +398,11 @@ const styles = StyleSheet.create({
   },
   matchResultTextDraw: {
     color: colors.info,
+  },
+  matchResultBadgeProgress: {
+    backgroundColor: '#F0F1F2',
+  },
+  matchResultTextProgress: {
+    color: colors.textSecondary,
   },
 });

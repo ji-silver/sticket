@@ -265,6 +265,7 @@ export async function getTickets(): Promise<Ticket[]> {
         awayTeamName: game.awayTeam.short_name,
         homeScore: game.home_score,
         awayScore: game.away_score,
+        gameStatus: game.status,
         isCancelled: game.status === 'CANCELLED',
         awayLineup: parseLineup(game.away_lineup),
         homeLineup: parseLineup(game.home_lineup),
