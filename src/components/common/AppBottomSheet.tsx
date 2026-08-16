@@ -45,9 +45,6 @@ function AppBottomSheet({
   const { height: windowHeight } = useWindowDimensions();
   const [isPresented, setIsPresented] = useState(visible);
   const progress = useRef(new Animated.Value(visible ? 1 : 0)).current;
-  const onClosedRef = useRef(onClosed);
-
-  onClosedRef.current = onClosed;
 
   useEffect(() => {
     if (!isPresented) {
@@ -64,7 +61,6 @@ function AppBottomSheet({
     }).start(({ finished }) => {
       if (finished && !visible) {
         setIsPresented(false);
-        onClosedRef.current?.();
       }
     });
   }, [isPresented, progress, visible]);
@@ -75,6 +71,7 @@ function AppBottomSheet({
       transparent
       animationType="none"
       onRequestClose={onClose}
+      onDismiss={onClosed}
     >
       <KeyboardAvoidingView
         enabled={keyboardAvoiding}
