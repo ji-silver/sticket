@@ -29,8 +29,30 @@ import type { RouteProp } from '@react-navigation/native';
 import { useCreateTicket } from '../../features/ticket/api/useCreateTicket';
 import AddTicketDateSection from './components/AddTicketDateSection.tsx';
 import AddTicketGameSection from './components/AddTicketGameSection.tsx';
+import type { UserProfile } from '../../features/auth/auth.types.ts';
+import type { KboGame } from '../../features/game/types.ts';
 
 type AddTicketRouteProp = RouteProp<RootStackParamList, 'AddTicket'>;
+
+function getSeasonTicketSeatName(
+  profile: UserProfile | null,
+  game: KboGame | undefined,
+  currentSeason: number,
+) {
+  if (
+    !game ||
+    !profile?.season_ticket_seat_name ||
+    profile.season_ticket_season !== currentSeason ||
+    profile.season_ticket_team_id !== game.homeTeamId ||
+    profile.favorite_team_id !== game.homeTeamId ||
+    game.season !== currentSeason ||
+    game.seriesType !== 'REGULAR'
+  ) {
+    return '';
+  }
+
+  return profile.season_ticket_seat_name;
+}
 
 function AddTicketScreen() {
   const horizontalPadding = 20;
@@ -41,6 +63,7 @@ function AddTicketScreen() {
   const favoriteTeamName = profile?.favorite_team?.short_name;
 
   const today = getTodayInKorea();
+  const currentSeason = Number(today.slice(0, 4));
   const routeInitialDate = route.params?.initialDate;
   const initialDate =
     routeInitialDate && routeInitialDate <= today ? routeInitialDate : '';
@@ -48,6 +71,7 @@ function AddTicketScreen() {
   const [selectedDate, setSelectedDate] = useState(initialDate);
   const [isCalendarOpen, setIsCalendarOpen] = useState(!initialDate);
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
+  const [seatName, setSeatName] = useState('');
   const queryDate = !isCalendarOpen && selectedDate ? selectedDate : '';
 
   const {
@@ -65,10 +89,14 @@ function AddTicketScreen() {
           game.homeTeamName === favoriteTeamName,
       );
       if (favoriteTeamGames.length === 1) {
-        setSelectedGameId(favoriteTeamGames[0].id);
+        const favoriteTeamGame = favoriteTeamGames[0];
+        setSelectedGameId(favoriteTeamGame.id);
+        setSeatName(
+          getSeasonTicketSeatName(profile, favoriteTeamGame, currentSeason),
+        );
       }
     }
-  }, [games, favoriteTeamName, selectedGameId]);
+  }, [currentSeason, games, favoriteTeamName, profile, selectedGameId]);
 
   const displayedGames = [...games].sort((firstGame, secondGame) => {
     const isFirstFavoriteTeamGame =
@@ -81,7 +109,6 @@ function AddTicketScreen() {
     return Number(isSecondFavoriteTeamGame) - Number(isFirstFavoriteTeamGame);
   });
 
-  const [seatName, setSeatName] = useState('');
   const [originalTicketImage, setOriginalTicketImage] =
     useState<SelectedOriginalTicketImage | null>(null);
 
@@ -108,7 +135,13 @@ function AddTicketScreen() {
 
   const handlePressGame = (gameId: string) => {
     if (selectedGameId !== gameId) {
-      setSeatName('');
+      setSeatName(
+        getSeasonTicketSeatName(
+          profile,
+          games.find(game => game.id === gameId),
+          currentSeason,
+        ),
+      );
     }
 
     setSelectedGameId(gameId);

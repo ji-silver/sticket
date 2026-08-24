@@ -192,6 +192,89 @@ describe('AddTicketScreen', () => {
       });
     });
 
+    it('현재 시즌 정규 홈경기에는 시즌권 좌석을 채우고 다른 좌석으로 바꿀 수 있다', async () => {
+      mockUseAuth.mockReturnValue({
+        profile: {
+          favorite_team_id: 'lg',
+          favorite_team: { short_name: 'LG' },
+          season_ticket_seat_name: '1루 응원지정석 23블록',
+          season_ticket_season: 2026,
+          season_ticket_team_id: 'lg',
+        },
+      });
+      (getGamesByDate as jest.Mock).mockResolvedValueOnce([
+        {
+          id: 'home-game',
+          date: '2026-08-01',
+          season: 2026,
+          seriesType: 'REGULAR',
+          awayTeamId: 'doosan',
+          homeTeamId: 'lg',
+          awayTeamName: '두산',
+          homeTeamName: 'LG',
+          time: '18:30',
+          stadiumName: '잠실',
+        },
+        {
+          id: 'away-game',
+          date: '2026-08-01',
+          season: 2026,
+          seriesType: 'REGULAR',
+          awayTeamId: 'lg',
+          homeTeamId: 'doosan',
+          awayTeamName: 'LG',
+          homeTeamName: '두산',
+          time: '14:00',
+          stadiumName: '잠실',
+        },
+      ]);
+
+      await setup();
+      fireEvent.press(screen.getByText('Mock Date 1'));
+
+      fireEvent.press(
+        await screen.findByRole('button', { name: /두산 원정 대 LG 홈/ }),
+      );
+      await waitFor(() => {
+        expect(screen.getByLabelText('좌석 정보').props.value).toBe(
+          '1루 응원지정석 23블록',
+        );
+      });
+
+      fireEvent.press(
+        screen.getByRole('button', { name: /LG 원정 대 두산 홈/ }),
+      );
+      await waitFor(() => {
+        expect(screen.getByLabelText('좌석 정보').props.value).toBe('');
+      });
+
+      fireEvent.press(
+        screen.getByRole('button', { name: /두산 원정 대 LG 홈/ }),
+      );
+      await waitFor(() => {
+        expect(screen.getByLabelText('좌석 정보').props.value).toBe(
+          '1루 응원지정석 23블록',
+        );
+      });
+
+      fireEvent.changeText(screen.getByLabelText('좌석 정보'), '테이블석 3열');
+      await waitFor(() => {
+        expect(screen.getByLabelText('좌석 정보').props.value).toBe(
+          '테이블석 3열',
+        );
+      });
+
+      fireEvent.press(screen.getByRole('button', { name: '티켓 추가' }));
+
+      await waitFor(() => {
+        expect(mockMutateAsync).toHaveBeenCalledWith({
+          gameKey: 'home-game',
+          seatName: '테이블석 3열',
+          originalPhotoBase64: undefined,
+        });
+      });
+    });
+
     it('달력에서 날짜를 선택하면, 해당 날짜의 경기를 서버에서 불러온다', async () => {
       (getGamesByDate as jest.Mock).mockResolvedValueOnce([
         {

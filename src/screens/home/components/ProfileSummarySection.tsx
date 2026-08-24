@@ -7,12 +7,16 @@ import { fonts } from '../../../styles/fonts.ts';
 interface ProfileSummarySectionProps {
   nickname: string;
   favoriteTeamName: string;
+  season: number;
+  seasonTicketSeatName: string | null;
   onPressEdit: () => void;
 }
 
 function ProfileSummarySection({
   nickname,
   favoriteTeamName,
+  season,
+  seasonTicketSeatName,
   onPressEdit,
 }: ProfileSummarySectionProps) {
   return (
@@ -43,6 +47,21 @@ function ProfileSummarySection({
             <AppText style={styles.teamName}>{favoriteTeamName}</AppText>
           </View>
         </View>
+      </View>
+
+      <View style={styles.divider} />
+
+      <View style={styles.seasonTicketSection}>
+        <AppText style={styles.label}>{season} 시즌권 좌석</AppText>
+
+        <AppText
+          style={[
+            styles.seasonTicketSeat,
+            !seasonTicketSeatName && styles.emptyValue,
+          ]}
+        >
+          {seasonTicketSeatName ?? '등록 안 함'}
+        </AppText>
       </View>
     </View>
   );
@@ -97,6 +116,20 @@ const styles = StyleSheet.create({
 
   favoriteSection: {
     gap: 10,
+  },
+
+  seasonTicketSection: {
+    gap: 6,
+  },
+
+  seasonTicketSeat: {
+    fontSize: 15,
+    fontFamily: fonts.regular,
+    color: colors.text,
+  },
+
+  emptyValue: {
+    color: colors.textSecondary,
   },
 
   favoriteTeamList: {

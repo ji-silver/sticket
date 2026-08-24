@@ -17,6 +17,7 @@ import AppText from '../../components/common/AppText.tsx';
 import ScreenHeader from '../../components/common/ScreenHeader.tsx';
 import { useAuth } from '../../features/auth/AuthProvider.tsx';
 import { useUpdateProfile } from '../../features/profile/api/useUpdateProfile.ts';
+import { getTodayInKorea } from '../../lib/date.ts';
 import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
 import TeamSelectSheet from './components/TeamSelectSheet.tsx';
@@ -28,6 +29,13 @@ function ProfileEditScreen() {
   const [favoriteTeam, setFavoriteTeam] = useState(
     profile?.favorite_team?.name ?? '',
   );
+  const currentSeason = Number(getTodayInKorea().slice(0, 4));
+  const [seasonTicketSeatName, setSeasonTicketSeatName] = useState(
+    profile?.season_ticket_season === currentSeason &&
+      profile.season_ticket_team_id === profile.favorite_team_id
+      ? profile.season_ticket_seat_name ?? ''
+      : '',
+  );
   const [isTeamSheetOpen, setIsTeamSheetOpen] = useState(false);
 
   const trimmedNickname = nickname.trim();
@@ -36,6 +44,10 @@ function ProfileEditScreen() {
   const isFormValid = isNicknameValid && favoriteTeam.length > 0;
 
   const handleSelectTeam = (team: string) => {
+    if (team !== favoriteTeam) {
+      setSeasonTicketSeatName('');
+    }
+
     setFavoriteTeam(team);
     setIsTeamSheetOpen(false);
   };
@@ -51,6 +63,12 @@ function ProfileEditScreen() {
       {
         nickname: trimmedNickname,
         favoriteTeamName: favoriteTeam,
+        seasonTicketSeat: seasonTicketSeatName.trim()
+          ? {
+              name: seasonTicketSeatName,
+              season: currentSeason,
+            }
+          : null,
       },
       {
         onSuccess: nextProfile => {
@@ -90,7 +108,7 @@ function ProfileEditScreen() {
                 allowFontScaling={false}
                 value={nickname}
                 onChangeText={setNickname}
-                style={styles.nicknameInput}
+                style={styles.textInput}
                 maxLength={10}
                 selectionColor={colors.primary}
                 clearButtonMode="while-editing"
@@ -129,6 +147,37 @@ function ProfileEditScreen() {
                   strokeWidth={2}
                 />
               </Pressable>
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <View style={styles.sectionTitleRow}>
+              <AppText style={styles.sectionTitle}>
+                {currentSeason} 시즌권 좌석
+              </AppText>
+              <AppText style={styles.optionalLabel}>선택</AppText>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <View style={styles.inputCard}>
+                <TextInput
+                  allowFontScaling={false}
+                  value={seasonTicketSeatName}
+                  onChangeText={setSeasonTicketSeatName}
+                  style={styles.textInput}
+                  maxLength={100}
+                  placeholder="예: 1루 응원지정석 23블록"
+                  placeholderTextColor={colors.textPlaceholder}
+                  selectionColor={colors.primary}
+                  clearButtonMode="while-editing"
+                  returnKeyType="done"
+                  accessibilityLabel={`${currentSeason} 시즌권 좌석`}
+                />
+              </View>
+              <AppText style={styles.helperText}>
+                {currentSeason}년 {favoriteTeam || '응원 구단'} 정규시즌 홈경기
+                티켓에 자동으로 입력돼요.
+              </AppText>
             </View>
           </View>
         </ScrollView>
@@ -196,6 +245,11 @@ const styles = StyleSheet.create({
   section: {
     gap: 12,
   },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   sectionTitle: {
     fontSize: 17,
     fontFamily: fonts.bold,
@@ -211,11 +265,25 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     justifyContent: 'center',
   },
-  nicknameInput: {
+  textInput: {
     padding: 0,
     fontSize: 16,
     fontFamily: fonts.regular,
     color: colors.text,
+  },
+  optionalLabel: {
+    fontSize: 13,
+    fontFamily: fonts.regular,
+    color: colors.textSecondary,
+  },
+  inputGroup: {
+    gap: 8,
+  },
+  helperText: {
+    fontSize: 13,
+    lineHeight: 19,
+    fontFamily: fonts.regular,
+    color: colors.textSecondary,
   },
   teamCard: {
     borderWidth: 1,

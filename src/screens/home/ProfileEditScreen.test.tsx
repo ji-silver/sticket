@@ -25,6 +25,10 @@ jest.mock('../../features/profile/api/useUpdateProfile.ts', () => ({
   useUpdateProfile: jest.fn(),
 }));
 
+jest.mock('../../lib/date.ts', () => ({
+  getTodayInKorea: () => '2026-08-24',
+}));
+
 jest.mock('./components/TeamSelectSheet.tsx', () => {
   const { View, Pressable, Text } = require('react-native');
   return function MockTeamSelectSheet({ visible, onSelect, onClose }: any) {
@@ -58,7 +62,14 @@ describe('ProfileEditScreen', () => {
     });
 
     (useAuth as jest.Mock).mockReturnValue({
-      profile: { nickname: '기존유저', favorite_team: { name: 'LG 트윈스' } },
+      profile: {
+        nickname: '기존유저',
+        favorite_team_id: 'lg',
+        favorite_team: { name: 'LG 트윈스' },
+        season_ticket_seat_name: '1루 응원지정석 23블록',
+        season_ticket_season: 2026,
+        season_ticket_team_id: 'lg',
+      },
       completeProfile: mockCompleteProfile,
     });
 
@@ -94,6 +105,9 @@ describe('ProfileEditScreen', () => {
       const nicknameInput = screen.getByLabelText('닉네임');
       expect(nicknameInput.props.value).toBe('기존유저');
       expect(screen.getByText('LG 트윈스')).toBeVisible();
+      expect(screen.getByLabelText('2026 시즌권 좌석').props.value).toBe(
+        '1루 응원지정석 23블록',
+      );
     });
   });
 
@@ -153,7 +167,11 @@ describe('ProfileEditScreen', () => {
 
       await waitFor(() => {
         expect(mockMutate).toHaveBeenCalledWith(
-          { nickname: '새로운유저', favoriteTeamName: '두산 베어스' },
+          {
+            nickname: '새로운유저',
+            favoriteTeamName: '두산 베어스',
+            seasonTicketSeat: null,
+          },
           expect.any(Object),
         );
       });

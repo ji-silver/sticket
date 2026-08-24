@@ -14,7 +14,11 @@ export async function getGamesByDate(date: string): Promise<KboGame[]> {
         game_key,
         game_date,
         start_time,
+        season,
+        series_type,
         stadium_name,
+        away_team_id,
+        home_team_id,
         away_score,
         home_score,
         awayTeam:teams!games_away_team_id_fkey (
@@ -45,7 +49,11 @@ export async function getGamesByDate(date: string): Promise<KboGame[]> {
       id: game.game_key,
       date: game.game_date,
       time: game.start_time?.slice(0, 5) ?? '시간 미정', // 18:30:00으로 표기되기 때문에 18:30
+      season: game.season,
+      seriesType: game.series_type,
       stadiumName: game.stadium_name ?? '경기장 미정',
+      awayTeamId: game.away_team_id,
+      homeTeamId: game.home_team_id,
       awayTeamName: game.awayTeam.short_name,
       homeTeamName: game.homeTeam.short_name,
       awayScore: game.away_score,

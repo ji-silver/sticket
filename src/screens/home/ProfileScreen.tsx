@@ -55,6 +55,11 @@ function ProfileScreen() {
   const favoriteTeamName = profile.favorite_team?.name ?? '선택 안 함';
 
   const favoriteTeamShortName = profile.favorite_team?.short_name ?? '응원팀';
+  const seasonTicketSeatName =
+    profile.season_ticket_season === CURRENT_SEASON &&
+    profile.season_ticket_team_id === profile.favorite_team_id
+      ? profile.season_ticket_seat_name
+      : null;
 
   const handleConfirmLogout = async () => {
     setIsLogoutDialogVisible(false);
@@ -109,6 +114,8 @@ function ProfileScreen() {
         <ProfileSummarySection
           nickname={profile.nickname}
           favoriteTeamName={favoriteTeamName}
+          season={CURRENT_SEASON}
+          seasonTicketSeatName={seasonTicketSeatName}
           onPressEdit={() => navigation.navigate('ProfileEdit')}
         />
 

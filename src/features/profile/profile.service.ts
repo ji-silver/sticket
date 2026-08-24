@@ -4,7 +4,13 @@ import { AttendanceSummary } from './types';
 interface SaveProfileParams {
   nickname: string;
   favoriteTeamName: string;
+  seasonTicketSeat?: {
+    name: string;
+    season: number;
+  } | null;
 }
+
+const MAX_SEASON_TICKET_SEAT_NAME_LENGTH = 100;
 
 // 현재 구단과 과거 구단 같은 팀 처리
 const FRANCHISE_TEAM_IDS: Record<string, readonly string[]> = {
@@ -20,9 +26,12 @@ export async function getProfile(userId: string) {
         id,
         nickname,
         favorite_team_id,
+        season_ticket_seat_name,
+        season_ticket_season,
+        season_ticket_team_id,
         created_at,
         updated_at,
-        favorite_team:teams (
+        favorite_team:teams!profiles_favorite_team_id_fkey (
           id,
           name,
           short_name,
@@ -119,9 +128,11 @@ export async function getAttendanceSummary(
 export async function saveProfile({
   nickname,
   favoriteTeamName,
+  seasonTicketSeat,
 }: SaveProfileParams) {
   const trimmedNickname = nickname.trim();
   const normalizedFavoriteTeamName = favoriteTeamName.trim();
+  const normalizedSeasonTicketSeatName = seasonTicketSeat?.name.trim() ?? '';
 
   if (trimmedNickname.length < 2 || trimmedNickname.length > 10) {
     throw new Error('닉네임은 2자 이상 10자 이하로 입력해 주세요.');
@@ -129,6 +140,22 @@ export async function saveProfile({
 
   if (!normalizedFavoriteTeamName) {
     throw new Error('응원 구단을 선택해 주세요.');
+  }
+
+  if (
+    normalizedSeasonTicketSeatName.length > MAX_SEASON_TICKET_SEAT_NAME_LENGTH
+  ) {
+    throw new Error(
+      `시즌권 좌석은 ${MAX_SEASON_TICKET_SEAT_NAME_LENGTH}자 이하로 입력해 주세요.`,
+    );
+  }
+
+  if (
+    seasonTicketSeat &&
+    (!normalizedSeasonTicketSeatName ||
+      !Number.isInteger(seasonTicketSeat.season))
+  ) {
+    throw new Error('시즌권 좌석 정보를 확인해 주세요.');
   }
 
   const {
@@ -160,6 +187,21 @@ export async function saveProfile({
     throw new Error('선택한 응원 구단을 찾을 수 없습니다.');
   }
 
+  const seasonTicketColumns =
+    seasonTicketSeat === undefined
+      ? {}
+      : seasonTicketSeat === null
+      ? {
+          season_ticket_seat_name: null,
+          season_ticket_season: null,
+          season_ticket_team_id: null,
+        }
+      : {
+          season_ticket_seat_name: normalizedSeasonTicketSeatName,
+          season_ticket_season: seasonTicketSeat.season,
+          season_ticket_team_id: team.id,
+        };
+
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .upsert(
@@ -167,6 +209,7 @@ export async function saveProfile({
         id: user.id,
         nickname: trimmedNickname,
         favorite_team_id: team.id,
+        ...seasonTicketColumns,
       },
       {
         onConflict: 'id',
@@ -177,9 +220,12 @@ export async function saveProfile({
         id,
         nickname,
         favorite_team_id,
+        season_ticket_seat_name,
+        season_ticket_season,
+        season_ticket_team_id,
         created_at,
         updated_at,
-        favorite_team:teams (
+        favorite_team:teams!profiles_favorite_team_id_fkey (
           id,
           name,
           short_name,

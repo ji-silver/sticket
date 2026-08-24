@@ -142,6 +142,9 @@ export type Database = {
           favorite_team_id: string | null
           id: string
           nickname: string
+          season_ticket_seat_name: string | null
+          season_ticket_season: number | null
+          season_ticket_team_id: string | null
           updated_at: string
         }
         Insert: {
@@ -149,6 +152,9 @@ export type Database = {
           favorite_team_id?: string | null
           id: string
           nickname: string
+          season_ticket_seat_name?: string | null
+          season_ticket_season?: number | null
+          season_ticket_team_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -156,12 +162,22 @@ export type Database = {
           favorite_team_id?: string | null
           id?: string
           nickname?: string
+          season_ticket_seat_name?: string | null
+          season_ticket_season?: number | null
+          season_ticket_team_id?: string | null
           updated_at?: string
         }
         Relationships: [
           {
             foreignKeyName: "profiles_favorite_team_id_fkey"
             columns: ["favorite_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_season_ticket_team_id_fkey"
+            columns: ["season_ticket_team_id"]
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]

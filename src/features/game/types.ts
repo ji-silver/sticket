@@ -2,7 +2,11 @@ export interface KboGame {
   id: string;
   date: string;
   time: string;
+  season: number;
+  seriesType: string;
   stadiumName: string;
+  awayTeamId: string;
+  homeTeamId: string;
   awayTeamName: string;
   homeTeamName: string;
   awayScore: number | null;
