@@ -30,6 +30,7 @@ function ProfileSummarySection({
 
         <InlineActionButton
           label="수정"
+          tone="primary"
           onPress={onPressEdit}
           accessibilityLabel="프로필 수정"
         />
@@ -37,31 +38,33 @@ function ProfileSummarySection({
 
       <View style={styles.divider} />
 
-      <View style={styles.favoriteSection}>
-        <AppText style={styles.label}>응원 구단</AppText>
+      <View style={styles.infoRow}>
+        <AppText style={styles.infoLabel}>응원 구단</AppText>
 
-        <View style={styles.favoriteTeamList}>
-          <View style={styles.favoriteTeamRow}>
-            <AppText style={styles.sportName}>야구</AppText>
-
-            <AppText style={styles.teamName}>{favoriteTeamName}</AppText>
-          </View>
+        <View style={styles.valueColumn}>
+          <AppText style={styles.infoValue}>{favoriteTeamName}</AppText>
         </View>
       </View>
 
       <View style={styles.divider} />
 
-      <View style={styles.seasonTicketSection}>
-        <AppText style={styles.label}>{season} 시즌권 좌석</AppText>
+      <View style={styles.infoRow}>
+        <AppText style={styles.infoLabel}>시즌권 좌석</AppText>
 
-        <AppText
-          style={[
-            styles.seasonTicketSeat,
-            !seasonTicketSeatName && styles.emptyValue,
-          ]}
-        >
-          {seasonTicketSeatName ?? '등록 안 함'}
-        </AppText>
+        <View style={styles.valueColumn}>
+          <AppText
+            style={[
+              styles.infoValue,
+              !seasonTicketSeatName && styles.emptyValue,
+            ]}
+          >
+            {seasonTicketSeatName ?? '없음'}
+          </AppText>
+
+          {seasonTicketSeatName ? (
+            <AppText style={styles.valueCaption}>{season} 시즌</AppText>
+          ) : null}
+        </View>
       </View>
     </View>
   );
@@ -71,20 +74,17 @@ export default ProfileSummarySection;
 
 const styles = StyleSheet.create({
   profileCard: {
-    padding: 22,
-    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 18,
+    borderCurve: 'continuous',
     backgroundColor: colors.surface,
-    shadowColor: colors.shadow,
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    shadowOpacity: 0.06,
-    shadowRadius: 18,
-    elevation: 3,
   },
 
   profileCardTop: {
+    minHeight: 78,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -110,50 +110,49 @@ const styles = StyleSheet.create({
 
   divider: {
     height: 1,
-    marginVertical: 20,
+    marginHorizontal: 20,
     backgroundColor: colors.border,
-  },
-
-  favoriteSection: {
-    gap: 10,
-  },
-
-  seasonTicketSection: {
-    gap: 6,
-  },
-
-  seasonTicketSeat: {
-    fontSize: 15,
-    fontFamily: fonts.regular,
-    color: colors.text,
   },
 
   emptyValue: {
     color: colors.textSecondary,
   },
 
-  favoriteTeamList: {
-    gap: 10,
-  },
-
-  favoriteTeamRow: {
-    minHeight: 24,
+  infoRow: {
+    minHeight: 56,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 16,
   },
 
-  sportName: {
-    width: 48,
-    fontSize: 12,
+  infoLabel: {
+    width: 72,
+    fontSize: 13,
+    lineHeight: 21,
     fontFamily: fonts.regular,
     color: colors.textSecondary,
   },
 
-  teamName: {
+  valueColumn: {
     flex: 1,
+    alignItems: 'flex-end',
+    gap: 2,
+  },
+
+  infoValue: {
     fontSize: 15,
+    lineHeight: 21,
     fontFamily: fonts.regular,
     color: colors.text,
+    textAlign: 'right',
+  },
+
+  valueCaption: {
+    fontSize: 12,
+    lineHeight: 18,
+    fontFamily: fonts.regular,
+    color: colors.textSecondary,
   },
 });
