@@ -6,7 +6,10 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useRef, useState } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
+정import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 import AppText from '../../../../components/common/AppText.tsx';
 import InlineActionButton from '../../../../components/common/InlineActionButton.tsx';
 import { colors } from '../../../../styles/colors.ts';
@@ -51,6 +54,8 @@ import { useTicketDiaryPersistence } from './useTicketDiaryPersistence.ts';
 
 const MAXIMUM_DIARY_PHOTO_COUNT = 2;
 const DRAWING_LAYER_ID = '__drawing__';
+const DETAIL_HEADER_HEIGHT = 52;
+const DETAIL_TAB_HEIGHT = 48;
 
 interface TicketDiaryPageProps {
   ticketId: string;
@@ -125,6 +130,7 @@ function createLayerPanelItems(
 }
 
 function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
+  const { top } = useSafeAreaInsets();
   const drawingCanvasRef = useRef<DiaryDrawingCanvasRef>(null);
   const {
     isLoading,
@@ -743,6 +749,9 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
     >
       <KeyboardAvoidingView
         behavior="padding"
+        keyboardVerticalOffset={
+          top + DETAIL_HEADER_HEIGHT + DETAIL_TAB_HEIGHT
+        }
         style={styles.keyboardAvoidingContainer}
       >
         <DiaryCanvasArea
