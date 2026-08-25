@@ -186,8 +186,7 @@ function ProfileEditScreen() {
           <AppButton
             style={({ pressed }) => [
               styles.saveButton,
-              (!isFormValid || updateProfileMutation.isPending) &&
-                styles.saveButtonDisabled,
+              !isFormValid && styles.saveButtonDisabled,
               pressed &&
                 isFormValid &&
                 !updateProfileMutation.isPending &&
@@ -195,7 +194,11 @@ function ProfileEditScreen() {
             ]}
             onPress={handleSave}
             disabled={!isFormValid || updateProfileMutation.isPending}
+            isLoading={updateProfileMutation.isPending}
             accessibilityRole="button"
+            accessibilityLabel={
+              updateProfileMutation.isPending ? '저장 중' : '저장'
+            }
             accessibilityState={{
               disabled: !isFormValid || updateProfileMutation.isPending,
             }}
@@ -203,11 +206,10 @@ function ProfileEditScreen() {
             <AppText
               style={[
                 styles.saveButtonText,
-                (!isFormValid || updateProfileMutation.isPending) &&
-                  styles.saveButtonTextDisabled,
+                !isFormValid && styles.saveButtonTextDisabled,
               ]}
             >
-              {updateProfileMutation.isPending ? '저장 중' : '저장'}
+              저장
             </AppText>
           </AppButton>
         </View>

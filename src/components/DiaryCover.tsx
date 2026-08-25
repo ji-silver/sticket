@@ -1,5 +1,5 @@
-import React from 'react';
-import {View} from 'react-native';
+import React, {useEffect, useState} from 'react';
+import {Image, StyleSheet, View} from 'react-native';
 import Svg, {
   Defs,
   LinearGradient,
@@ -13,6 +13,7 @@ import Svg, {
   ClipPath,
   Image as SvgImage,
 } from 'react-native-svg';
+import AppSkeleton from './common/AppSkeleton.tsx';
 
 type CoverPattern = 'solid' | 'stripe';
 
@@ -39,9 +40,36 @@ function DiaryCover({
 }: DiaryCoverProps) {
   const w = size * WIDTH_SCALE;
   const h = size * (300 / 250);
+  const [loadedPhotoUri, setLoadedPhotoUri] = useState<string | null>(null);
+  const isPhotoLoading = Boolean(photoUri && loadedPhotoUri !== photoUri);
+
+  useEffect(() => {
+    if (!photoUri) {
+      return;
+    }
+
+    const currentPhotoUri = photoUri;
+    let isActive = true;
+
+    async function preparePhoto() {
+      try {
+        await Image.prefetch(currentPhotoUri);
+      } catch {}
+
+      if (isActive) {
+        setLoadedPhotoUri(currentPhotoUri);
+      }
+    }
+
+    preparePhoto();
+
+    return () => {
+      isActive = false;
+    };
+  }, [photoUri]);
 
   return (
-    <View style={{width: w, height: h}}>
+    <View style={[styles.container, {width: w, height: h}]}>
       <Svg width={w} height={h} viewBox="-12 0 250 300">
         <Defs>
           {/* ── 바인더 봉 금속 ── */}
@@ -238,6 +266,7 @@ function DiaryCover({
               height="95"
               clipPath="url(#photoClip)"
               preserveAspectRatio="xMidYMid slice"
+              onLoad={() => setLoadedPhotoUri(photoUri)}
             />
           </>
         )}
@@ -327,8 +356,32 @@ function DiaryCover({
         <Circle cx="189" cy="130" r="4.2" fill="rgba(255,255,255,0.45)" />
         <Circle cx="192" cy="135" r="1.6" fill="rgba(195,205,212,0.25)" />
       </Svg>
+
+      {isPhotoLoading ? (
+        <AppSkeleton
+          width={size * 0.256}
+          height={size * 0.38}
+          borderRadius={size * 0.016}
+          style={[
+            styles.photoSkeleton,
+            {
+              left: size * 0.398,
+              top: size * 0.584,
+            },
+          ]}
+        />
+      ) : null}
     </View>
   );
 }
 
 export default DiaryCover;
+
+const styles = StyleSheet.create({
+  container: {
+    position: 'relative',
+  },
+  photoSkeleton: {
+    position: 'absolute',
+  },
+});

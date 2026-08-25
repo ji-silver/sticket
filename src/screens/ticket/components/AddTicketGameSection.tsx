@@ -1,9 +1,12 @@
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import AppSkeleton from '../../../components/common/AppSkeleton.tsx';
 import AppText from '../../../components/common/AppText.tsx';
 import EmptyCard from '../../../components/common/EmptyCard.tsx';
 import { colors } from '../../../styles/colors.ts';
 import { fonts } from '../../../styles/fonts.ts';
 import type { KboGame } from '../../../features/game/types.ts';
+
+const GAME_SKELETON_COUNT = 5;
 
 interface AddTicketGameSectionProps {
   games: KboGame[];
@@ -27,8 +30,20 @@ export default function AddTicketGameSection({
       </View>
 
       {isLoadingGames ? (
-        <View style={styles.gameLoadingCard}>
-          <ActivityIndicator size="small" color={colors.primary} />
+        <View
+          accessible
+          accessibilityRole="progressbar"
+          accessibilityLabel="경기 목록을 불러오는 중"
+          style={styles.gameList}
+        >
+          {Array.from({ length: GAME_SKELETON_COUNT }, (_, index) => (
+            <AppSkeleton
+              key={`game-skeleton-${index}`}
+              width="100%"
+              height={122}
+              borderRadius={18}
+            />
+          ))}
         </View>
       ) : gameLoadError ? (
         <EmptyCard
@@ -112,11 +127,6 @@ const styles = StyleSheet.create({
   },
   gameList: {
     gap: 10,
-  },
-  gameLoadingCard: {
-    minHeight: 156,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   gameCard: {
     minHeight: 122,

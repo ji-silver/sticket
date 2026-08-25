@@ -1,5 +1,4 @@
 import {
-  ActivityIndicator,
   Image,
   StatusBar,
   StyleSheet,
@@ -31,9 +30,7 @@ function LoadingScreen() {
             accessibilityLabel="STICKET 로고"
           />
         </View>
-      </View>
 
-      <View style={styles.loadingArea}>
         {hasError ? (
           <View style={styles.errorArea}>
             <AppText style={styles.errorText}>
@@ -51,13 +48,7 @@ function LoadingScreen() {
               <AppText style={styles.retryButtonText}>다시 시도</AppText>
             </AppButton>
           </View>
-        ) : (
-          <ActivityIndicator
-            size="small"
-            color={colors.primary}
-            accessibilityLabel="앱을 불러오는 중"
-          />
-        )}
+        ) : null}
       </View>
     </SafeAreaView>
   );
@@ -86,12 +77,8 @@ const styles = StyleSheet.create({
     height: '100%',
   },
 
-  loadingArea: {
-    minHeight: 96,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   errorArea: {
+    marginTop: 28,
     alignItems: 'center',
     gap: 10,
   },

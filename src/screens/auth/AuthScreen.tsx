@@ -70,6 +70,7 @@ function AuthScreen() {
           ]}
           onPress={handlePressApple}
           disabled={isLoading}
+          isLoading={loadingProvider === 'apple'}
           accessibilityRole="button"
           accessibilityLabel="Apple로 계속하기"
           accessibilityState={{ disabled: isLoading }}
@@ -79,9 +80,7 @@ function AuthScreen() {
             style={styles.appleLogo}
             resizeMode="contain"
           />
-          <AppText style={styles.appleButtonText}>
-            {loadingProvider === 'apple' ? '로그인 중...' : 'Apple로 계속하기'}
-          </AppText>
+          <AppText style={styles.appleButtonText}>Apple로 계속하기</AppText>
         </AppButton>
 
         <AppButton
@@ -93,6 +92,8 @@ function AuthScreen() {
           ]}
           onPress={handlePressGoogle}
           disabled={isLoading}
+          isLoading={loadingProvider === 'google'}
+          loadingColor={colors.text}
           accessibilityRole="button"
           accessibilityLabel="Google로 계속하기"
           accessibilityState={{ disabled: isLoading }}
@@ -103,11 +104,7 @@ function AuthScreen() {
             resizeMode="contain"
           />
 
-          <AppText style={styles.googleButtonText}>
-            {loadingProvider === 'google'
-              ? '로그인 중...'
-              : 'Google로 계속하기'}
-          </AppText>
+          <AppText style={styles.googleButtonText}>Google로 계속하기</AppText>
         </AppButton>
       </View>
     </SafeAreaView>

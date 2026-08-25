@@ -133,6 +133,14 @@ async function restoreDiaryItems(
 
   const signedUrlByPath = await getTicketDiaryPhotoUrls(photoPaths);
 
+  const photoPrefetchResults = await Promise.all(
+    Array.from(signedUrlByPath.values()).map(uri => Image.prefetch(uri)),
+  );
+
+  if (photoPrefetchResults.some(isReady => !isReady)) {
+    throw new Error('저장된 다이어리 사진을 불러올 수 없습니다.');
+  }
+
   const sourceSizeByPath = new Map<
     string,
     {

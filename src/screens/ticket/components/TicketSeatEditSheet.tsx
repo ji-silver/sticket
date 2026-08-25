@@ -103,6 +103,7 @@ function TicketSeatEditSheet({
         ]}
         onPress={handleSave}
         disabled={updateTicketSeatMutation.isPending}
+        isLoading={pendingAction === 'save'}
         accessibilityRole="button"
         accessibilityLabel="좌석 정보 저장"
         accessibilityState={{
@@ -110,9 +111,7 @@ function TicketSeatEditSheet({
           busy: updateTicketSeatMutation.isPending,
         }}
       >
-        <AppText style={styles.saveButtonText}>
-          {pendingAction === 'save' ? '저장 중' : '저장'}
-        </AppText>
+        <AppText style={styles.saveButtonText}>저장</AppText>
       </AppButton>
 
       {seatName ? (
@@ -125,15 +124,15 @@ function TicketSeatEditSheet({
           ]}
           onPress={handleDelete}
           disabled={updateTicketSeatMutation.isPending}
+          isLoading={pendingAction === 'delete'}
+          loadingColor={colors.error}
           accessibilityLabel="좌석 정보 삭제"
           accessibilityState={{
             disabled: updateTicketSeatMutation.isPending,
             busy: pendingAction === 'delete',
           }}
         >
-          <AppText style={styles.deleteButtonText}>
-            {pendingAction === 'delete' ? '삭제 중' : '좌석 정보 삭제'}
-          </AppText>
+          <AppText style={styles.deleteButtonText}>좌석 정보 삭제</AppText>
         </AppButton>
       ) : null}
     </AppBottomSheet>

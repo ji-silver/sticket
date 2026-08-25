@@ -1,6 +1,7 @@
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Plus } from 'lucide-react-native';
 import AppButton from '../../../components/common/AppButton.tsx';
+import AppSkeleton from '../../../components/common/AppSkeleton.tsx';
 import AppText from '../../../components/common/AppText.tsx';
 import EmptyCard from '../../../components/common/EmptyCard.tsx';
 import TicketCard from '../../ticket/components/TicketCard.tsx';
@@ -49,8 +50,13 @@ function CalendarTicketList({
       </View>
 
       {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="small" color={colors.primary} />
+        <View
+          accessible
+          accessibilityRole="progressbar"
+          accessibilityLabel="선택한 날짜의 경기 정보를 불러오는 중"
+          style={styles.loadingContainer}
+        >
+          <AppSkeleton width="100%" height={166} borderRadius={18} />
         </View>
       ) : selectedRecords.length > 0 ? (
         <View style={styles.recordList}>
@@ -195,8 +201,6 @@ const styles = StyleSheet.create({
 
   loadingContainer: {
     minHeight: 166,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 
   recordList: {

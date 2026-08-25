@@ -99,18 +99,13 @@ function BucketEditModal({
         ]}
         onPress={handleSave}
         disabled={!canSave}
+        isLoading={isSaving}
         accessibilityRole="button"
         accessibilityLabel={isEditing ? '버킷리스트 저장' : '버킷리스트 추가'}
         accessibilityState={{ disabled: !canSave, busy: isSaving }}
       >
         <AppText style={styles.saveButtonText}>
-          {isSaving
-            ? isEditing
-              ? '저장 중'
-              : '추가 중'
-            : isEditing
-            ? '저장'
-            : '추가'}
+          {isEditing ? '저장' : '추가'}
         </AppText>
       </AppButton>
     </AppBottomSheet>

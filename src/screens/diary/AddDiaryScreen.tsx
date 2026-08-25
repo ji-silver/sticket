@@ -179,13 +179,14 @@ function AddDiaryScreen() {
 
   const createTicketBookMutation = useCreateTicketBook();
   const updateTicketBookMutation = useUpdateTicketBook();
+  const isSavingTicketBook =
+    createTicketBookMutation.isPending || updateTicketBookMutation.isPending;
 
   const handleSaveTicketBook = async () => {
     if (
       !isSelectedSportReady ||
       selectedSportId !== 'baseball' ||
-      createTicketBookMutation.isPending ||
-      updateTicketBookMutation.isPending
+      isSavingTicketBook
     ) {
       return;
     }
@@ -339,40 +340,30 @@ function AddDiaryScreen() {
         <AppButton
           style={[
             styles.createButton,
-            (!isSelectedSportReady ||
-              createTicketBookMutation.isPending ||
-              updateTicketBookMutation.isPending) &&
-              styles.createButtonDisabled,
+            !isSelectedSportReady && styles.createButtonDisabled,
           ]}
-          disabled={
-            !isSelectedSportReady ||
-            createTicketBookMutation.isPending ||
-            updateTicketBookMutation.isPending
-          }
+          disabled={!isSelectedSportReady || isSavingTicketBook}
+          isLoading={isSavingTicketBook}
           onPress={handleSaveTicketBook}
           accessibilityRole="button"
+          accessibilityLabel={
+            isSavingTicketBook
+              ? '저장 중'
+              : isEditing
+              ? '수정하기'
+              : '티켓북 만들기'
+          }
           accessibilityState={{
-            disabled:
-              !isSelectedSportReady ||
-              createTicketBookMutation.isPending ||
-              updateTicketBookMutation.isPending,
+            disabled: !isSelectedSportReady || isSavingTicketBook,
           }}
         >
           <AppText
             style={[
               styles.createButtonText,
-              (!isSelectedSportReady ||
-                createTicketBookMutation.isPending ||
-                updateTicketBookMutation.isPending) &&
-                styles.createButtonTextDisabled,
+              !isSelectedSportReady && styles.createButtonTextDisabled,
             ]}
           >
-            {createTicketBookMutation.isPending ||
-            updateTicketBookMutation.isPending
-              ? '저장 중'
-              : isEditing
-              ? '수정하기'
-              : '티켓북 만들기'}
+            {isEditing ? '수정하기' : '티켓북 만들기'}
           </AppText>
         </AppButton>
       </View>

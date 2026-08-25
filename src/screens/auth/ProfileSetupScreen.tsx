@@ -217,11 +217,12 @@ function ProfileSetupScreen() {
           <AppButton
             style={({ pressed }) => [
               styles.startButton,
-              (!isFormValid || isSaving) && styles.startButtonDisabled,
+              !isFormValid && styles.startButtonDisabled,
               pressed && isFormValid && !isSaving && styles.startButtonPressed,
             ]}
             onPress={handlePressStart}
             disabled={!isFormValid || isSaving}
+            isLoading={isSaving}
             accessibilityRole="button"
             accessibilityLabel="프로필 설정 완료하고 시작하기"
             accessibilityState={{
@@ -231,10 +232,10 @@ function ProfileSetupScreen() {
             <AppText
               style={[
                 styles.startButtonText,
-                (!isFormValid || isSaving) && styles.startButtonTextDisabled,
+                !isFormValid && styles.startButtonTextDisabled,
               ]}
             >
-              {isSaving ? '저장 중' : '시작하기'}
+              시작하기
             </AppText>
           </AppButton>
         </View>
