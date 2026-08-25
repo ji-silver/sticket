@@ -5,8 +5,8 @@ import {
   type LayoutChangeEvent,
   StyleSheet,
 } from 'react-native';
-import { useRef, useState } from 'react';
-정import {
+import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
+import {
   SafeAreaView,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
@@ -59,6 +59,11 @@ const DETAIL_TAB_HEIGHT = 48;
 
 interface TicketDiaryPageProps {
   ticketId: string;
+}
+
+export interface TicketDiaryPageHandle {
+  hasDecorations: () => boolean;
+  resetDecorations: () => Promise<void>;
 }
 
 export type DiaryItem =
@@ -129,7 +134,10 @@ function createLayerPanelItems(
   return bottomToTop.reverse();
 }
 
-function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
+const TicketDiaryPage = forwardRef<
+  TicketDiaryPageHandle,
+  TicketDiaryPageProps
+>(function TicketDiaryPageContent({ ticketId }, ref) {
   const { top } = useSafeAreaInsets();
   const drawingCanvasRef = useRef<DiaryDrawingCanvasRef>(null);
   const {
@@ -141,6 +149,7 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
     hasDrawing,
     handleDrawingChange,
     handleFinishDrawing,
+    resetDiaryDecorations,
   } = useTicketDiaryPersistence({ ticketId, drawingCanvasRef });
 
   const selectedTool = useDiaryStore(state => state.selectedTool);
@@ -151,6 +160,7 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
     state => state.setIsLayerPanelVisible,
   );
 
+  const paperType = useDiaryStore(state => state.paperType);
   const setPaperType = useDiaryStore(state => state.setPaperType);
   const orientation = useDiaryStore(state => state.orientation);
   const items = useDiaryStore(state => state.items);
@@ -161,6 +171,17 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
   const setSelectedItem = useDiaryStore(state => state.setSelectedItem);
   const editingTextId = useDiaryStore(state => state.editingTextId);
   const setEditingTextId = useDiaryStore(state => state.setEditingTextId);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      hasDecorations: () =>
+        !isLoading &&
+        (items.length > 0 || hasDrawing || paperType !== 'plain'),
+      resetDecorations: resetDiaryDecorations,
+    }),
+    [hasDrawing, isLoading, items.length, paperType, resetDiaryDecorations],
+  );
 
   const [editorWrapperSize, setEditorWrapperSize] = useState({
     width: 0,
@@ -797,7 +818,7 @@ function TicketDiaryPage({ ticketId }: TicketDiaryPageProps) {
       />
     </SafeAreaView>
   );
-}
+});
 
 export default TicketDiaryPage;
 

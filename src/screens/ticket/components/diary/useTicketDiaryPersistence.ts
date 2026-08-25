@@ -45,6 +45,22 @@ interface UseTicketDiaryPersistenceParams {
   drawingCanvasRef: RefObject<DiaryDrawingCanvasRef | null>;
 }
 
+export function createDiaryResetSnapshot(
+  version: number,
+  orientation: TicketDiaryOrientation,
+  drawingRevision: number,
+): DiarySaveSnapshot {
+  return {
+    version,
+    orientation,
+    paperType: 'plain',
+    items: [],
+    drawingIndex: 0,
+    drawingBase64: null,
+    drawingRevision,
+  };
+}
+
 async function prepareDiaryItemsForSave(
   ticketId: string,
   currentItems: DiaryItem[],
@@ -283,6 +299,7 @@ export function useTicketDiaryPersistence({
   const isSavingBeforeLeaveRef = useRef(false);
   const pendingNavigationActionRef = useRef<NavigationAction | null>(null);
   const snackbarTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isResettingDiaryRef = useRef(false);
 
   const enqueueDiarySaveRef = useRef<
     (snapshot: DiarySaveSnapshot) => Promise<void>
@@ -751,6 +768,51 @@ export function useTicketDiaryPersistence({
     setSelectedTool(null);
   };
 
+  const resetDiaryDecorations = async () => {
+    if (!hasLoadedDiaryRef.current || isResettingDiaryRef.current) {
+      return;
+    }
+
+    isResettingDiaryRef.current = true;
+    drawingCaptureVersionRef.current += 1;
+    shouldSaveDrawingImmediatelyRef.current = false;
+
+    const previousSnapshot = latestSnapshotRef.current;
+    const snapshot = createDiaryResetSnapshot(
+      nextSnapshotVersionRef.current + 1,
+      orientation,
+      drawingRevision + 1,
+    );
+
+    nextSnapshotVersionRef.current = snapshot.version;
+    latestSnapshotRef.current = snapshot;
+    setHasUnsavedChanges(true);
+
+    try {
+      await enqueueDiarySaveRef.current(snapshot);
+
+      isAutosaveReadyRef.current = false;
+      drawingBase64Ref.current = null;
+      drawingStoragePathRef.current = null;
+      drawingCanvasRef.current?.clear();
+      setDrawingRevision(snapshot.drawingRevision);
+      initializeDiary({
+        orientation,
+        paperType: 'plain',
+        items: [],
+        drawingIndex: 0,
+      });
+    } catch (error) {
+      latestSnapshotRef.current = previousSnapshot;
+      setHasUnsavedChanges(
+        (previousSnapshot?.version ?? 0) > lastSavedVersionRef.current,
+      );
+      throw error;
+    } finally {
+      isResettingDiaryRef.current = false;
+    }
+  };
+
   const retryLoadDiary = () => {
     setHasLoadError(false);
     setIsLoading(true);
@@ -766,5 +828,6 @@ export function useTicketDiaryPersistence({
     hasDrawing: drawingBase64Ref.current !== null,
     handleDrawingChange,
     handleFinishDrawing,
+    resetDiaryDecorations,
   };
 }

@@ -1,7 +1,15 @@
-import { useLayoutEffect, useState } from 'react';
-import { Alert, Keyboard, Pressable, StyleSheet, View } from 'react-native';
+import { useLayoutEffect, useRef, useState } from 'react';
+import {
+  ActionSheetIOS,
+  Alert,
+  findNodeHandle,
+  Keyboard,
+  Pressable,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Trash2 } from 'lucide-react-native';
+import { MoreHorizontal } from 'lucide-react-native';
 import { useNavigation, useRoute } from '@react-navigation/core';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -11,7 +19,9 @@ import ScreenHeader from '../../components/common/ScreenHeader.tsx';
 import type { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
 import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
-import TicketDiaryPage from './components/diary/TicketDiaryPage.tsx';
+import TicketDiaryPage, {
+  type TicketDiaryPageHandle,
+} from './components/diary/TicketDiaryPage.tsx';
 import TicketRecordPage from './components/TicketRecordPage.tsx';
 import TicketPageOrientationSheet from './components/TicketPageOrientationSheet.tsx';
 import { useDeleteTicket } from '../../features/ticket/api/useDeleteTicket';
@@ -27,6 +37,8 @@ function TicketDetailScreen() {
   const navigation = useNavigation<TicketDetailNavigationProp>();
   const route = useRoute<TicketDetailRouteProp>();
   const { ticketId } = route.params;
+  const diaryPageRef = useRef<TicketDiaryPageHandle>(null);
+  const menuButtonRef = useRef<View>(null);
 
   const { data: tickets = [] } = useGetTickets();
   const ticket = tickets.find(t => t.id === ticketId);
@@ -34,6 +46,8 @@ function TicketDetailScreen() {
   const [activeTab, setActiveTab] = useState<DetailTab>('record');
   const [hasOpenedDiary, setHasOpenedDiary] = useState(false);
   const [isDeleteDialogVisible, setIsDeleteDialogVisible] = useState(false);
+  const [isResetDialogVisible, setIsResetDialogVisible] = useState(false);
+  const [isResettingDiary, setIsResettingDiary] = useState(false);
   const { mutateAsync: removeTicket, isPending: isDeleting } =
     useDeleteTicket();
   const {
@@ -77,6 +91,60 @@ function TicketDetailScreen() {
     }
   };
 
+  const handleOpenMenu = () => {
+    Keyboard.dismiss();
+
+    const canResetDiary =
+      activeTab === 'diary' &&
+      (diaryPageRef.current?.hasDecorations() ?? false);
+    const options =
+      activeTab === 'diary'
+        ? ['취소', '다이어리 초기화', '티켓 삭제']
+        : ['취소', '티켓 삭제'];
+    const resetIndex = activeTab === 'diary' ? 1 : -1;
+    const deleteIndex = options.length - 1;
+
+    ActionSheetIOS.showActionSheetWithOptions(
+      {
+        options,
+        cancelButtonIndex: 0,
+        destructiveButtonIndex:
+          resetIndex === -1 ? deleteIndex : [resetIndex, deleteIndex],
+        disabledButtonIndices:
+          resetIndex !== -1 && !canResetDiary ? [resetIndex] : undefined,
+        anchor: findNodeHandle(menuButtonRef.current) ?? undefined,
+      },
+      selectedIndex => {
+        if (selectedIndex === resetIndex) {
+          setIsResetDialogVisible(true);
+        } else if (selectedIndex === deleteIndex) {
+          setIsDeleteDialogVisible(true);
+        }
+      },
+    );
+  };
+
+  const handleResetDiary = async () => {
+    if (isResettingDiary || !diaryPageRef.current) {
+      return;
+    }
+
+    setIsResettingDiary(true);
+
+    try {
+      await diaryPageRef.current.resetDecorations();
+      setIsResetDialogVisible(false);
+    } catch (error) {
+      console.error('다이어리를 초기화하지 못했습니다.', error);
+      Alert.alert(
+        '다이어리를 초기화하지 못했어요',
+        '잠시 후 다시 시도해 주세요.',
+      );
+    } finally {
+      setIsResettingDiary(false);
+    }
+  };
+
   const handleConfirmPageOrientation = async (
     orientation: TicketDiaryOrientation,
   ) => {
@@ -102,16 +170,21 @@ function TicketDetailScreen() {
         onPressBack={() => navigation.goBack()}
         right={
           <Pressable
+            ref={menuButtonRef}
             style={({ pressed }) => [
-              styles.deleteButton,
-              pressed && styles.deleteButtonPressed,
+              styles.menuButton,
+              pressed && styles.menuButtonPressed,
             ]}
-            onPress={() => setIsDeleteDialogVisible(true)}
+            onPress={handleOpenMenu}
             hitSlop={8}
             accessibilityRole="button"
-            accessibilityLabel="직관 기록 삭제"
+            accessibilityLabel="직관 기록 메뉴"
           >
-            <Trash2 size={20} color={colors.textSecondary} strokeWidth={2.2} />
+            <MoreHorizontal
+              size={22}
+              color={colors.textSecondary}
+              strokeWidth={2.4}
+            />
           </Pressable>
         }
       />
@@ -169,7 +242,11 @@ function TicketDetailScreen() {
 
       {hasOpenedDiary ? (
         <View style={[styles.page, activeTab !== 'diary' && styles.hidden]}>
-          <TicketDiaryPage key={ticket.id} ticketId={ticket.id} />
+          <TicketDiaryPage
+            ref={diaryPageRef}
+            key={ticket.id}
+            ticketId={ticket.id}
+          />
         </View>
       ) : null}
 
@@ -177,6 +254,17 @@ function TicketDetailScreen() {
         visible={pageOrientation === null}
         isSaving={isSavingPageOrientation}
         onConfirm={handleConfirmPageOrientation}
+      />
+
+      <ConfirmDialog
+        visible={isResetDialogVisible}
+        title="다이어리를 초기화할까요?"
+        description="사진, 스티커, 텍스트와 드로잉을 모두 지우고 속지를 기본으로 되돌려요. 이 작업은 되돌릴 수 없어요."
+        confirmLabel="초기화"
+        confirmTone="destructive"
+        isLoading={isResettingDiary}
+        onConfirm={handleResetDiary}
+        onCancel={() => setIsResetDialogVisible(false)}
       />
 
       <ConfirmDialog
@@ -239,7 +327,7 @@ const styles = StyleSheet.create({
     borderRadius: 1,
     backgroundColor: colors.primary,
   },
-  deleteButton: {
+  menuButton: {
     width: 34,
     height: 34,
     borderRadius: 17,
@@ -247,7 +335,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  deleteButtonPressed: {
+  menuButtonPressed: {
     backgroundColor: colors.primarySoft,
   },
 });
