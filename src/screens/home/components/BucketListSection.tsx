@@ -7,13 +7,13 @@ import {
   MoreHorizontal,
   Plus,
 } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import BucketEditModal from './BucketEditModal.tsx';
 import { fonts } from '../../../styles/fonts.ts';
 import AppText from '../../../components/common/AppText.tsx';
 import InlineActionButton from '../../../components/common/InlineActionButton.tsx';
 import { colors } from '../../../styles/colors.ts';
-import EditDeleteActionSheet from './EditDeleteActionSheet.tsx';
+import AppPopoverMenu from '../../../components/common/AppPopoverMenu.tsx';
 
 interface BucketListSectionProps {
   diaryId: string;
@@ -23,6 +23,11 @@ interface BucketListSectionProps {
   onToggleBucket: (bucket: Bucket) => Promise<boolean>;
   onUpdateBucketTitle: (bucket: Bucket, title: string) => Promise<boolean>;
   onDeleteBucket: (bucket: Bucket) => Promise<boolean>;
+}
+
+interface BucketMenuTarget {
+  bucket: Bucket;
+  anchorRef: RefObject<View | null>;
 }
 
 function BucketListSection({
@@ -37,8 +42,7 @@ function BucketListSection({
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditorVisible, setIsEditorVisible] = useState(false);
   const [editingBucket, setEditingBucket] = useState<Bucket | null>(null);
-  const [actionBucket, setActionBucket] = useState<Bucket | null>(null);
-  const [queuedEditBucket, setQueuedEditBucket] = useState<Bucket | null>(null);
+  const [menuTarget, setMenuTarget] = useState<BucketMenuTarget | null>(null);
   const [pendingBucketIds, setPendingBucketIds] = useState<Set<string>>(
     new Set(),
   );
@@ -51,8 +55,7 @@ function BucketListSection({
     setIsExpanded(false);
     setIsEditorVisible(false);
     setEditingBucket(null);
-    setActionBucket(null);
-    setQueuedEditBucket(null);
+    setMenuTarget(null);
     setPendingBucketIds(new Set());
   }, [diaryId]);
 
@@ -119,29 +122,6 @@ function BucketListSection({
     setIsEditorVisible(true);
   };
 
-  const handlePressActionEdit = () => {
-    if (actionBucket === null) return;
-
-    setQueuedEditBucket(actionBucket);
-    setActionBucket(null);
-  };
-
-  const handleActionSheetClosed = () => {
-    if (queuedEditBucket === null) return;
-
-    setEditingBucket(queuedEditBucket);
-    setIsEditorVisible(true);
-    setQueuedEditBucket(null);
-  };
-
-  const handlePressActionDelete = async () => {
-    if (actionBucket === null) return;
-
-    const bucketId = actionBucket.id;
-    setActionBucket(null);
-    await handleDeleteBucket(bucketId);
-  };
-
   return (
     <View style={styles.bucketSection}>
       <View style={styles.bucketHeader}>
@@ -177,7 +157,9 @@ function BucketListSection({
                 bucket={bucket}
                 isLast={index === visibleBuckets.length - 1}
                 onToggleBucket={handleToggleBucket}
-                onOpenMenu={setActionBucket}
+                onOpenMenu={(targetBucket, anchorRef) =>
+                  setMenuTarget({ bucket: targetBucket, anchorRef })
+                }
                 disabled={pendingBucketIds.has(bucket.id)}
               />
             ))}
@@ -216,13 +198,30 @@ function BucketListSection({
         }
       />
 
-      <EditDeleteActionSheet
-        visible={actionBucket !== null}
-        targetName="버킷리스트"
-        onClose={() => setActionBucket(null)}
-        onClosed={handleActionSheetClosed}
-        onEdit={handlePressActionEdit}
-        onDelete={handlePressActionDelete}
+      <AppPopoverMenu
+        visible={menuTarget !== null}
+        anchorRef={menuTarget?.anchorRef ?? null}
+        onClose={() => setMenuTarget(null)}
+        actions={[
+          {
+            label: '수정하기',
+            accessibilityLabel: '버킷리스트 수정하기',
+            onPress: () => {
+              if (menuTarget === null) return;
+              setEditingBucket(menuTarget.bucket);
+              setIsEditorVisible(true);
+            },
+          },
+          {
+            label: '삭제하기',
+            accessibilityLabel: '버킷리스트 삭제하기',
+            tone: 'destructive',
+            onPress: () => {
+              if (menuTarget === null) return;
+              handleDeleteBucket(menuTarget.bucket.id);
+            },
+          },
+        ]}
       />
     </View>
   );
@@ -238,9 +237,11 @@ function BucketListItem({
   bucket: Bucket;
   isLast: boolean;
   onToggleBucket: (id: string) => Promise<boolean>;
-  onOpenMenu: (bucket: Bucket) => void;
+  onOpenMenu: (bucket: Bucket, anchorRef: RefObject<View | null>) => void;
   disabled: boolean;
 }) {
+  const menuButtonRef = useRef<View>(null);
+
   return (
     <View style={[styles.bucketItem, isLast && styles.bucketItemLast]}>
       <Pressable
@@ -278,11 +279,12 @@ function BucketListItem({
       </View>
 
       <Pressable
+        ref={menuButtonRef}
         style={({ pressed }) => [
           styles.itemMenuButton,
           pressed && !disabled && styles.buttonPressed,
         ]}
-        onPress={() => onOpenMenu(bucket)}
+        onPress={() => onOpenMenu(bucket, menuButtonRef)}
         disabled={disabled}
         accessibilityRole="button"
         accessibilityLabel={`${bucket.title} 메뉴`}

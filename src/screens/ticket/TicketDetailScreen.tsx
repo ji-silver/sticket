@@ -1,8 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import {
-  ActionSheetIOS,
   Alert,
-  findNodeHandle,
   Keyboard,
   Pressable,
   StyleSheet,
@@ -14,6 +12,7 @@ import { useNavigation, useRoute } from '@react-navigation/core';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AppText from '../../components/common/AppText.tsx';
+import AppPopoverMenu from '../../components/common/AppPopoverMenu.tsx';
 import ConfirmDialog from '../../components/common/ConfirmDialog.tsx';
 import ScreenHeader from '../../components/common/ScreenHeader.tsx';
 import type { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
@@ -47,6 +46,7 @@ function TicketDetailScreen() {
   const [hasOpenedDiary, setHasOpenedDiary] = useState(false);
   const [isDeleteDialogVisible, setIsDeleteDialogVisible] = useState(false);
   const [isResetDialogVisible, setIsResetDialogVisible] = useState(false);
+  const [isMenuVisible, setIsMenuVisible] = useState(false);
   const [isResettingDiary, setIsResettingDiary] = useState(false);
   const { mutateAsync: removeTicket, isPending: isDeleting } =
     useDeleteTicket();
@@ -93,35 +93,7 @@ function TicketDetailScreen() {
 
   const handleOpenMenu = () => {
     Keyboard.dismiss();
-
-    const canResetDiary =
-      activeTab === 'diary' &&
-      (diaryPageRef.current?.hasDecorations() ?? false);
-    const options =
-      activeTab === 'diary'
-        ? ['취소', '다이어리 초기화', '티켓 삭제']
-        : ['취소', '티켓 삭제'];
-    const resetIndex = activeTab === 'diary' ? 1 : -1;
-    const deleteIndex = options.length - 1;
-
-    ActionSheetIOS.showActionSheetWithOptions(
-      {
-        options,
-        cancelButtonIndex: 0,
-        destructiveButtonIndex:
-          resetIndex === -1 ? deleteIndex : [resetIndex, deleteIndex],
-        disabledButtonIndices:
-          resetIndex !== -1 && !canResetDiary ? [resetIndex] : undefined,
-        anchor: findNodeHandle(menuButtonRef.current) ?? undefined,
-      },
-      selectedIndex => {
-        if (selectedIndex === resetIndex) {
-          setIsResetDialogVisible(true);
-        } else if (selectedIndex === deleteIndex) {
-          setIsDeleteDialogVisible(true);
-        }
-      },
-    );
+    setIsMenuVisible(true);
   };
 
   const handleResetDiary = async () => {
@@ -254,6 +226,30 @@ function TicketDetailScreen() {
         visible={pageOrientation === null}
         isSaving={isSavingPageOrientation}
         onConfirm={handleConfirmPageOrientation}
+      />
+
+      <AppPopoverMenu
+        visible={isMenuVisible}
+        anchorRef={menuButtonRef}
+        onClose={() => setIsMenuVisible(false)}
+        actions={[
+          ...(activeTab === 'diary'
+            ? [
+                {
+                  label: '다이어리 초기화',
+                  disabled: !(
+                    diaryPageRef.current?.hasDecorations() ?? false
+                  ),
+                  onPress: () => setIsResetDialogVisible(true),
+                },
+              ]
+            : []),
+          {
+            label: '티켓 삭제',
+            tone: 'destructive',
+            onPress: () => setIsDeleteDialogVisible(true),
+          },
+        ]}
       />
 
       <ConfirmDialog

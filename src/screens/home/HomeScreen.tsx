@@ -5,14 +5,14 @@ import DiarySection from './components/DiarySection.tsx';
 import { Bucket, Diary } from './types.ts';
 import BucketListSection from './components/BucketListSection.tsx';
 import { useNavigation } from '@react-navigation/core';
-import { useEffect, useState } from 'react';
-import EditDeleteActionSheet from './components/EditDeleteActionSheet.tsx';
+import { useEffect, useState, type RefObject } from 'react';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
 import { fonts } from '../../styles/fonts.ts';
 import AppButton from '../../components/common/AppButton.tsx';
 import AppSnackbar from '../../components/common/AppSnackbar.tsx';
 import AppText from '../../components/common/AppText.tsx';
+import AppPopoverMenu from '../../components/common/AppPopoverMenu.tsx';
 import { colors } from '../../styles/colors.ts';
 import { useGetTicketBooks } from '../../features/ticket-book/api/useGetTicketBooks';
 import { useGetBucketList } from '../../features/bucket-list/api/useGetBucketList';
@@ -25,6 +25,11 @@ import { useUpdateBucketItemTitle } from '../../features/bucket-list/api/useUpda
 
 type HomeNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
+interface DiaryMenuTarget {
+  diary: Diary;
+  anchorRef: RefObject<View | null>;
+}
+
 const SPORT_TITLES: Record<Diary['sport'], string> = {
   baseball: '야구',
   soccer: '축구',
@@ -36,7 +41,7 @@ function HomeScreen() {
   const navigation = useNavigation<HomeNavigationProp>();
 
   const [selectedDiaryIndex, setSelectedDiaryIndex] = useState(0);
-  const [menuDiary, setMenuDiary] = useState<Diary | null>(null);
+  const [menuDiary, setMenuDiary] = useState<DiaryMenuTarget | null>(null);
   const [lastDeletedBucket, setLastDeletedBucket] = useState<Bucket | null>(
     null,
   );
@@ -250,7 +255,9 @@ function HomeScreen() {
           onChangeIndex={setSelectedDiaryIndex}
           onPressAddDiary={handlePressAddDiary}
           onPressDiary={handlePressDiary}
-          onPressDiaryMenu={setMenuDiary}
+          onPressDiaryMenu={(diary, anchorRef) =>
+            setMenuDiary({ diary, anchorRef })
+          }
         />
 
         {selectedDiary && (
@@ -266,32 +273,38 @@ function HomeScreen() {
         )}
       </ScrollView>
 
-      <EditDeleteActionSheet
+      <AppPopoverMenu
         visible={menuDiary !== null}
-        targetName="티켓북"
+        anchorRef={menuDiary?.anchorRef ?? null}
         onClose={() => setMenuDiary(null)}
-        onEdit={() => {
-          if (menuDiary === null) return;
+        actions={[
+          {
+            label: '수정하기',
+            accessibilityLabel: '티켓북 수정하기',
+            onPress: () => {
+              if (menuDiary === null) return;
+              navigation.navigate('AddDiary', { ticketBook: menuDiary.diary });
+            },
+          },
+          {
+            label: '삭제하기',
+            accessibilityLabel: '티켓북 삭제하기',
+            tone: 'destructive',
+            onPress: () => {
+              if (menuDiary === null) return;
 
-          const diary = menuDiary;
-          setMenuDiary(null);
-          navigation.navigate('AddDiary', { ticketBook: diary });
-        }}
-        onDelete={() => {
-          if (menuDiary === null) return;
+              if (menuDiary.diary.recordCount > 0) {
+                Alert.alert(
+                  '삭제할 수 없어요',
+                  '기록이 있는 티켓북은 삭제할 수 없어요.',
+                );
+                return;
+              }
 
-          if (menuDiary.recordCount > 0) {
-            Alert.alert(
-              '삭제할 수 없어요',
-              '기록이 있는 티켓북은 삭제할 수 없어요.',
-            );
-            return;
-          }
-
-          const diaryId = menuDiary.id;
-          setMenuDiary(null);
-          handleDeleteDiary(diaryId);
-        }}
+              handleDeleteDiary(menuDiary.diary.id);
+            },
+          },
+        ]}
       />
 
       {lastDeletedBucket !== null ? (

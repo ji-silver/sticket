@@ -8,6 +8,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import { useRef, type RefObject } from 'react';
 import { MoreHorizontal, Plus } from 'lucide-react-native';
 import DiaryCover from '../../../components/DiaryCover';
 import type { Diary } from '../types';
@@ -22,7 +23,7 @@ interface DiarySectionProps {
   selectedIndex: number;
   onChangeIndex: (index: number) => void;
   onPressAddDiary: () => void;
-  onPressDiaryMenu: (diary: Diary) => void;
+  onPressDiaryMenu: (diary: Diary, anchorRef: RefObject<View | null>) => void;
   onPressDiary: (diary: Diary) => void;
 }
 
@@ -37,6 +38,7 @@ function DiarySection({
 }: DiarySectionProps) {
   const hasDiaries = diaries.length > 0;
   const { width } = useWindowDimensions();
+  const menuButtonRef = useRef<View>(null);
 
   const handleMomentumScrollEnd = (
     event: NativeSyntheticEvent<NativeScrollEvent>,
@@ -57,8 +59,11 @@ function DiarySection({
 
         {hasDiaries && (
           <Pressable
+            ref={menuButtonRef}
             style={styles.sectionMenuButton}
-            onPress={() => onPressDiaryMenu(diaries[selectedIndex])}
+            onPress={() =>
+              onPressDiaryMenu(diaries[selectedIndex], menuButtonRef)
+            }
             hitSlop={8}
             accessibilityRole="button"
             accessibilityLabel={`${diaries[selectedIndex].title} 티켓북 메뉴`}
