@@ -59,6 +59,11 @@
 		<string>Pretendard-Black.otf</string>
 		<string>Pretendard-Bold.otf</string>
 		<string>Pretendard-Regular.otf</string>
+		<string>OwnglyphCorncorn.ttf</string>
+		<string>OwnglyphYuntaeng.ttf</string>
+		<string>BookkMyungjo_Light.ttf</string>
+		<string>BookkMyungjo_Bold.ttf</string>
+		<string>KyoboHandwriting2025lyb.ttf</string>
 	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>

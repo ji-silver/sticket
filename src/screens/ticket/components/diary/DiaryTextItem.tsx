@@ -21,7 +21,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { colors } from '../../../../styles/colors.ts';
-import { fonts } from '../../../../styles/fonts.ts';
 import {
   constrainDiaryTextFrame,
   type DiaryText,
@@ -31,6 +30,7 @@ import {
   MINIMUM_TEXT_WIDTH,
 } from './diaryText.ts';
 import { type EditorSize, snapRotationToZero } from './photoTransform.ts';
+import { getDiaryFontFamily } from './diaryFonts.ts';
 
 const HANDLE_TOUCH_SIZE = 44;
 const ACTION_HANDLE_SIZE = 24;
@@ -481,7 +481,10 @@ function DiaryTextItem({
     ? 'line-through'
     : 'none';
 
-  const fontFamily = textItem.style.isBold ? fonts.bold : fonts.regular;
+  const fontFamily = getDiaryFontFamily(
+    textItem.style.fontId,
+    textItem.style.isBold,
+  );
 
   const textInputStyleKey = [
     textItem.style.color,

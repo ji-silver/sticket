@@ -25,6 +25,7 @@ import type { PaperType } from './DiaryPaperSelector.tsx';
 import { DIARY_STICKER_PACKS } from './diaryStickerPacks.ts';
 import { flushPendingDiarySaves } from './flushPendingDiarySaves.ts';
 import { useDiaryStore } from './store/useDiaryStore.ts';
+import { getDiaryFontOption } from './diaryFonts.ts';
 
 const AUTOSAVE_DELAY_MS = 800;
 const AUTOSAVE_ERROR_MESSAGE = '변경 내용을 저장하지 못했어요';
@@ -229,7 +230,13 @@ async function restoreDiaryItems(
 
     return {
       type: 'text',
-      data: item.data,
+      data: {
+        ...item.data,
+        style: {
+          ...item.data.style,
+          fontId: getDiaryFontOption(item.data.style.fontId).id,
+        },
+      },
     };
   });
 }

@@ -10,6 +10,7 @@ import {
   AlignLeft,
   AlignRight,
   Bold,
+  Check,
   Minus,
   Plus,
   Strikethrough,
@@ -26,6 +27,11 @@ import AppBottomSheet from '../../../../components/common/AppBottomSheet.tsx';
 import AppText from '../../../../components/common/AppText.tsx';
 import { colors } from '../../../../styles/colors.ts';
 import { type DiaryText, type DiaryTextStyle } from './diaryText.ts';
+import {
+  DIARY_FONT_OPTIONS,
+  getDiaryFontOption,
+  type DiaryFontOption,
+} from './diaryFonts.ts';
 
 const MINIMUM_FONT_SIZE = 12;
 const MAXIMUM_FONT_SIZE = 72;
@@ -37,14 +43,31 @@ interface DiaryTextToolbarProps {
 }
 
 function DiaryTextToolbar({ textItem, onChangeStyle }: DiaryTextToolbarProps) {
+  const [isFontPickerVisible, setFontPickerVisible] = useState(false);
   const [isColorPickerVisible, setColorPickerVisible] = useState(false);
   const [colorBeforePicker, setColorBeforePicker] = useState(
     textItem.style.color,
   );
 
-  /**
-   * 색상 피커를 열고, 취소 시 복구할 현재 색상을 저장합니다.
-   */
+  const selectedFont = getDiaryFontOption(textItem.style.fontId);
+  const isBoldAvailable = selectedFont.boldFamily !== null;
+
+  const openFontPicker = () => {
+    Keyboard.dismiss();
+    setFontPickerVisible(true);
+  };
+
+  const selectFont = (fontId: DiaryFontOption['id']) => {
+    const nextFont = getDiaryFontOption(fontId);
+
+    onChangeStyle({
+      fontId: nextFont.id,
+      isBold: nextFont.boldFamily === null ? false : textItem.style.isBold,
+    });
+
+    setFontPickerVisible(false);
+  };
+
   const openColorPicker = () => {
     const currentColor = textItem.style.color;
 
@@ -53,9 +76,6 @@ function DiaryTextToolbar({ textItem, onChangeStyle }: DiaryTextToolbarProps) {
     setColorPickerVisible(true);
   };
 
-  /**
-   * 색상 변경을 취소하고 피커를 열기 전 색상으로 되돌립니다.
-   */
   const cancelColorPicker = () => {
     onChangeStyle({
       color: colorBeforePicker,
@@ -63,9 +83,6 @@ function DiaryTextToolbar({ textItem, onChangeStyle }: DiaryTextToolbarProps) {
     setColorPickerVisible(false);
   };
 
-  /**
-   * 글자 크기를 최소·최대 범위 안에서 변경합니다.
-   */
   const changeFontSize = (amount: number) => {
     const nextFontSize = Math.min(
       MAXIMUM_FONT_SIZE,
@@ -89,6 +106,26 @@ function DiaryTextToolbar({ textItem, onChangeStyle }: DiaryTextToolbarProps) {
           keyboardShouldPersistTaps="always"
           contentContainerStyle={styles.toolbarContent}
         >
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`글꼴 변경, 현재 ${selectedFont.label}`}
+            accessibilityHint="글꼴 선택창을 엽니다"
+            onPress={openFontPicker}
+            style={({ pressed }) => [
+              styles.fontButton,
+              pressed && styles.pressedControl,
+            ]}
+          >
+            <AppText
+              size={20}
+              style={{
+                fontFamily: selectedFont.regularFamily,
+              }}
+            >
+              가
+            </AppText>
+          </Pressable>
+
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="텍스트 색상 변경"
@@ -210,7 +247,8 @@ function DiaryTextToolbar({ textItem, onChangeStyle }: DiaryTextToolbarProps) {
           <View style={styles.controlGroup}>
             <SegmentButton
               label="굵게"
-              isSelected={textItem.style.isBold}
+              isSelected={isBoldAvailable && textItem.style.isBold}
+              disabled={!isBoldAvailable}
               onPress={() =>
                 onChangeStyle({
                   isBold: !textItem.style.isBold,
@@ -221,7 +259,11 @@ function DiaryTextToolbar({ textItem, onChangeStyle }: DiaryTextToolbarProps) {
                 size={18}
                 strokeWidth={2.2}
                 color={
-                  textItem.style.isBold ? colors.primary : colors.textSecondary
+                  !isBoldAvailable
+                    ? colors.disabled
+                    : textItem.style.isBold
+                    ? colors.primary
+                    : colors.textSecondary
                 }
               />
             </SegmentButton>
@@ -268,6 +310,53 @@ function DiaryTextToolbar({ textItem, onChangeStyle }: DiaryTextToolbarProps) {
           </View>
         </ScrollView>
       </View>
+
+      <AppBottomSheet
+        visible={isFontPickerVisible}
+        title="글꼴"
+        onClose={() => setFontPickerVisible(false)}
+        closeAccessibilityLabel="글꼴 선택 닫기"
+      >
+        <View style={styles.fontList}>
+          {DIARY_FONT_OPTIONS.map((option, index) => {
+            const isSelected = option.id === selectedFont.id;
+            const isLast = index === DIARY_FONT_OPTIONS.length - 1;
+
+            return (
+              <Pressable
+                key={option.id}
+                accessibilityRole="button"
+                accessibilityLabel={`${option.label} 글꼴`}
+                accessibilityState={{
+                  selected: isSelected,
+                }}
+                onPress={() => selectFont(option.id)}
+                style={({ pressed }) => [
+                  styles.fontOption,
+                  !isLast && styles.fontOptionBorder,
+                  pressed && styles.pressedControl,
+                ]}
+              >
+                <AppText
+                  numberOfLines={1}
+                  size={18}
+                  color={isSelected ? colors.primary : colors.text}
+                  style={{
+                    flex: 1,
+                    fontFamily: option.regularFamily,
+                  }}
+                >
+                  {option.label}
+                </AppText>
+
+                {isSelected ? (
+                  <Check size={20} strokeWidth={2.2} color={colors.primary} />
+                ) : null}
+              </Pressable>
+            );
+          })}
+        </View>
+      </AppBottomSheet>
 
       <AppBottomSheet
         visible={isColorPickerVisible}
@@ -339,6 +428,7 @@ interface SegmentButtonProps {
   isSelected: boolean;
   onPress: () => void;
   children: ReactNode;
+  disabled?: boolean;
 }
 
 function SegmentButton({
@@ -346,6 +436,7 @@ function SegmentButton({
   isSelected,
   onPress,
   children,
+  disabled = false,
 }: SegmentButtonProps) {
   return (
     <Pressable
@@ -353,11 +444,14 @@ function SegmentButton({
       accessibilityLabel={label}
       accessibilityState={{
         selected: isSelected,
+        disabled,
       }}
+      disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => [
         styles.segmentButton,
         isSelected && styles.selectedSegmentButton,
+        disabled && styles.disabledControl,
         pressed && styles.pressedControl,
       ]}
     >
@@ -498,5 +592,37 @@ const styles = StyleSheet.create({
     height: 28,
     marginBottom: 8,
     borderRadius: 14,
+  },
+
+  fontButton: {
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    borderCurve: 'continuous',
+    backgroundColor: colors.background,
+  },
+
+  fontList: {
+    marginTop: -4,
+  },
+
+  fontOption: {
+    minHeight: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 16,
+    paddingVertical: 8,
+  },
+
+  fontOptionBorder: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+
+  disabledControl: {
+    opacity: 0.4,
   },
 });

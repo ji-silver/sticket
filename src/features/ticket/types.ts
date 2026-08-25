@@ -60,6 +60,13 @@ export type TicketDiaryMatrix = [
   number,
 ];
 
+export type TicketDiaryFontId =
+  | 'pretendard'
+  | 'corncorn'
+  | 'yuntaeng'
+  | 'bookkMyungjo'
+  | 'kyobo2025';
+
 export interface SavedDiaryPhoto {
   id: string;
   storagePath: string;
@@ -85,6 +92,7 @@ export interface SavedDiaryTextStyle {
   isBold: boolean;
   hasUnderline: boolean;
   hasStrikeThrough: boolean;
+  fontId?: TicketDiaryFontId;
 }
 
 export interface SavedDiaryText {

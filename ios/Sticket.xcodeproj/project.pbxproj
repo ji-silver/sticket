@@ -15,6 +15,11 @@
 		A10000000000000000000002 /* Pretendard-Bold.otf in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000002 /* Pretendard-Bold.otf */; };
 		A10000000000000000000005 /* Pretendard-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000005 /* Pretendard-Regular.otf */; };
 		A10000000000000000000006 /* KBLJump_EB_Condensed.otf in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000006 /* KBLJump_EB_Condensed.otf */; };
+		A10000000000000000000007 /* OwnglyphCorncorn.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000007 /* OwnglyphCorncorn.ttf */; };
+		A10000000000000000000008 /* OwnglyphYuntaeng.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000008 /* OwnglyphYuntaeng.ttf */; };
+		A10000000000000000000009 /* BookkMyungjo_Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000009 /* BookkMyungjo_Light.ttf */; };
+		A10000000000000000000010 /* BookkMyungjo_Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000010 /* BookkMyungjo_Bold.ttf */; };
+		A10000000000000000000011 /* KyoboHandwriting2025lyb.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000011 /* KyoboHandwriting2025lyb.ttf */; };
 		C286E919302DAB1500647387 /* logo.icon in Resources */ = {isa = PBXBuildFile; fileRef = C286E918302DAB1500647387 /* logo.icon */; };
 		C8AFED52FAB80A476E8B9CFB /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 		D20000000000000000000002 /* PencilKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D20000000000000000000001 /* PencilKit.framework */; };
@@ -34,6 +39,11 @@
 		B10000000000000000000002 /* Pretendard-Bold.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Pretendard-Bold.otf"; sourceTree = "<group>"; };
 		B10000000000000000000005 /* Pretendard-Regular.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Pretendard-Regular.otf"; sourceTree = "<group>"; };
 		B10000000000000000000006 /* KBLJump_EB_Condensed.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = KBLJump_EB_Condensed.otf; sourceTree = "<group>"; };
+		B10000000000000000000007 /* OwnglyphCorncorn.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = OwnglyphCorncorn.ttf; sourceTree = "<group>"; };
+		B10000000000000000000008 /* OwnglyphYuntaeng.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = OwnglyphYuntaeng.ttf; sourceTree = "<group>"; };
+		B10000000000000000000009 /* BookkMyungjo_Light.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = BookkMyungjo_Light.ttf; sourceTree = "<group>"; };
+		B10000000000000000000010 /* BookkMyungjo_Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = BookkMyungjo_Bold.ttf; sourceTree = "<group>"; };
+		B10000000000000000000011 /* KyoboHandwriting2025lyb.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = KyoboHandwriting2025lyb.ttf; sourceTree = "<group>"; };
 		C286E918302DAB1500647387 /* logo.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; name = logo.icon; path = Sticket/logo.icon; sourceTree = "<group>"; };
 		C289C00330190985006AC1BA /* Sticket.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = Sticket.entitlements; path = Sticket/Sticket.entitlements; sourceTree = "<group>"; };
 		D20000000000000000000001 /* PencilKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = PencilKit.framework; path = System/Library/Frameworks/PencilKit.framework; sourceTree = SDKROOT; };
@@ -119,7 +129,12 @@
 		C10000000000000000000001 /* Sticket/Fonts */ = {
 			isa = PBXGroup;
 			children = (
+				B10000000000000000000010 /* BookkMyungjo_Bold.ttf */,
+				B10000000000000000000009 /* BookkMyungjo_Light.ttf */,
 				B10000000000000000000006 /* KBLJump_EB_Condensed.otf */,
+				B10000000000000000000011 /* KyoboHandwriting2025lyb.ttf */,
+				B10000000000000000000007 /* OwnglyphCorncorn.ttf */,
+				B10000000000000000000008 /* OwnglyphYuntaeng.ttf */,
 				B10000000000000000000001 /* Pretendard-Black.otf */,
 				B10000000000000000000002 /* Pretendard-Bold.otf */,
 				B10000000000000000000005 /* Pretendard-Regular.otf */,
@@ -188,7 +203,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
+				A10000000000000000000010 /* BookkMyungjo_Bold.ttf in Resources */,
+				A10000000000000000000009 /* BookkMyungjo_Light.ttf in Resources */,
 				A10000000000000000000006 /* KBLJump_EB_Condensed.otf in Resources */,
+				A10000000000000000000011 /* KyoboHandwriting2025lyb.ttf in Resources */,
+				A10000000000000000000007 /* OwnglyphCorncorn.ttf in Resources */,
+				A10000000000000000000008 /* OwnglyphYuntaeng.ttf in Resources */,
 				A10000000000000000000001 /* Pretendard-Black.otf in Resources */,
 				A10000000000000000000002 /* Pretendard-Bold.otf in Resources */,
 				A10000000000000000000005 /* Pretendard-Regular.otf in Resources */,

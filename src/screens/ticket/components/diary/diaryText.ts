@@ -1,5 +1,7 @@
 import { colors } from '../../../../styles/colors.ts';
+import type { TicketDiaryFontId } from '../../../../features/ticket/types.ts';
 import { clamp, type EditorSize } from './photoTransform.ts';
+import { DEFAULT_DIARY_FONT_ID } from './diaryFonts.ts';
 
 export const MINIMUM_TEXT_WIDTH = 96;
 export const MINIMUM_TEXT_HEIGHT = 32;
@@ -14,6 +16,7 @@ export interface DiaryTextStyle {
   isBold: boolean;
   hasUnderline: boolean;
   hasStrikeThrough: boolean;
+  fontId: TicketDiaryFontId;
 }
 
 export interface DiaryTextFrame {
@@ -57,6 +60,7 @@ export function createDiaryText(editorSize: EditorSize): DiaryText | null {
       isBold: false,
       hasUnderline: false,
       hasStrikeThrough: false,
+      fontId: DEFAULT_DIARY_FONT_ID,
     },
   };
 }
