@@ -1,0 +1,1069 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>스티켓 | 스포츠 직관 기록·티켓 다이어리</title>
+    <meta name="description" content="야구 직관을 기록하고 경기 티켓과 다이어리를 한곳에 모아보세요"/>
+    <meta name="theme-color" content="#ffffff"/>
+    <link rel="icon" href="./assets/app-icon.png"/>
+    <link rel="canonical" href="https://s-ticket.app/"/>
+    <meta property="og:type" content="website"/>
+    <meta property="og:locale" content="ko_KR"/>
+    <meta property="og:title" content="스티켓 | 스포츠 직관 기록 다이어리"/>
+    <meta property="og:description" content="야구 직관을 기록하고 경기 티켓과 다이어리를 한곳에 모아보세요"/>
+    <meta property="og:url" content="https://s-ticket.app/"/>
+    <meta property="og:image" content="https://s-ticket.app/assets/tickets.png"/>
+
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            "name": "스티켓",
+            "operatingSystem": "iOS",
+            "applicationCategory": "SportsApplication",
+            "description": "야구·축구·농구·배구 직관을 티켓으로 기록하고 다이어리로 꾸미는 iOS 앱",
+            "downloadUrl": "https://apps.apple.com/kr/app/%EC%8A%A4%ED%8B%B0%EC%BC%93/id6800050133",
+            "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "KRW"
+            }
+        }
+    </script>
+
+    <style>
+        @font-face {
+            font-family: "Pretendard";
+            src: url("./assets/fonts/Pretendard-Regular.otf") format("opentype");
+            font-weight: 400;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: "Pretendard";
+            src: url("./assets/fonts/Pretendard-Bold.otf") format("opentype");
+            font-weight: 700;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: "Pretendard";
+            src: url("./assets/fonts/Pretendard-Black.otf") format("opentype");
+            font-weight: 900;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: "KBLJump";
+            src: url("./assets/fonts/KBLJump_EB_Condensed.otf") format("opentype");
+            font-display: swap;
+        }
+
+        :root {
+            --accent: #c63d5b;
+            --accent-dark: #a92f4a;
+            --accent-soft: #fbf2f5;
+            --ink: #202020;
+            --muted: #6e6e73;
+            --paper: #ffffff;
+            --canvas: #f5f5f7;
+            --rule: #e8e8ea;
+            --content: 1180px;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            overflow-x: hidden;
+            color: var(--ink);
+            background: var(--paper);
+            font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif;
+            line-height: 1.55;
+            word-break: keep-all;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        img {
+            display: block;
+            max-width: 100%;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .skip-link {
+            position: fixed;
+            top: 8px;
+            left: 8px;
+            z-index: 100;
+            padding: 10px 14px;
+            color: white;
+            background: var(--ink);
+            transform: translateY(-150%);
+        }
+
+        .skip-link:focus {
+            transform: translateY(0);
+        }
+
+        .wrap {
+            width: min(calc(100% - 48px), var(--content));
+            margin-inline: auto;
+        }
+
+        .app-lockup {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 28px;
+            color: var(--accent);
+            font-family: "KBLJump", sans-serif;
+            font-size: 22px;
+        }
+
+        .app-lockup img {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+        }
+
+        .hero {
+            width: min(calc(100% - 48px), var(--content));
+            display: grid;
+            grid-template-columns: minmax(0, .84fr) minmax(520px, 1.16fr);
+            align-items: center;
+            gap: clamp(48px, 6vw, 84px);
+            margin-inline: auto;
+            padding: 72px 0 96px;
+        }
+
+        .hero-copy {
+            padding-bottom: 8px;
+        }
+
+        .service-note {
+            margin: 0 0 18px;
+            color: var(--accent);
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .hero h1 {
+            max-width: 8.8ch;
+            margin: 0;
+            font-size: clamp(58px, 5.4vw, 82px);
+            font-weight: 900;
+            letter-spacing: -.065em;
+            line-height: 1.02;
+        }
+
+        .hero-description {
+            max-width: 400px;
+            margin: 24px 0 0;
+            color: var(--muted);
+            font-size: 18px;
+        }
+
+        .store-link {
+            display: inline-block;
+            margin-top: 30px;
+        }
+
+        .store-link img {
+            width: 172px;
+            height: auto;
+        }
+
+        .hero-visual {
+            --phone-scale: .72;
+            position: relative;
+            width: 100%;
+            height: 620px;
+            min-height: 0;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            border-radius: 24px;
+            background: var(--accent-soft);
+        }
+
+        .ticket-demo {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 390px;
+            height: 844px;
+            overflow: hidden;
+            border: 1px solid #dedee1;
+            border-radius: 46px;
+            background: var(--paper);
+            box-shadow: 0 18px 48px rgba(32, 32, 32, .12);
+            transform: translate(-50%, -50%) scale(var(--phone-scale));
+        }
+
+        .ticket-demo__status {
+            position: relative;
+            height: 46px;
+        }
+
+        .ticket-demo__island {
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            width: 108px;
+            height: 30px;
+            border-radius: 18px;
+            background: #050505;
+            transform: translateX(-50%);
+        }
+
+        .ticket-demo__header {
+            height: 68px;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+        }
+
+        .ticket-demo__back {
+            width: 12px;
+            height: 12px;
+            margin-right: 18px;
+            border-bottom: 2.5px solid #222;
+            border-left: 2.5px solid #222;
+            transform: rotate(45deg);
+        }
+
+        .ticket-demo__title {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -.04em;
+        }
+
+        .ticket-demo__add {
+            margin-left: auto;
+            color: var(--accent);
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .ticket-demo__scroll {
+            height: calc(100% - 114px);
+            overflow: hidden;
+        }
+
+        .ticket-demo__summary {
+            display: flex;
+            align-items: flex-end;
+            padding: 22px 20px 18px;
+        }
+
+        .ticket-demo__count {
+            font-size: 64px;
+            font-weight: 900;
+            letter-spacing: -.06em;
+            line-height: 68px;
+        }
+
+        .ticket-demo__count-label {
+            margin-left: 10px;
+            padding-bottom: 9px;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -.04em;
+            line-height: 28px;
+        }
+
+        .ticket-demo__seasons {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            height: 64px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 8px 20px 16px;
+            border-bottom: 1px solid #f1f1f1;
+            background: var(--paper);
+        }
+
+        .ticket-demo__season {
+            height: 40px;
+            min-width: 78px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 20px;
+            border: 1px solid #e8e8ea;
+            border-radius: 22px;
+            color: var(--muted);
+            background: var(--paper);
+            font-size: 14px;
+        }
+
+        .ticket-demo__season--active {
+            border-color: var(--accent);
+            color: white;
+            background: var(--accent);
+            font-weight: 700;
+        }
+
+        .ticket-demo__list {
+            display: grid;
+            gap: 16px;
+            padding: 28px 20px 32px;
+            background: var(--canvas);
+        }
+
+        .demo-ticket {
+            position: relative;
+            border: .5px solid #eaeaea;
+            border-radius: 18px;
+            background: var(--paper);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, .025);
+        }
+
+        .demo-ticket__content {
+            padding: 16px 18px 12px;
+        }
+
+        .demo-ticket__meta {
+            min-height: 38px;
+            display: flex;
+            align-items: stretch;
+        }
+
+        .demo-ticket__meta-item {
+            min-width: 0;
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .demo-ticket__meta-divider {
+            width: .5px;
+            margin: 0 10px;
+            background: #ededee;
+        }
+
+        .demo-ticket__label {
+            color: #77777d;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .demo-ticket__value {
+            margin-top: 3px;
+            font-size: 15px;
+            font-weight: 700;
+            line-height: 1.15;
+        }
+
+        .demo-ticket__matchup {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: end;
+            gap: 18px;
+            margin-top: 28px;
+            text-align: center;
+        }
+
+        .demo-ticket__role, .demo-ticket__team {
+            display: block;
+        }
+
+        .demo-ticket__role {
+            margin-bottom: 3px;
+            color: var(--accent);
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .demo-ticket__team {
+            font-size: 21px;
+            font-weight: 700;
+        }
+
+        .demo-ticket__versus {
+            padding-bottom: 3px;
+            color: #8d8d92;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .demo-ticket__perforation {
+            position: relative;
+            height: 12px;
+        }
+
+        .demo-ticket__perforation::before {
+            position: absolute;
+            top: 5px;
+            right: 18px;
+            left: 18px;
+            height: 1px;
+            background: repeating-linear-gradient(to right, #dddddf 0 7px, transparent 7px 14px);
+            content: "";
+        }
+
+        .demo-ticket__stub {
+            min-height: 58px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 18px 14px;
+        }
+
+        .demo-ticket__seat-label {
+            display: block;
+            color: #7c7c82;
+            font-size: 9px;
+            font-weight: 700;
+        }
+
+        .demo-ticket__seat {
+            display: block;
+            margin-top: 2px;
+            color: #73737a;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .demo-ticket__barcode {
+            height: 34px;
+            display: flex;
+            align-items: stretch;
+            gap: 1px;
+        }
+
+        .demo-ticket__barcode-bar {
+            display: block;
+            background: #111;
+        }
+
+        .team-kia, .team-lotte {
+            color: #e31a3d;
+        }
+
+        .team-doosan {
+            color: #1d428a;
+        }
+
+        .team-kiwoom {
+            color: #7b1831;
+        }
+
+        .team-kt {
+            color: #111;
+        }
+
+        .team-samsung {
+            color: #074ca1;
+        }
+
+        .products {
+            padding: 112px 0 120px;
+            background: var(--canvas);
+        }
+
+        .products-heading {
+            margin: 0 0 48px;
+            text-align: center;
+            font-size: clamp(40px, 4vw, 58px);
+            font-weight: 900;
+            letter-spacing: -.055em;
+            line-height: 1.08;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 24px;
+        }
+
+        .product-card {
+            overflow: hidden;
+            border-radius: 28px;
+            background: var(--paper);
+        }
+
+        .product-copy {
+            padding: 36px 36px 30px;
+        }
+
+        .product-copy h3 {
+            margin: 0;
+            font-size: 28px;
+            letter-spacing: -.04em;
+        }
+
+        .product-copy p {
+            margin: 8px 0 0;
+            color: var(--muted);
+            font-size: 16px;
+        }
+
+        .product-media {
+            height: 580px;
+            display: grid;
+            place-items: start center;
+            overflow: hidden;
+            margin: 0;
+            padding-top: 28px;
+            background: #f0f0f2;
+        }
+
+        .product-media img {
+            width: min(68%, 340px);
+            height: auto;
+            border-radius: 28px 28px 0 0;
+            box-shadow: 0 16px 36px rgba(32, 32, 32, .1);
+        }
+
+
+        .ticketbook {
+            padding: 120px 0;
+        }
+
+        .ticketbook-inner {
+            display: grid;
+            grid-template-columns: minmax(280px, .78fr) minmax(0, 1.22fr);
+            align-items: center;
+            gap: clamp(56px, 8vw, 112px);
+        }
+
+        .ticketbook-copy h2 {
+            max-width: 8ch;
+            margin: 0;
+            font-size: clamp(40px, 4vw, 58px);
+            font-weight: 900;
+            letter-spacing: -.055em;
+            line-height: 1.08;
+        }
+
+        .ticketbook-copy p {
+            max-width: 360px;
+            margin: 20px 0 0;
+            color: var(--muted);
+            font-size: 18px;
+        }
+
+        .ticketbook-media {
+            position: relative;
+            height: 620px;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            margin: 0;
+            border-radius: 28px;
+            background: var(--canvas);
+        }
+
+        .ticketbook-window {
+            width: min(62%, 380px);
+            aspect-ratio: 720 / 980;
+            overflow: hidden;
+            border-radius: 28px;
+            box-shadow: 0 16px 36px rgba(32, 32, 32, .1);
+            background: var(--paper);
+        }
+
+        .ticketbook-track {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .ticketbook-frame {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            margin: 0;
+            background: var(--paper);
+            display: none;
+        }
+
+        .ticketbook-frame.is-active {
+            display: block;
+        }
+
+        .ticketbook-frame img {
+            width: 100%;
+            height: auto;
+            margin-top: -15.28%;
+        }
+
+        .site-footer {
+            border-top: 1px solid var(--rule);
+        }
+
+        .footer-inner {
+            min-height: 116px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 32px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 24px;
+        }
+
+        .footer-links a:hover {
+            color: var(--ink);
+        }
+
+        :focus-visible {
+            outline: 3px solid #222;
+            outline-offset: 4px;
+        }
+
+        @media (max-width: 900px) {
+            .wrap {
+                width: min(calc(100% - 36px), var(--content));
+            }
+
+            .hero {
+                width: 100%;
+                grid-template-columns: 1fr;
+                gap: 0;
+                padding: 72px 0 0;
+            }
+
+            .hero-copy {
+                padding: 0 24px 48px;
+                text-align: center;
+            }
+
+            .hero h1 {
+                max-width: 8ch;
+                margin-inline: auto;
+            }
+
+            .hero-description {
+                margin-inline: auto;
+            }
+
+            .hero-visual {
+                --phone-scale: .74;
+                width: min(calc(100% - 36px), var(--content));
+                height: 650px;
+                min-height: 0;
+                margin: 0 auto 72px;
+            }
+
+            .products {
+                padding: 88px 0 96px;
+            }
+
+            .product-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .ticketbook {
+                padding: 88px 0 96px;
+            }
+
+            .ticketbook-inner {
+                grid-template-columns: 1fr;
+                gap: 48px;
+            }
+
+            .ticketbook-copy {
+                text-align: center;
+            }
+
+            .ticketbook-copy h2,
+            .ticketbook-copy p {
+                margin-inline: auto;
+            }
+
+            .footer-inner {
+                padding: 28px 0;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .hero-copy {
+                padding: 0 20px 40px;
+            }
+
+            .app-lockup {
+                margin-bottom: 24px;
+                font-size: 20px;
+            }
+
+            .app-lockup img {
+                width: 52px;
+                height: 52px;
+                border-radius: 13px;
+            }
+
+            .hero h1 {
+                max-width: 7ch;
+                font-size: clamp(44px, 13vw, 54px);
+            }
+
+            .hero-description {
+                font-size: 16px;
+            }
+
+            .hero-visual {
+                --phone-scale: .71;
+                width: calc(100% - 32px);
+                height: 620px;
+                margin-bottom: 56px;
+                border-radius: 24px;
+            }
+
+            .ticket-demo {
+                border-radius: 38px;
+            }
+
+            .products {
+                padding: 72px 0 80px;
+            }
+
+            .products-heading {
+                margin-bottom: 36px;
+                font-size: 38px;
+            }
+
+            .product-card {
+                border-radius: 24px;
+            }
+
+            .product-copy {
+                padding: 28px 24px 24px;
+            }
+
+            .product-copy h3 {
+                font-size: 24px;
+            }
+
+            .product-copy p {
+                font-size: 15px;
+            }
+
+            .product-media {
+                height: 500px;
+                padding-top: 24px;
+            }
+
+            .product-media img {
+                width: min(82%, 300px);
+            }
+
+            .ticketbook {
+                padding: 72px 0 80px;
+            }
+
+            .ticketbook-inner {
+                gap: 36px;
+            }
+
+            .ticketbook-copy h2 {
+                margin-inline: auto;
+                font-size: 38px;
+            }
+
+            .ticketbook-copy p {
+                font-size: 16px;
+            }
+
+            .ticketbook-media {
+                height: 520px;
+                border-radius: 24px;
+            }
+
+            .ticketbook-window {
+                width: min(82%, 300px);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html {
+                scroll-behavior: auto;
+            }
+
+            .ticketbook-frame {
+                display: none;
+            }
+
+            .ticketbook-frame:first-child {
+                display: block;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<a class="skip-link" href="#main">본문으로 이동</a>
+
+<main id="main">
+    <section class="hero" id="top">
+        <div class="hero-copy">
+            <div class="app-lockup">
+                <span>스티켓</span>
+            </div>
+            <h1>직관의 순간을 티켓으로</h1>
+            <p class="hero-description">경기 기록부터 나만의 직관 다이어리까지 한곳에 남겨보세요</p>
+            <a class="store-link" href="https://apps.apple.com/kr/app/%EC%8A%A4%ED%8B%B0%EC%BC%93/id6800050133"
+               target="_blank" rel="noreferrer" aria-label="App Store에서 스티켓 다운로드">
+                <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg"
+                     alt="App Store에서 다운로드"/>
+            </a>
+        </div>
+
+        <div class="hero-visual" aria-label="스티켓 티켓 목록 화면 미리보기">
+            <div class="ticket-demo">
+                <div class="ticket-demo__status" aria-hidden="true"><span class="ticket-demo__island"></span></div>
+                <div class="ticket-demo__header">
+                    <span class="ticket-demo__back" aria-hidden="true"></span>
+                    <p class="ticket-demo__title">야구 티켓북</p>
+                    <span class="ticket-demo__add">＋ 추가</span>
+                </div>
+
+                <div class="ticket-demo__scroll" aria-label="시즌별 직관 티켓 목록">
+                    <div class="ticket-demo__summary">
+                        <span class="ticket-demo__count">3</span>
+                        <span class="ticket-demo__count-label">개의<br/>직관 티켓</span>
+                    </div>
+                    <div class="ticket-demo__seasons" aria-label="시즌 선택">
+                        <span class="ticket-demo__season ticket-demo__season--active">2026</span>
+                        <span class="ticket-demo__season">2025</span>
+                        <span class="ticket-demo__season">2024</span>
+                    </div>
+                    <div class="ticket-demo__list">
+                        <article class="demo-ticket">
+                            <div class="demo-ticket__content">
+                                <div class="demo-ticket__meta">
+                                    <div class="demo-ticket__meta-item"><span class="demo-ticket__label">경기일</span><span
+                                            class="demo-ticket__value">08.23 (일)</span></div>
+                                    <span class="demo-ticket__meta-divider"></span>
+                                    <div class="demo-ticket__meta-item"><span class="demo-ticket__label">시간</span><span
+                                            class="demo-ticket__value">19:00</span></div>
+                                    <span class="demo-ticket__meta-divider"></span>
+                                    <div class="demo-ticket__meta-item"><span class="demo-ticket__label">경기장</span><span
+                                            class="demo-ticket__value">잠실</span></div>
+                                </div>
+                                <div class="demo-ticket__matchup">
+                                    <div><span class="demo-ticket__role team-lotte">AWAY</span><span
+                                            class="demo-ticket__team">롯데</span></div>
+                                    <span class="demo-ticket__versus">VS</span>
+                                    <div><span class="demo-ticket__role team-doosan">HOME</span><span
+                                            class="demo-ticket__team">두산</span></div>
+                                </div>
+                            </div>
+                            <div class="demo-ticket__perforation"></div>
+                            <div class="demo-ticket__stub">
+                                <div><span class="demo-ticket__seat-label">좌석</span><span class="demo-ticket__seat">1루 네이비 309블록</span>
+                                </div>
+                                <span class="demo-ticket__barcode" aria-hidden="true"></span>
+                            </div>
+                        </article>
+
+                        <article class="demo-ticket">
+                            <div class="demo-ticket__content">
+                                <div class="demo-ticket__meta">
+                                    <div class="demo-ticket__meta-item"><span class="demo-ticket__label">경기일</span><span
+                                            class="demo-ticket__value">08.22 (토)</span></div>
+                                    <span class="demo-ticket__meta-divider"></span>
+                                    <div class="demo-ticket__meta-item"><span class="demo-ticket__label">시간</span><span
+                                            class="demo-ticket__value">18:00</span></div>
+                                    <span class="demo-ticket__meta-divider"></span>
+                                    <div class="demo-ticket__meta-item"><span class="demo-ticket__label">경기장</span><span
+                                            class="demo-ticket__value">고척</span></div>
+                                </div>
+                                <div class="demo-ticket__matchup">
+                                    <div><span class="demo-ticket__role team-kia">AWAY</span><span
+                                            class="demo-ticket__team">KIA</span></div>
+                                    <span class="demo-ticket__versus">VS</span>
+                                    <div><span class="demo-ticket__role team-kiwoom">HOME</span><span
+                                            class="demo-ticket__team">키움</span></div>
+                                </div>
+                            </div>
+                            <div class="demo-ticket__perforation"></div>
+                            <div class="demo-ticket__stub">
+                                <div><span class="demo-ticket__seat-label">좌석</span><span class="demo-ticket__seat">1루 버건디석 101구역</span>
+                                </div>
+                                <span class="demo-ticket__barcode" aria-hidden="true"></span>
+                            </div>
+                        </article>
+
+                        <article class="demo-ticket">
+                            <div class="demo-ticket__content">
+                                <div class="demo-ticket__meta">
+                                    <div class="demo-ticket__meta-item"><span class="demo-ticket__label">경기일</span><span
+                                            class="demo-ticket__value">06.28 (일)</span></div>
+                                    <span class="demo-ticket__meta-divider"></span>
+                                    <div class="demo-ticket__meta-item"><span class="demo-ticket__label">시간</span><span
+                                            class="demo-ticket__value">17:00</span></div>
+                                    <span class="demo-ticket__meta-divider"></span>
+                                    <div class="demo-ticket__meta-item"><span class="demo-ticket__label">경기장</span><span
+                                            class="demo-ticket__value">대구</span></div>
+                                </div>
+                                <div class="demo-ticket__matchup">
+                                    <div><span class="demo-ticket__role team-kt">AWAY</span><span
+                                            class="demo-ticket__team">KT</span></div>
+                                    <span class="demo-ticket__versus">VS</span>
+                                    <div><span class="demo-ticket__role team-samsung">HOME</span><span
+                                            class="demo-ticket__team">삼성</span></div>
+                                </div>
+                            </div>
+                            <div class="demo-ticket__perforation"></div>
+                            <div class="demo-ticket__stub">
+                                <div><span class="demo-ticket__seat-label">좌석</span><span class="demo-ticket__seat">3루 블루존</span>
+                                </div>
+                                <span class="demo-ticket__barcode" aria-hidden="true"></span>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="products" aria-labelledby="products-title">
+        <div class="wrap">
+            <h2 class="products-heading" id="products-title">그날의 함성을 오래 간직하는 방법</h2>
+            <div class="product-grid">
+                <article class="product-card">
+                    <div class="product-copy">
+                        <h3>경기 기록</h3>
+                        <p>경기 기록과 직관의 추억을 기록해보세요</p>
+                    </div>
+                    <figure class="product-media">
+                        <img src="./assets/game-record-screen.png" alt="팀별 선발 라인업을 확인하는 경기 기록 화면" width="1116"
+                             height="2048"/>
+                    </figure>
+                </article>
+
+                <article class="product-card">
+                    <div class="product-copy">
+                        <h3>다이어리</h3>
+                        <p>기억하고 싶은 장면을 담아보세요</p>
+                    </div>
+                    <figure class="product-media">
+                        <img src="./assets/diary-screen.png" alt="야구장에서 찍은 사진과 스티커로 꾸민 직관 다이어리 화면" width="1206"
+                             height="2622"/>
+                    </figure>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="ticketbook" aria-labelledby="ticketbook-title">
+        <div class="ticketbook-inner wrap">
+            <div class="ticketbook-copy">
+                <h2 id="ticketbook-title">내 취향을 담은 티켓북</h2>
+                <p>표지 색상과 포토카드를 직접 골라 나만의 티켓북을 만들어보세요.</p>
+            </div>
+            <div class="ticketbook-media">
+                <div class="ticketbook-window" role="img" aria-label="티켓북 표지 색상이 순서대로 바뀌는 미리보기">
+                    <div class="ticketbook-track">
+                        <figure class="ticketbook-frame"><img src="./assets/ticketbook-colors/01-pink.png" alt=""
+                                                              width="720" height="1565"/></figure>
+                        <figure class="ticketbook-frame"><img src="./assets/ticketbook-colors/02-stripe.png" alt=""
+                                                              width="720" height="1565"/></figure>
+                        <figure class="ticketbook-frame"><img src="./assets/ticketbook-colors/03-orange.png" alt=""
+                                                              width="720" height="1565"/></figure>
+                        <figure class="ticketbook-frame"><img src="./assets/ticketbook-colors/04-blue.png" alt=""
+                                                              width="720" height="1565"/></figure>
+                        <figure class="ticketbook-frame"><img src="./assets/ticketbook-colors/05-powder-blue.png" alt=""
+                                                              width="720" height="1565"/></figure>
+                        <figure class="ticketbook-frame"><img src="./assets/ticketbook-colors/06-gray.png" alt=""
+                                                              width="720" height="1565"/></figure>
+                        <figure class="ticketbook-frame"><img src="./assets/ticketbook-colors/07-muted-blue.png" alt=""
+                                                              width="720" height="1565"/></figure>
+                        <figure class="ticketbook-frame"><img src="./assets/ticketbook-colors/08-coral.png" alt=""
+                                                              width="720" height="1565"/></figure>
+                        <figure class="ticketbook-frame"><img src="./assets/ticketbook-colors/09-purple.png" alt=""
+                                                              width="720" height="1565"/></figure>
+                        <figure class="ticketbook-frame"><img src="./assets/ticketbook-colors/10-mauve.png" alt=""
+                                                              width="720" height="1565"/></figure>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer class="site-footer">
+    <div class="footer-inner wrap">
+        <span>&copy; 2026 Sticket</span>
+        <div class="footer-links">
+            <a href="mailto:jisilver.kim@gmail.com">문의하기</a>
+            <a href="https://amenable-colby-ae6.notion.site/3b6f2bd020d08050b594d22630e4a866" target="_blank"
+               rel="noreferrer">이용약관</a>
+            <a href="https://amenable-colby-ae6.notion.site/3b5f2bd020d0803da252e68a09189ae5" target="_blank"
+               rel="noreferrer">개인정보 처리방침</a>
+        </div>
+    </div>
+</footer>
+
+<script>
+    const barcodeModules = [3, 1, 1, 2, 4, 1, 2, 1, 3, 2, 1, 4, 1, 1, 3, 1, 2, 3, 1, 4, 2, 1, 1, 3];
+    document.querySelectorAll(".demo-ticket__barcode").forEach(barcode => {
+        barcode.replaceChildren(...barcodeModules.map(width => {
+            const bar = document.createElement("span");
+            bar.className = "demo-ticket__barcode-bar";
+            bar.style.width = `${width}px`;
+            return bar;
+        }));
+    });
+
+    const ticketScroller = document.querySelector(".ticket-demo__scroll");
+    const ticketVisual = document.querySelector(".hero-visual");
+    const getTicketScrollProgress = (scrollY, start, distance) => Math.min(1, Math.max(0, (scrollY - start) / distance));
+
+    if (ticketScroller && ticketVisual && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        let frame = 0;
+        const syncTicketScroll = () => {
+            frame = 0;
+            const start = scrollY + ticketVisual.getBoundingClientRect().top;
+            const progress = getTicketScrollProgress(scrollY, start, ticketVisual.offsetHeight * .55);
+            ticketScroller.scrollTop = progress * (ticketScroller.scrollHeight - ticketScroller.clientHeight);
+        };
+        const requestTicketScroll = () => {
+            if (frame) return;
+            frame = requestAnimationFrame(syncTicketScroll);
+        };
+        addEventListener("scroll", requestTicketScroll, {passive: true});
+        addEventListener("resize", requestTicketScroll);
+        requestTicketScroll();
+    }
+
+    const ticketbookFrames = [...document.querySelectorAll(".ticketbook-frame")];
+    if (ticketbookFrames.length && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        let activeFrame = 0;
+        ticketbookFrames[activeFrame].classList.add("is-active");
+        setInterval(() => {
+            const nextFrame = (activeFrame + 1) % ticketbookFrames.length;
+            ticketbookFrames[activeFrame].classList.remove("is-active");
+            ticketbookFrames[nextFrame].classList.add("is-active");
+            activeFrame = nextFrame;
+        }, 800);
+    }
+
+    console.assert(document.querySelectorAll(".demo-ticket").length === 3, "티켓 미리보기 누락");
+    console.assert(document.querySelectorAll(".demo-ticket__barcode-bar").length === 72, "바코드 모듈 누락");
+</script>
+</body>
+</html>
