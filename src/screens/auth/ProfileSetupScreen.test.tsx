@@ -163,6 +163,9 @@ describe('ProfileSetupScreen', () => {
     });
 
     it('프로필 저장 중 서버 에러가 발생하면, 알림 팝업을 띄운다', async () => {
+      const consoleError = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
       (saveProfile as jest.Mock).mockRejectedValueOnce(
         new Error('Server Error'),
       );
@@ -206,6 +209,7 @@ describe('ProfileSetupScreen', () => {
       });
 
       expect(mockCompleteProfile).not.toHaveBeenCalled();
+      consoleError.mockRestore();
     });
   });
 });

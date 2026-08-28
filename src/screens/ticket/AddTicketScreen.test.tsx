@@ -128,7 +128,7 @@ describe('AddTicketScreen', () => {
       ]);
 
       await setup();
-      fireEvent.press(screen.getByText('Mock Date 1'));
+      await fireEvent.press(screen.getByText('Mock Date 1'));
 
       const gameButtons = await screen.findAllByRole('button', {
         name: /원정 대/,
@@ -161,7 +161,7 @@ describe('AddTicketScreen', () => {
       ]);
 
       await setup();
-      fireEvent.press(screen.getByText('Mock Date 1'));
+      await fireEvent.press(screen.getByText('Mock Date 1'));
 
       const favoriteGame = await screen.findByRole('button', {
         name: /두산 원정 대 LG 홈/,
@@ -176,7 +176,7 @@ describe('AddTicketScreen', () => {
         });
       });
 
-      fireEvent.press(otherGame);
+      await fireEvent.press(otherGame);
 
       await waitFor(() => {
         expect(
@@ -230,9 +230,9 @@ describe('AddTicketScreen', () => {
       ]);
 
       await setup();
-      fireEvent.press(screen.getByText('Mock Date 1'));
+      await fireEvent.press(screen.getByText('Mock Date 1'));
 
-      fireEvent.press(
+      await fireEvent.press(
         await screen.findByRole('button', { name: /두산 원정 대 LG 홈/ }),
       );
       await waitFor(() => {
@@ -241,14 +241,14 @@ describe('AddTicketScreen', () => {
         );
       });
 
-      fireEvent.press(
+      await fireEvent.press(
         screen.getByRole('button', { name: /LG 원정 대 두산 홈/ }),
       );
       await waitFor(() => {
         expect(screen.getByLabelText('좌석 정보').props.value).toBe('');
       });
 
-      fireEvent.press(
+      await fireEvent.press(
         screen.getByRole('button', { name: /두산 원정 대 LG 홈/ }),
       );
       await waitFor(() => {
@@ -257,14 +257,19 @@ describe('AddTicketScreen', () => {
         );
       });
 
-      fireEvent.changeText(screen.getByLabelText('좌석 정보'), '테이블석 3열');
+      await fireEvent.changeText(
+        screen.getByLabelText('좌석 정보'),
+        '테이블석 3열',
+      );
       await waitFor(() => {
         expect(screen.getByLabelText('좌석 정보').props.value).toBe(
           '테이블석 3열',
         );
       });
 
-      fireEvent.press(screen.getByRole('button', { name: '티켓 추가' }));
+      await fireEvent.press(
+        screen.getByRole('button', { name: '티켓 추가' }),
+      );
 
       await waitFor(() => {
         expect(mockMutateAsync).toHaveBeenCalledWith({
@@ -289,7 +294,7 @@ describe('AddTicketScreen', () => {
       await setup();
 
       const dayButton = screen.getByText('Mock Date 1');
-      fireEvent.press(dayButton);
+      await fireEvent.press(dayButton);
 
       await waitFor(() => {
         expect(getGamesByDate).toHaveBeenCalledWith('2026-08-01');
@@ -305,7 +310,7 @@ describe('AddTicketScreen', () => {
       await setup();
 
       const dayButton = screen.getByText('Mock Date 2');
-      fireEvent.press(dayButton);
+      await fireEvent.press(dayButton);
 
       await waitFor(() => {
         expect(getGamesByDate).toHaveBeenCalledWith('2026-08-02');
@@ -324,7 +329,7 @@ describe('AddTicketScreen', () => {
       await setup();
 
       const dayButton = screen.getByText('Mock Date 2');
-      fireEvent.press(dayButton);
+      await fireEvent.press(dayButton);
 
       expect(
         await screen.findByText('경기 정보를 불러오지 못했어요'),
@@ -347,7 +352,7 @@ describe('AddTicketScreen', () => {
       await setup();
 
       const dayButton = screen.getByText('Mock Date 1');
-      fireEvent.press(dayButton);
+      await fireEvent.press(dayButton);
 
       await screen.findByText('두산');
 
@@ -369,12 +374,12 @@ describe('AddTicketScreen', () => {
       await setup();
 
       const dayButton = screen.getByText('Mock Date 1');
-      fireEvent.press(dayButton);
+      await fireEvent.press(dayButton);
 
       const gameButton = await screen.findByRole('button', {
         name: /두산 원정 대 LG 홈/,
       });
-      fireEvent.press(gameButton);
+      await fireEvent.press(gameButton);
 
       const addButton = screen.getByRole('button', { name: '티켓 추가' });
 
@@ -382,7 +387,7 @@ describe('AddTicketScreen', () => {
         expect(addButton).not.toBeDisabled();
       });
 
-      fireEvent.press(addButton);
+      await fireEvent.press(addButton);
 
       await waitFor(() => {
         expect(mockMutateAsync).toHaveBeenCalledWith({
@@ -396,6 +401,9 @@ describe('AddTicketScreen', () => {
     });
 
     it('중복 등록된 경기일 경우, 에러 팝업을 띄우고 화면에 머무른다', async () => {
+      const consoleError = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
       (getGamesByDate as jest.Mock).mockResolvedValueOnce([
         {
           id: 'g1',
@@ -409,12 +417,12 @@ describe('AddTicketScreen', () => {
       await setup();
 
       const dayButton = screen.getByText('Mock Date 1');
-      fireEvent.press(dayButton);
+      await fireEvent.press(dayButton);
 
       const gameButton = await screen.findByRole('button', {
         name: /두산 원정 대 LG 홈/,
       });
-      fireEvent.press(gameButton);
+      await fireEvent.press(gameButton);
 
       const addButton = screen.getByRole('button', { name: '티켓 추가' });
 
@@ -422,7 +430,7 @@ describe('AddTicketScreen', () => {
         expect(addButton).not.toBeDisabled();
       });
 
-      fireEvent.press(addButton);
+      await fireEvent.press(addButton);
 
       await waitFor(() => {
         expect(mockMutateAsync).toHaveBeenCalled();
@@ -433,6 +441,7 @@ describe('AddTicketScreen', () => {
         '이미 등록한 경기예요',
         '같은 티켓북에는 동일한 경기를 한 번만 등록할 수 있어요.',
       );
+      consoleError.mockRestore();
     });
   });
 });

@@ -4,11 +4,19 @@
   "private": true,
   "scripts": {
     "android": "react-native run-android",
+    "db:reset": "supabase db reset --local",
     "ios": "react-native run-ios",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings=0",
     "postinstall": "node scripts/patch-react-native-pencil-kit.cjs",
     "start": "react-native start",
-    "test": "jest"
+    "test": "jest",
+    "test:app": "jest --runInBand",
+    "test:collector": "npm --prefix collector run test",
+    "test:db": "supabase test db --local supabase/tests",
+    "typecheck": "tsc --noEmit",
+    "verify": "npm run lint && npm run typecheck && npm run test:app && npm run test:collector",
+    "verify:db": "npm run db:reset && npm run test:db",
+    "verify:ios": "xcodebuild -workspace ios/Sticket.xcworkspace -scheme Sticket -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build"
   },
   "dependencies": {
     "@invertase/react-native-apple-authentication": "^2.5.1",

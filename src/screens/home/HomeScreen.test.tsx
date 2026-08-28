@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  fireEvent,
   render,
   screen,
   userEvent,
@@ -39,16 +38,59 @@ jest.mock('@react-navigation/native', () => {
   };
 });
 
+jest.mock('../../components/common/AppPopoverMenu.tsx', () => {
+  const ReactMock = require('react');
+  const { Pressable, Text, View } = require('react-native');
+
+  return function MockAppPopoverMenu({ visible, actions }: any) {
+    if (!visible) return null;
+
+    return ReactMock.createElement(
+      View,
+      null,
+      actions.map((action: any) =>
+        ReactMock.createElement(
+          Pressable,
+          {
+            key: action.accessibilityLabel ?? action.label,
+            accessibilityRole: 'button',
+            accessibilityLabel: action.accessibilityLabel ?? action.label,
+            onPress: action.onPress,
+          },
+          ReactMock.createElement(Text, null, action.label),
+        ),
+      ),
+    );
+  };
+});
+
 jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 
-jest.mock('../../features/ticket-book/api/useGetTicketBooks');
-jest.mock('../../features/bucket-list/api/useGetBucketList');
-jest.mock('../../features/ticket-book/api/useDeleteTicketBook');
-jest.mock('../../features/bucket-list/api/useCreateBucketItem');
-jest.mock('../../features/bucket-list/api/useDeleteBucketItem');
-jest.mock('../../features/bucket-list/api/useRestoreBucketItem');
-jest.mock('../../features/bucket-list/api/useUpdateBucketItemCompleted');
-jest.mock('../../features/bucket-list/api/useUpdateBucketItemTitle');
+jest.mock('../../features/ticket-book/api/useGetTicketBooks', () => ({
+  useGetTicketBooks: jest.fn(),
+}));
+jest.mock('../../features/bucket-list/api/useGetBucketList', () => ({
+  useGetBucketList: jest.fn(),
+}));
+jest.mock('../../features/ticket-book/api/useDeleteTicketBook', () => ({
+  useDeleteTicketBook: jest.fn(),
+}));
+jest.mock('../../features/bucket-list/api/useCreateBucketItem', () => ({
+  useCreateBucketItem: jest.fn(),
+}));
+jest.mock('../../features/bucket-list/api/useDeleteBucketItem', () => ({
+  useDeleteBucketItem: jest.fn(),
+}));
+jest.mock('../../features/bucket-list/api/useRestoreBucketItem', () => ({
+  useRestoreBucketItem: jest.fn(),
+}));
+jest.mock(
+  '../../features/bucket-list/api/useUpdateBucketItemCompleted',
+  () => ({ useUpdateBucketItemCompleted: jest.fn() }),
+);
+jest.mock('../../features/bucket-list/api/useUpdateBucketItemTitle', () => ({
+  useUpdateBucketItemTitle: jest.fn(),
+}));
 
 describe('HomeScreen', () => {
   const mockCreateBucketMutateAsync = jest.fn();
@@ -313,7 +355,7 @@ describe('HomeScreen', () => {
     it('버킷리스트 메뉴에서 수정 화면을 열 수 있다', async () => {
       const user = userEvent.setup();
 
-      const view = await render(<HomeScreen />);
+      await render(<HomeScreen />);
 
       expect(
         screen.queryByRole('button', { name: '기존 버킷리스트 수정' }),
@@ -327,13 +369,6 @@ describe('HomeScreen', () => {
       await user.press(
         screen.getByRole('button', { name: '버킷리스트 수정하기' }),
       );
-
-      const actionSheetModal = view.container
-        .queryAll(node => node.props.onDismiss !== undefined)
-        .at(0);
-
-      expect(actionSheetModal).toBeDefined();
-      fireEvent(actionSheetModal!, 'dismiss');
 
       expect(await screen.findByLabelText('버킷리스트 내용')).toBeVisible();
     });

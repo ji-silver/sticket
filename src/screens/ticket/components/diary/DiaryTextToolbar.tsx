@@ -321,6 +321,7 @@ function DiaryTextToolbar({ textItem, onChangeStyle }: DiaryTextToolbarProps) {
           {DIARY_FONT_OPTIONS.map((option, index) => {
             const isSelected = option.id === selectedFont.id;
             const isLast = index === DIARY_FONT_OPTIONS.length - 1;
+            const optionFontStyle = { fontFamily: option.regularFamily };
 
             return (
               <Pressable
@@ -341,10 +342,7 @@ function DiaryTextToolbar({ textItem, onChangeStyle }: DiaryTextToolbarProps) {
                   numberOfLines={1}
                   size={18}
                   color={isSelected ? colors.primary : colors.text}
-                  style={{
-                    flex: 1,
-                    fontFamily: option.regularFamily,
-                  }}
+                  style={[styles.fontOptionLabel, optionFontStyle]}
                 >
                   {option.label}
                 </AppText>
@@ -620,6 +618,10 @@ const styles = StyleSheet.create({
   fontOptionBorder: {
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
+  },
+
+  fontOptionLabel: {
+    flex: 1,
   },
 
   disabledControl: {

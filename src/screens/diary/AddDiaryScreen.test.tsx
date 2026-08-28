@@ -99,6 +99,9 @@ describe('AddDiaryScreen (티켓북 폼 비즈니스 로직 검증)', () => {
 
       it('이미 생성된 티켓북이 있다는 에러 반환 시 전용 팝업을 띄운다', async () => {
         const user = userEvent.setup();
+        const consoleError = jest
+          .spyOn(console, 'error')
+          .mockImplementation(() => {});
         (createTicketBook as jest.Mock).mockRejectedValueOnce({
           code: '23505',
         });
@@ -114,6 +117,7 @@ describe('AddDiaryScreen (티켓북 폼 비즈니스 로직 검증)', () => {
           '이미 야구 티켓북이 있어요',
           '기존 티켓북을 이용해 주세요.',
         );
+        consoleError.mockRestore();
       });
     });
 

@@ -1,0 +1,44 @@
+insert into public.games (
+    game_key,
+    source_game_id,
+    season,
+    series_type,
+    game_date,
+    start_time,
+    away_team_id,
+    home_team_id,
+    away_score,
+    home_score,
+    stadium_name,
+    status
+)
+values
+    (
+        'harness-20260801-doosan-lg-1',
+        'harness-finished-1',
+        2026,
+        'REGULAR',
+        '2026-08-01',
+        '18:30',
+        'doosan',
+        'lg',
+        3,
+        5,
+        '잠실야구장',
+        'FINISHED'
+    ),
+    (
+        'harness-20260802-kiwoom-kia-1',
+        'harness-cancelled-1',
+        2026,
+        'REGULAR',
+        '2026-08-02',
+        '17:00',
+        'kiwoom',
+        'kia',
+        null,
+        null,
+        '광주-기아 챔피언스 필드',
+        'CANCELLED'
+    )
+on conflict (game_key) do nothing;

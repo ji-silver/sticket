@@ -188,7 +188,9 @@ npm test                           # 수집 로직 검사
 ## 품질 확인
 
 ```bash
-npm run lint
-npm test -- --runInBand
+npm run verify       # lint, typecheck, 앱 테스트, 수집기 테스트
+npm run verify:db    # 로컬 Supabase reset과 RLS 테스트 (Docker 필요)
+npm run verify:ios   # iOS Simulator용 Debug 빌드
 ```
 
+네이티브 UI 변경은 [`harness/SCENARIOS.md`](./harness/SCENARIOS.md)의 관련 smoke 시나리오도 확인합니다.
