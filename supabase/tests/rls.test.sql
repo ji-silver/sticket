@@ -115,16 +115,14 @@ select is(
     '사용자는 자신의 티켓만 조회한다'
 );
 
+with changed as (
+    update public.ticket_books
+    set cover_color = '#FFFFFF'
+    where id = '22000000-0000-0000-0000-000000000002'
+    returning 1
+)
 select is(
-    (
-        with changed as (
-            update public.ticket_books
-            set cover_color = '#FFFFFF'
-            where id = '22000000-0000-0000-0000-000000000002'
-            returning 1
-        )
-        select count(*) from changed
-    ),
+    (select count(*) from changed),
     0::bigint,
     '사용자는 다른 사용자의 티켓북을 수정하지 못한다'
 );
