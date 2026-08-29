@@ -35,6 +35,7 @@ interface DiaryCanvasAreaProps {
   layerPanelItems: DiaryLayerPanelItem[];
   selectedLayerId: string | null;
   drawingCanvasRef: RefObject<DiaryDrawingCanvasRef | null>;
+  exportCanvasRef: RefObject<View | null>;
   onEditorWrapperLayout: (event: LayoutChangeEvent) => void;
   onEditorCanvasRegionLayout: (event: LayoutChangeEvent) => void;
   onDeselectDiaryItem: () => void;
@@ -60,6 +61,7 @@ export default function DiaryCanvasArea({
   layerPanelItems,
   selectedLayerId,
   drawingCanvasRef,
+  exportCanvasRef,
   onEditorWrapperLayout,
   onEditorCanvasRegionLayout,
   onDeselectDiaryItem,
@@ -107,6 +109,8 @@ export default function DiaryCanvasArea({
             ]}
           >
             <View
+              ref={exportCanvasRef}
+              collapsable={false}
               style={[
                 styles.editorArea,
                 {

@@ -57,18 +57,28 @@ import {
   getDiaryPageSize,
 } from './diaryLayout.ts';
 import { useTicketDiaryPersistence } from './useTicketDiaryPersistence.ts';
+import type { Ticket } from '../../../../features/ticket/types.ts';
+import DiaryExportCard from './DiaryExportCard.tsx';
+import { type DiaryExportMode, exportDiaryImage } from './diaryExport.ts';
 
 const MAXIMUM_DIARY_PHOTO_COUNT = 2;
 const DRAWING_LAYER_ID = '__drawing__';
 const DETAIL_HEADER_HEIGHT = 52;
 const DETAIL_TAB_HEIGHT = 48;
 
+function waitForViewUpdate() {
+  return new Promise<void>(resolve => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  });
+}
+
 interface TicketDiaryPageProps {
-  ticketId: string;
+  ticket: Ticket;
 }
 
 export interface TicketDiaryPageHandle {
   hasDecorations: () => boolean;
+  openExportOptions: () => void;
   resetDecorations: () => Promise<void>;
 }
 
@@ -143,9 +153,12 @@ function createLayerPanelItems(
 const TicketDiaryPage = forwardRef<
   TicketDiaryPageHandle,
   TicketDiaryPageProps
->(function TicketDiaryPageContent({ ticketId }, ref) {
+>(function TicketDiaryPageContent({ ticket }, ref) {
   const { top } = useSafeAreaInsets();
+  const ticketId = ticket.id;
   const drawingCanvasRef = useRef<DiaryDrawingCanvasRef>(null);
+  const exportCanvasRef = useRef<View>(null);
+  const exportCardRef = useRef<View>(null);
   const {
     isLoading,
     hasLoadError,
@@ -177,6 +190,14 @@ const TicketDiaryPage = forwardRef<
   const setSelectedItem = useDiaryStore(state => state.setSelectedItem);
   const editingTextId = useDiaryStore(state => state.editingTextId);
   const setEditingTextId = useDiaryStore(state => state.setEditingTextId);
+  const [isExportSheetVisible, setIsExportSheetVisible] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportPaperUri, setExportPaperUri] = useState<string | null>(null);
+  const pendingExportModeRef = useRef<DiaryExportMode | null>(null);
+  const exportCardReadyRef = useRef<{
+    resolve: () => void;
+    reject: (error: Error) => void;
+  } | null>(null);
 
   useImperativeHandle(
     ref,
@@ -184,9 +205,22 @@ const TicketDiaryPage = forwardRef<
       hasDecorations: () =>
         !isLoading &&
         (items.length > 0 || hasDrawing || paperType !== 'plain'),
+      openExportOptions: () => {
+        if (!isLoading && !hasLoadError && !isExporting) {
+          setIsExportSheetVisible(true);
+        }
+      },
       resetDecorations: resetDiaryDecorations,
     }),
-    [hasDrawing, isLoading, items.length, paperType, resetDiaryDecorations],
+    [
+      hasDrawing,
+      hasLoadError,
+      isExporting,
+      isLoading,
+      items.length,
+      paperType,
+      resetDiaryDecorations,
+    ],
   );
 
   const [editorWrapperSize, setEditorWrapperSize] = useState({
@@ -611,6 +645,74 @@ const TicketDiaryPage = forwardRef<
     }
   };
 
+  const prepareExportComposition = (paperUri: string) =>
+    new Promise<void>((resolve, reject) => {
+      exportCardReadyRef.current = { resolve, reject };
+      setExportPaperUri(paperUri);
+    });
+
+  const handleExportCardImageLoad = () => {
+    const pending = exportCardReadyRef.current;
+    exportCardReadyRef.current = null;
+
+    if (pending) {
+      waitForViewUpdate().then(pending.resolve);
+    }
+  };
+
+  const handleExportCardImageError = () => {
+    const pending = exportCardReadyRef.current;
+    exportCardReadyRef.current = null;
+    pending?.reject(new Error('다이어리 이미지를 합성할 수 없습니다.'));
+  };
+
+  const handleExportDiary = async (mode: DiaryExportMode) => {
+    if (isExporting) {
+      return;
+    }
+
+    setIsExporting(true);
+    finishCurrentTextEditing();
+    setSelectedItem(null);
+    setSelectedTool(null);
+    setIsLayerPanelVisible(false);
+
+    try {
+      await waitForViewUpdate();
+
+      await exportDiaryImage({
+        mode,
+        paperRef: exportCanvasRef,
+        compositionRef: exportCardRef,
+        prepareComposition: prepareExportComposition,
+      });
+    } catch (error) {
+      console.error('다이어리를 내보내지 못했습니다.', error);
+      Alert.alert(
+        '다이어리를 내보내지 못했어요',
+        '잠시 후 다시 시도해 주세요.',
+      );
+    } finally {
+      exportCardReadyRef.current = null;
+      setExportPaperUri(null);
+      setIsExporting(false);
+    }
+  };
+
+  const requestDiaryExport = (mode: DiaryExportMode) => {
+    pendingExportModeRef.current = mode;
+    setIsExportSheetVisible(false);
+  };
+
+  const handleExportSheetClosed = () => {
+    const mode = pendingExportModeRef.current;
+    pendingExportModeRef.current = null;
+
+    if (mode) {
+      handleExportDiary(mode);
+    }
+  };
+
   const handlePressTool = (toolId: DiaryToolId) => {
     if (toolId === 'layers') {
       finishCurrentTextEditing();
@@ -815,6 +917,7 @@ const TicketDiaryPage = forwardRef<
           layerPanelItems={layerPanelItems}
           selectedLayerId={selectedLayerId}
           drawingCanvasRef={drawingCanvasRef}
+          exportCanvasRef={exportCanvasRef}
           onEditorWrapperLayout={handleEditorWrapperLayout}
           onEditorCanvasRegionLayout={handleEditorCanvasRegionLayout}
           onDeselectDiaryItem={handleDeselectDiaryItem}
@@ -847,23 +950,59 @@ const TicketDiaryPage = forwardRef<
         onClosed={handlePhotoSourceSheetClosed}
         closeAccessibilityLabel="사진 추가 닫기"
       >
-        <View style={styles.photoSourceList}>
-          <PhotoSourceRow
+        <View style={styles.sheetActionList}>
+          <SheetActionRow
             title="사진 촬영"
             onPress={() => requestDiaryPhoto('camera')}
           />
 
-          <View style={styles.photoSourceDivider} />
+          <View style={styles.sheetActionDivider} />
 
-          <PhotoSourceRow
+          <SheetActionRow
             title="앨범에서 선택"
             onPress={() => requestDiaryPhoto('library')}
           />
         </View>
       </AppBottomSheet>
 
+      <AppBottomSheet
+        visible={isExportSheetVisible}
+        title="다이어리 내보내기"
+        description="내보낼 이미지 형태를 선택해 주세요"
+        onClose={() => setIsExportSheetVisible(false)}
+        onClosed={handleExportSheetClosed}
+        closeAccessibilityLabel="다이어리 내보내기 닫기"
+      >
+        <View style={styles.sheetActionList}>
+          <SheetActionRow
+            title="경기 정보와 함께"
+            onPress={() => requestDiaryExport('withGameInfo')}
+          />
+
+          <View style={styles.sheetActionDivider} />
+
+          <SheetActionRow
+            title="다이어리만"
+            onPress={() => requestDiaryExport('diaryOnly')}
+          />
+        </View>
+      </AppBottomSheet>
+
+      {exportPaperUri ? (
+        <View pointerEvents="none" style={styles.exportCardHost}>
+          <DiaryExportCard
+            ref={exportCardRef}
+            ticket={ticket}
+            diaryImageUri={exportPaperUri}
+            pageSize={pageSize}
+            onImageLoad={handleExportCardImageLoad}
+            onImageError={handleExportCardImageError}
+          />
+        </View>
+      ) : null}
+
       <DiaryEditorFeedbackUI
-        isLoading={isLoading || isSavingBeforeLeave}
+        isLoading={isLoading || isSavingBeforeLeave || isExporting}
         snackbarMessage={snackbarMessage}
       />
     </SafeAreaView>
@@ -872,7 +1011,7 @@ const TicketDiaryPage = forwardRef<
 
 export default TicketDiaryPage;
 
-function PhotoSourceRow({
+function SheetActionRow({
   title,
   onPress,
 }: {
@@ -885,8 +1024,8 @@ function PhotoSourceRow({
       accessibilityLabel={title}
       onPress={onPress}
       style={({ pressed }) => [
-        styles.photoSourceRow,
-        pressed && styles.photoSourceRowPressed,
+        styles.sheetActionRow,
+        pressed && styles.sheetActionRowPressed,
       ]}
     >
       <AppText size={16} weight="semiBold">
@@ -913,23 +1052,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
 
-  photoSourceList: {
+  sheetActionList: {
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
   },
 
-  photoSourceRow: {
+  sheetActionRow: {
     height: 58,
     paddingHorizontal: 4,
     justifyContent: 'center',
   },
 
-  photoSourceRowPressed: {
+  sheetActionRowPressed: {
     backgroundColor: colors.background,
   },
 
-  photoSourceDivider: {
+  sheetActionDivider: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: colors.border,
+  },
+
+  exportCardHost: {
+    position: 'absolute',
+    top: 0,
+    left: -10000,
   },
 });

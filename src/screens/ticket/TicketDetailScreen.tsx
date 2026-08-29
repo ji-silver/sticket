@@ -1,13 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react';
-import {
-  Alert,
-  Keyboard,
-  Pressable,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { Alert, Keyboard, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { MoreHorizontal } from 'lucide-react-native';
+import { MoreHorizontal, Share } from 'lucide-react-native';
 import { useNavigation, useRoute } from '@react-navigation/core';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -96,6 +90,11 @@ function TicketDetailScreen() {
     setIsMenuVisible(true);
   };
 
+  const handleOpenDiaryExport = () => {
+    Keyboard.dismiss();
+    diaryPageRef.current?.openExportOptions();
+  };
+
   const handleResetDiary = async () => {
     if (isResettingDiary || !diaryPageRef.current) {
       return;
@@ -141,23 +140,44 @@ function TicketDetailScreen() {
         title="직관 기록"
         onPressBack={() => navigation.goBack()}
         right={
-          <Pressable
-            ref={menuButtonRef}
-            style={({ pressed }) => [
-              styles.menuButton,
-              pressed && styles.menuButtonPressed,
-            ]}
-            onPress={handleOpenMenu}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="직관 기록 메뉴"
-          >
-            <MoreHorizontal
-              size={22}
-              color={colors.textSecondary}
-              strokeWidth={2.4}
-            />
-          </Pressable>
+          <View style={styles.headerActions}>
+            {activeTab === 'diary' ? (
+              <Pressable
+                style={({ pressed }) => [
+                  styles.headerActionButton,
+                  pressed && styles.headerActionButtonPressed,
+                ]}
+                onPress={handleOpenDiaryExport}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="다이어리 내보내기"
+              >
+                <Share
+                  size={21}
+                  color={colors.textSecondary}
+                  strokeWidth={2.2}
+                />
+              </Pressable>
+            ) : null}
+
+            <Pressable
+              ref={menuButtonRef}
+              style={({ pressed }) => [
+                styles.headerActionButton,
+                pressed && styles.headerActionButtonPressed,
+              ]}
+              onPress={handleOpenMenu}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="직관 기록 메뉴"
+            >
+              <MoreHorizontal
+                size={22}
+                color={colors.textSecondary}
+                strokeWidth={2.4}
+              />
+            </Pressable>
+          </View>
         }
       />
 
@@ -214,11 +234,7 @@ function TicketDetailScreen() {
 
       {hasOpenedDiary ? (
         <View style={[styles.page, activeTab !== 'diary' && styles.hidden]}>
-          <TicketDiaryPage
-            ref={diaryPageRef}
-            key={ticket.id}
-            ticketId={ticket.id}
-          />
+          <TicketDiaryPage ref={diaryPageRef} key={ticket.id} ticket={ticket} />
         </View>
       ) : null}
 
@@ -237,9 +253,7 @@ function TicketDetailScreen() {
             ? [
                 {
                   label: '다이어리 초기화',
-                  disabled: !(
-                    diaryPageRef.current?.hasDecorations() ?? false
-                  ),
+                  disabled: !(diaryPageRef.current?.hasDecorations() ?? false),
                   onPress: () => setIsResetDialogVisible(true),
                 },
               ]
@@ -323,7 +337,12 @@ const styles = StyleSheet.create({
     borderRadius: 1,
     backgroundColor: colors.primary,
   },
-  menuButton: {
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  headerActionButton: {
     width: 34,
     height: 34,
     borderRadius: 17,
@@ -331,7 +350,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  menuButtonPressed: {
+  headerActionButtonPressed: {
     backgroundColor: colors.primarySoft,
   },
 });
