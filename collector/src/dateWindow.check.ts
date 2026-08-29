@@ -20,6 +20,10 @@ test('오늘과 어제 날짜를 월·연도 경계에서도 계산한다', () =
     '2025-12-31',
     '2026-01-01',
   ]);
+  assert.deepEqual(getRecentGameDates('2026-01-01', 'today'), ['2026-01-01']);
+  assert.deepEqual(getRecentGameDates('2026-01-01', 'yesterday'), [
+    '2025-12-31',
+  ]);
 });
 
 test('시즌 잔여 월과 매일 갱신할 두 달을 계산한다', () => {

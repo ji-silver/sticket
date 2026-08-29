@@ -55,6 +55,8 @@ interface CollectionTarget {
   month: string;
 }
 
+type GameDateTarget = 'today' | 'yesterday';
+
 async function selectScheduleOption(
   page: Page,
   selector: string,
@@ -111,11 +113,12 @@ async function readScheduleRows(page: Page): Promise<RawScheduleRow[]> {
 }
 
 async function main() {
-  const targets = getCollectionTargets();
+  const gameDateTarget = getGameDateTarget();
+  const targets = getCollectionTargets(gameDateTarget);
   const isBackfill = process.argv.includes('--backfill');
   const isScheduleCollection = process.argv.includes('--schedule');
   const today = getTodayInKorea();
-  const automaticGameDates = new Set(getRecentGameDates(today));
+  const automaticGameDates = new Set(getRecentGameDates(today, gameDateTarget));
   const isAutomaticCollection =
     !isBackfill &&
     !isScheduleCollection &&
@@ -218,7 +221,7 @@ async function main() {
       }
     }
 
-    if (isAutomaticCollection) {
+    if (isAutomaticCollection && gameDateTarget === undefined) {
       const backfilledLineupCount = await syncMissingGameLineups();
 
       if (backfilledLineupCount > 0) {
@@ -232,7 +235,9 @@ async function main() {
   }
 }
 
-function getCollectionTargets(): CollectionTarget[] {
+function getCollectionTargets(
+  gameDateTarget?: GameDateTarget,
+): CollectionTarget[] {
   const today = getTodayInKorea();
   const currentYear = Number(today.slice(0, 4));
   const currentMonth = today.slice(5, 7);
@@ -241,6 +246,16 @@ function getCollectionTargets(): CollectionTarget[] {
   const isUpcomingScheduleCollection = process.argv.includes('--upcoming');
   const yearArgument = getArgumentValue('year');
   const monthArgument = getArgumentValue('month');
+
+  if (
+    gameDateTarget !== undefined &&
+    (isBackfill ||
+      isScheduleCollection ||
+      yearArgument !== null ||
+      monthArgument !== null)
+  ) {
+    throw new Error('--date는 다른 수집 범위 옵션과 함께 사용할 수 없습니다.');
+  }
 
   if (isBackfill && isScheduleCollection) {
     throw new Error('--backfill과 --schedule은 함께 사용할 수 없습니다.');
@@ -290,7 +305,7 @@ function getCollectionTargets(): CollectionTarget[] {
   }
 
   if (yearArgument === null || monthArgument === null) {
-    const targets = getRecentGameDates(today).map(date => ({
+    const targets = getRecentGameDates(today, gameDateTarget).map(date => ({
       year: Number(date.slice(0, 4)),
       month: date.slice(5, 7),
     }));
@@ -325,6 +340,15 @@ function getCollectionTargets(): CollectionTarget[] {
   }
 
   return [{ year, month }];
+}
+
+function getGameDateTarget(): GameDateTarget | undefined {
+  const value = getArgumentValue('date');
+
+  if (value === null) return undefined;
+  if (value === 'today' || value === 'yesterday') return value;
+
+  throw new Error('--date는 today 또는 yesterday만 사용할 수 있습니다.');
 }
 
 function getArgumentValue(name: string): string | null {

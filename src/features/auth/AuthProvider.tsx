@@ -1,7 +1,7 @@
 import {
-  useCallback,
   createContext,
   type PropsWithChildren,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -10,7 +10,7 @@ import {
 } from 'react';
 import { AppState } from 'react-native';
 import type { Session } from '@supabase/supabase-js';
-import { useQueryClient } from '@tanstack/react-query';
+import { focusManager, useQueryClient } from '@tanstack/react-query';
 
 import { supabase } from '../../lib/supabase';
 import { getProfile } from '../profile/profile.service';
@@ -75,6 +75,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
     const appStateSubscription = AppState.addEventListener(
       'change',
       nextAppState => {
+        focusManager.setFocused(nextAppState === 'active');
+
         if (nextAppState === 'active') {
           supabase.auth.startAutoRefresh();
         } else {

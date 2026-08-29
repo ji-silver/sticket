@@ -1,10 +1,18 @@
-export function getRecentGameDates(today: string): [string, string] {
+export function getRecentGameDates(
+  today: string,
+  target?: 'today' | 'yesterday',
+): string[] {
   const [year, month, day] = today.split('-').map(Number);
   const yesterday = new Date(Date.UTC(year, month - 1, day));
 
   yesterday.setUTCDate(yesterday.getUTCDate() - 1);
 
-  return [yesterday.toISOString().slice(0, 10), today];
+  const yesterdayText = yesterday.toISOString().slice(0, 10);
+
+  if (target === 'today') return [today];
+  if (target === 'yesterday') return [yesterdayText];
+
+  return [yesterdayText, today];
 }
 
 const KBO_SEASON_MONTHS = [

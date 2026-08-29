@@ -4,13 +4,16 @@ on:
   workflow_dispatch:
 
   schedule:
-    - cron: '7 10 * 3-11 *'
+    - cron: '7 10 * 3-7 *'
       timezone: 'Asia/Seoul'
 
-    - cron: '17 11-23 * 3-11 *'
+    - cron: '7 10 * 8-11 *'
       timezone: 'Asia/Seoul'
 
-    - cron: '17 0 * 3-11 *'
+    - cron: '17,47 10-23 * 3-11 *'
+      timezone: 'Asia/Seoul'
+
+    - cron: '17 0,9 * 3-11 *'
       timezone: 'Asia/Seoul'
 
 permissions:
@@ -42,15 +45,36 @@ jobs:
       - name: Chromium 설치
         run: npx playwright install --with-deps chromium
 
-      - name: KBO 미래 일정 수집
-        if: github.event.schedule == '7 10 * 3-11 *'
+      - name: KBO 향후 2개월 일정 수집
+        if: github.event.schedule == '7 10 * 3-7 *'
         run: npm run collect:schedule:upcoming
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
 
-      - name: KBO 경기 상태 수집
-        if: github.event_name == 'workflow_dispatch' || github.event.schedule != '7 10 * 3-11 *'
+      - name: KBO 잔여 시즌 일정 수집
+        if: github.event.schedule == '7 10 * 8-11 *'
+        run: npm run collect:schedule
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+
+      - name: KBO 당일 경기 상태 수집
+        if: github.event.schedule == '17,47 10-23 * 3-11 *'
+        run: npm run collect:today
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+
+      - name: KBO 전날 경기 최종 보정
+        if: github.event.schedule == '17 0,9 * 3-11 *'
+        run: npm run collect:yesterday
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+
+      - name: KBO 경기 상태 수동 수집
+        if: github.event_name == 'workflow_dispatch'
         run: npm run collect
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

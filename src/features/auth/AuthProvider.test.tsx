@@ -1,6 +1,11 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {
+  focusManager,
+  QueryClient,
+  QueryClientProvider,
+} from '@tanstack/react-query';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { act, render, waitFor } from '@testing-library/react-native';
+import { AppState, type AppStateStatus } from 'react-native';
 
 import { supabase } from '../../lib/supabase.ts';
 import { getProfile } from '../profile/profile.service.ts';
@@ -68,4 +73,38 @@ test('로그인 사용자가 바뀌면 이전 사용자의 쿼리 캐시를 제�
   await waitFor(() =>
     expect(queryClient.getQueryData(['tickets'])).toBeUndefined(),
   );
+});
+
+test('앱 상태가 바뀌면 서버 데이터의 포커스 상태를 갱신한다', async () => {
+  let emitAppStateChange: ((status: AppStateStatus) => void) | undefined;
+  const setFocused = jest.spyOn(focusManager, 'setFocused');
+
+  jest
+    .spyOn(AppState, 'addEventListener')
+    .mockImplementation((_type, listener) => {
+      emitAppStateChange = listener;
+
+      return { remove: jest.fn() };
+    });
+  (supabase.auth.getSession as jest.Mock).mockResolvedValue({
+    data: { session: null },
+    error: null,
+  });
+  (supabase.auth.onAuthStateChange as jest.Mock).mockReturnValue({
+    data: { subscription: { unsubscribe: jest.fn() } },
+  });
+
+  await act(async () => {
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <AuthProvider>{null}</AuthProvider>
+      </QueryClientProvider>,
+    );
+  });
+
+  await act(async () => emitAppStateChange?.('background'));
+  expect(setFocused).toHaveBeenLastCalledWith(false);
+
+  await act(async () => emitAppStateChange?.('active'));
+  expect(setFocused).toHaveBeenLastCalledWith(true);
 });
