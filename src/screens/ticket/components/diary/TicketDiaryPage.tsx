@@ -3,7 +3,9 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   type LayoutChangeEvent,
+  Pressable,
   StyleSheet,
+  View,
 } from 'react-native';
 import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import {
@@ -11,6 +13,7 @@ import {
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 import AppText from '../../../../components/common/AppText.tsx';
+import AppBottomSheet from '../../../../components/common/AppBottomSheet.tsx';
 import InlineActionButton from '../../../../components/common/InlineActionButton.tsx';
 import { colors } from '../../../../styles/colors.ts';
 import DiaryCanvasArea from './DiaryCanvasArea.tsx';
@@ -21,7 +24,10 @@ import DiaryEditorUI, {
 import { useDiaryStore } from './store/useDiaryStore.ts';
 import DiaryPhotoItem from './DiaryPhotoItem.tsx';
 import { type DiaryPhoto, type EditorSize } from './photoTransform.ts';
-import { selectDiaryPhoto } from './selectDiaryPhoto.ts';
+import {
+  type DiaryPhotoSource,
+  selectDiaryPhoto,
+} from './selectDiaryPhoto.ts';
 import DiaryStickerItem, {
   createDiarySticker,
   type DiarySticker,
@@ -192,6 +198,9 @@ const TicketDiaryPage = forwardRef<
     width: 0,
     height: 0,
   });
+  const [isPhotoSourceSheetVisible, setIsPhotoSourceSheetVisible] =
+    useState(false);
+  const pendingPhotoSourceRef = useRef<DiaryPhotoSource | null>(null);
   const editingPageWidthRef = useRef(0);
 
   const pageSize = getDiaryPageSize(orientation);
@@ -548,23 +557,8 @@ const TicketDiaryPage = forwardRef<
     }
   };
 
-  const handlePressSelectPhoto = async () => {
-    finishCurrentTextEditing();
-
-    const photoCount = items.filter(item => item.type === 'photo').length;
-
-    if (photoCount >= MAXIMUM_DIARY_PHOTO_COUNT) {
-      Alert.alert(
-        '사진을 추가할 수 없습니다',
-        '사진은 최대 2장까지 추가할 수 있습니다.',
-      );
-
-      return;
-    }
-
-    const selectedPhoto = await selectDiaryPhoto(activeEditorSize);
-
-    setSelectedTool(null);
+  const handleAddPhoto = async (source: DiaryPhotoSource) => {
+    const selectedPhoto = await selectDiaryPhoto(activeEditorSize, source);
 
     if (selectedPhoto === null) {
       return;
@@ -582,6 +576,39 @@ const TicketDiaryPage = forwardRef<
       type: 'photo',
       id: selectedPhoto.id,
     });
+  };
+
+  const handlePressSelectPhoto = () => {
+    finishCurrentTextEditing();
+
+    const photoCount = items.filter(item => item.type === 'photo').length;
+
+    if (photoCount >= MAXIMUM_DIARY_PHOTO_COUNT) {
+      setSelectedTool(null);
+      Alert.alert(
+        '사진을 추가할 수 없습니다',
+        '사진은 최대 2장까지 추가할 수 있습니다.',
+      );
+
+      return;
+    }
+
+    setIsPhotoSourceSheetVisible(true);
+  };
+
+  const requestDiaryPhoto = (source: DiaryPhotoSource) => {
+    pendingPhotoSourceRef.current = source;
+    setIsPhotoSourceSheetVisible(false);
+  };
+
+  const handlePhotoSourceSheetClosed = () => {
+    const source = pendingPhotoSourceRef.current;
+    pendingPhotoSourceRef.current = null;
+    setSelectedTool(null);
+
+    if (source) {
+      handleAddPhoto(source);
+    }
   };
 
   const handlePressTool = (toolId: DiaryToolId) => {
@@ -812,6 +839,29 @@ const TicketDiaryPage = forwardRef<
         />
       </KeyboardAvoidingView>
 
+      <AppBottomSheet
+        visible={isPhotoSourceSheetVisible}
+        title="사진 추가"
+        description="다이어리에 추가할 사진을 선택해 주세요"
+        onClose={() => setIsPhotoSourceSheetVisible(false)}
+        onClosed={handlePhotoSourceSheetClosed}
+        closeAccessibilityLabel="사진 추가 닫기"
+      >
+        <View style={styles.photoSourceList}>
+          <PhotoSourceRow
+            title="사진 촬영"
+            onPress={() => requestDiaryPhoto('camera')}
+          />
+
+          <View style={styles.photoSourceDivider} />
+
+          <PhotoSourceRow
+            title="앨범에서 선택"
+            onPress={() => requestDiaryPhoto('library')}
+          />
+        </View>
+      </AppBottomSheet>
+
       <DiaryEditorFeedbackUI
         isLoading={isLoading || isSavingBeforeLeave}
         snackbarMessage={snackbarMessage}
@@ -821,6 +871,30 @@ const TicketDiaryPage = forwardRef<
 });
 
 export default TicketDiaryPage;
+
+function PhotoSourceRow({
+  title,
+  onPress,
+}: {
+  title: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.photoSourceRow,
+        pressed && styles.photoSourceRowPressed,
+      ]}
+    >
+      <AppText size={16} weight="semiBold">
+        {title}
+      </AppText>
+    </Pressable>
+  );
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -837,5 +911,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     paddingHorizontal: 24,
+  },
+
+  photoSourceList: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+  },
+
+  photoSourceRow: {
+    height: 58,
+    paddingHorizontal: 4,
+    justifyContent: 'center',
+  },
+
+  photoSourceRowPressed: {
+    backgroundColor: colors.background,
+  },
+
+  photoSourceDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
   },
 });
