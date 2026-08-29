@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   type LayoutChangeEvent,
-  KeyboardAvoidingView,
   ScrollView,
   StyleSheet,
   View,
@@ -12,6 +11,7 @@ import AppText from '../../../components/common/AppText.tsx';
 import { useAuth } from '../../../features/auth/AuthProvider.tsx';
 import { colors } from '../../../styles/colors.ts';
 import { fonts } from '../../../styles/fonts.ts';
+import type { TicketDiaryOrientation } from '../../../features/ticket/types.ts';
 import { Ticket } from '../../../features/ticket/types.ts';
 import TicketLineupSection from './TicketLineupSection.tsx';
 import TicketReviewSection from './TicketReviewSection.tsx';
@@ -21,7 +21,6 @@ import {
   getDiaryPageLayout,
   getDiaryPageSize,
 } from './diary/diaryLayout.ts';
-import type { TicketDiaryOrientation } from '../../../features/ticket/types.ts';
 
 interface TicketRecordPageProps {
   ticket: Ticket;
@@ -49,10 +48,7 @@ const teamColors: Record<string, string> = {
   두산: '#1A1748',
 };
 
-function TicketRecordPage({
-  ticket,
-  orientation,
-}: TicketRecordPageProps) {
+function TicketRecordPage({ ticket, orientation }: TicketRecordPageProps) {
   const insets = useSafeAreaInsets();
   const { profile } = useAuth();
   const favoriteTeamName = profile?.favorite_team?.short_name;
@@ -67,22 +63,20 @@ function TicketRecordPage({
       : null;
   const matchResultText = matchResult ? matchResultLabels[matchResult] : null;
   const matchStatusText = isInProgress ? '경기 진행 중' : matchResultText;
-  const matchResultBadgeStyle =
-    isInProgress
-      ? styles.matchResultBadgeProgress
-      : matchResult === 'lose'
-      ? styles.matchResultBadgeLose
-      : matchResult === 'draw'
-      ? styles.matchResultBadgeDraw
-      : null;
-  const matchResultTextStyle =
-    isInProgress
-      ? styles.matchResultTextProgress
-      : matchResult === 'lose'
-      ? styles.matchResultTextLose
-      : matchResult === 'draw'
-      ? styles.matchResultTextDraw
-      : null;
+  const matchResultBadgeStyle = isInProgress
+    ? styles.matchResultBadgeProgress
+    : matchResult === 'lose'
+    ? styles.matchResultBadgeLose
+    : matchResult === 'draw'
+    ? styles.matchResultBadgeDraw
+    : null;
+  const matchResultTextStyle = isInProgress
+    ? styles.matchResultTextProgress
+    : matchResult === 'lose'
+    ? styles.matchResultTextLose
+    : matchResult === 'draw'
+    ? styles.matchResultTextDraw
+    : null;
   const [snackbarMessage, setSnackbarMessage] = useState<string | null>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const snackbarTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -116,11 +110,7 @@ function TicketRecordPage({
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior="padding"
-      onLayout={handleContainerLayout}
-    >
+    <View style={styles.container} onLayout={handleContainerLayout}>
       <ScrollView
         style={styles.content}
         contentContainerStyle={[
@@ -128,6 +118,7 @@ function TicketRecordPage({
           pageWidth > 0 && { width: pageWidth },
         ]}
         showsVerticalScrollIndicator={false}
+        automaticallyAdjustKeyboardInsets
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
       >
@@ -145,9 +136,7 @@ function TicketRecordPage({
                 : `원정 ${ticket.awayTeamName} ${awayScoreText} 대 홈 ${
                     ticket.homeTeamName
                   } ${homeScoreText}${
-                    matchStatusText
-                      ? `, ${matchStatusText}`
-                      : ''
+                    matchStatusText ? `, ${matchStatusText}` : ''
                   }`
             }
           >
@@ -244,7 +233,7 @@ function TicketRecordPage({
       {snackbarMessage ? (
         <AppSnackbar message={snackbarMessage} horizontalInset={24} />
       ) : null}
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
