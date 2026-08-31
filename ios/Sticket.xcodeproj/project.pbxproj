@@ -72,7 +72,7 @@
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
-				C10000000000000000000001 /* Sticket/Fonts */,
+				C10000000000000000000001 /* Fonts */,
 				C286E918302DAB1500647387 /* logo.icon */,
 			);
 			name = Sticket;
@@ -126,7 +126,7 @@
 			path = Pods;
 			sourceTree = "<group>";
 		};
-		C10000000000000000000001 /* Sticket/Fonts */ = {
+		C10000000000000000000001 /* Fonts */ = {
 			isa = PBXGroup;
 			children = (
 				B10000000000000000000010 /* BookkMyungjo_Bold.ttf */,
@@ -245,13 +245,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Sticket/Pods-Sticket-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Sticket/Pods-Sticket-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -288,13 +284,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Sticket/Pods-Sticket-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Sticket/Pods-Sticket-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;

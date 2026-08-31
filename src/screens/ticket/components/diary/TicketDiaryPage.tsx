@@ -23,11 +23,8 @@ import DiaryEditorUI, {
 } from './DiaryEditorUI.tsx';
 import { useDiaryStore } from './store/useDiaryStore.ts';
 import DiaryPhotoItem from './DiaryPhotoItem.tsx';
-import { type DiaryPhoto, type EditorSize } from './photoTransform.ts';
-import {
-  type DiaryPhotoSource,
-  selectDiaryPhoto,
-} from './selectDiaryPhoto.ts';
+import { type DiaryPhoto } from './photoTransform.ts';
+import { type DiaryPhotoSource, selectDiaryPhoto } from './selectDiaryPhoto.ts';
 import DiaryStickerItem, {
   createDiarySticker,
   type DiarySticker,
@@ -150,864 +147,865 @@ function createLayerPanelItems(
   return bottomToTop.reverse();
 }
 
-const TicketDiaryPage = forwardRef<
-  TicketDiaryPageHandle,
-  TicketDiaryPageProps
->(function TicketDiaryPageContent({ ticket }, ref) {
-  const { top } = useSafeAreaInsets();
-  const ticketId = ticket.id;
-  const drawingCanvasRef = useRef<DiaryDrawingCanvasRef>(null);
-  const exportCanvasRef = useRef<View>(null);
-  const exportCardRef = useRef<View>(null);
-  const {
-    isLoading,
-    hasLoadError,
-    retryLoadDiary,
-    isSavingBeforeLeave,
-    snackbarMessage,
-    hasDrawing,
-    handleDrawingChange,
-    handleFinishDrawing,
-    resetDiaryDecorations,
-  } = useTicketDiaryPersistence({ ticketId, drawingCanvasRef });
-
-  const selectedTool = useDiaryStore(state => state.selectedTool);
-
-  const setSelectedTool = useDiaryStore(state => state.setSelectedTool);
-
-  const setIsLayerPanelVisible = useDiaryStore(
-    state => state.setIsLayerPanelVisible,
-  );
-
-  const paperType = useDiaryStore(state => state.paperType);
-  const setPaperType = useDiaryStore(state => state.setPaperType);
-  const orientation = useDiaryStore(state => state.orientation);
-  const items = useDiaryStore(state => state.items);
-  const setItems = useDiaryStore(state => state.setItems);
-  const drawingIndex = useDiaryStore(state => state.drawingIndex);
-  const setDrawingIndex = useDiaryStore(state => state.setDrawingIndex);
-  const selectedItem = useDiaryStore(state => state.selectedItem);
-  const setSelectedItem = useDiaryStore(state => state.setSelectedItem);
-  const editingTextId = useDiaryStore(state => state.editingTextId);
-  const setEditingTextId = useDiaryStore(state => state.setEditingTextId);
-  const [isExportSheetVisible, setIsExportSheetVisible] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
-  const [exportPaperUri, setExportPaperUri] = useState<string | null>(null);
-  const pendingExportModeRef = useRef<DiaryExportMode | null>(null);
-  const exportCardReadyRef = useRef<{
-    resolve: () => void;
-    reject: (error: Error) => void;
-  } | null>(null);
-
-  useImperativeHandle(
-    ref,
-    () => ({
-      hasDecorations: () =>
-        !isLoading &&
-        (items.length > 0 || hasDrawing || paperType !== 'plain'),
-      openExportOptions: () => {
-        if (!isLoading && !hasLoadError && !isExporting) {
-          setIsExportSheetVisible(true);
-        }
-      },
-      resetDecorations: resetDiaryDecorations,
-    }),
-    [
-      hasDrawing,
-      hasLoadError,
-      isExporting,
+const TicketDiaryPage = forwardRef<TicketDiaryPageHandle, TicketDiaryPageProps>(
+  function TicketDiaryPageContent({ ticket }, ref) {
+    const { top } = useSafeAreaInsets();
+    const ticketId = ticket.id;
+    const drawingCanvasRef = useRef<DiaryDrawingCanvasRef>(null);
+    const exportCanvasRef = useRef<View>(null);
+    const exportCardRef = useRef<View>(null);
+    const {
       isLoading,
-      items.length,
-      paperType,
+      hasLoadError,
+      retryLoadDiary,
+      isSavingBeforeLeave,
+      snackbarMessage,
+      hasDrawing,
+      handleDrawingChange,
+      handleFinishDrawing,
       resetDiaryDecorations,
-    ],
-  );
+    } = useTicketDiaryPersistence({ ticketId, drawingCanvasRef });
 
-  const [editorWrapperSize, setEditorWrapperSize] = useState({
-    width: 0,
-    height: 0,
-  });
+    const selectedTool = useDiaryStore(state => state.selectedTool);
 
-  const [editorCanvasRegionSize, setEditorCanvasRegionSize] = useState({
-    width: 0,
-    height: 0,
-  });
-  const [isPhotoSourceSheetVisible, setIsPhotoSourceSheetVisible] =
-    useState(false);
-  const pendingPhotoSourceRef = useRef<DiaryPhotoSource | null>(null);
-  const editingPageWidthRef = useRef(0);
+    const setSelectedTool = useDiaryStore(state => state.setSelectedTool);
 
-  const pageSize = getDiaryPageSize(orientation);
-  const editorSize = getDiaryEditorSize(orientation);
-
-  const isLandscape = orientation === 'landscape';
-
-  const availableEditorHeight = Math.max(0, editorCanvasRegionSize.height);
-  const { pageWidth: measuredPageWidth } = getDiaryPageLayout(
-    editorWrapperSize,
-    availableEditorHeight,
-    pageSize,
-  );
-  const shouldKeepEditingPageSize =
-    editingTextId !== null || Keyboard.isVisible();
-  const pageWidth =
-    shouldKeepEditingPageSize && editingPageWidthRef.current > 0
-      ? editingPageWidthRef.current
-      : measuredPageWidth;
-  const editorScale = Math.max(0.01, pageWidth / editorSize.width);
-  const displayedEditorWidth = pageWidth;
-  const displayedEditorHeight = pageSize.height * (pageWidth / pageSize.width);
-  const displayScaleY = displayedEditorHeight / editorSize.height;
-  const activeEditorSize = editorSize;
-  const layerPanelEditorSize: EditorSize = pageSize;
-
-  const selectedText =
-    selectedItem?.type === 'text'
-      ? items.find(
-          item => item.type === 'text' && item.data.id === selectedItem.id,
-        )
-      : null;
-
-  const layerPanelItems = createLayerPanelItems(
-    items,
-    drawingIndex,
-    hasDrawing,
-  );
-  const selectedLayerId =
-    selectedTool === 'drawing'
-      ? DRAWING_LAYER_ID
-      : selectedItem
-      ? `${selectedItem.type}:${selectedItem.id}`
-      : null;
-
-  const handleEditorWrapperLayout = ({ nativeEvent }: LayoutChangeEvent) => {
-    const { width, height } = nativeEvent.layout;
-
-    setEditorWrapperSize({
-      width,
-      height,
-    });
-  };
-
-  const handleEditorCanvasRegionLayout = ({
-    nativeEvent,
-  }: LayoutChangeEvent) => {
-    const { width, height } = nativeEvent.layout;
-
-    setEditorCanvasRegionSize({
-      width,
-      height,
-    });
-  };
-
-  const handlePaperSelect = (next: PaperType) => {
-    setPaperType(next);
-    setSelectedTool(null);
-  };
-
-  const removeDiaryItem = (itemType: DiaryItem['type'], itemId: string) => {
-    const removedItemIndex = items.findIndex(
-      item => item.type === itemType && item.data.id === itemId,
+    const setIsLayerPanelVisible = useDiaryStore(
+      state => state.setIsLayerPanelVisible,
     );
 
-    if (removedItemIndex === -1) {
-      return;
-    }
+    const paperType = useDiaryStore(state => state.paperType);
+    const setPaperType = useDiaryStore(state => state.setPaperType);
+    const orientation = useDiaryStore(state => state.orientation);
+    const items = useDiaryStore(state => state.items);
+    const setItems = useDiaryStore(state => state.setItems);
+    const drawingIndex = useDiaryStore(state => state.drawingIndex);
+    const setDrawingIndex = useDiaryStore(state => state.setDrawingIndex);
+    const selectedItem = useDiaryStore(state => state.selectedItem);
+    const setSelectedItem = useDiaryStore(state => state.setSelectedItem);
+    const editingTextId = useDiaryStore(state => state.editingTextId);
+    const setEditingTextId = useDiaryStore(state => state.setEditingTextId);
+    const [isExportSheetVisible, setIsExportSheetVisible] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
+    const [exportPaperUri, setExportPaperUri] = useState<string | null>(null);
+    const pendingExportModeRef = useRef<DiaryExportMode | null>(null);
+    const exportCardReadyRef = useRef<{
+      resolve: () => void;
+      reject: (error: Error) => void;
+    } | null>(null);
 
-    setItems(currentItems =>
-      currentItems.filter(
-        item => item.type !== itemType || item.data.id !== itemId,
-      ),
+    useImperativeHandle(
+      ref,
+      () => ({
+        hasDecorations: () =>
+          !isLoading &&
+          (items.length > 0 || hasDrawing || paperType !== 'plain'),
+        openExportOptions: () => {
+          if (!isLoading && !hasLoadError && !isExporting) {
+            setIsExportSheetVisible(true);
+          }
+        },
+        resetDecorations: resetDiaryDecorations,
+      }),
+      [
+        hasDrawing,
+        hasLoadError,
+        isExporting,
+        isLoading,
+        items.length,
+        paperType,
+        resetDiaryDecorations,
+      ],
     );
 
-    if (removedItemIndex < drawingIndex) {
-      setDrawingIndex(currentIndex => Math.max(0, currentIndex - 1));
-    }
-  };
-
-  const finishCurrentTextEditing = () => {
-    const currentEditingTextId = editingTextId;
-
-    if (currentEditingTextId === null) {
-      return;
-    }
-
-    Keyboard.dismiss();
-    setEditingTextId(null);
-
-    const editingText = items.find(
-      item => item.type === 'text' && item.data.id === currentEditingTextId,
-    );
-
-    if (
-      editingText?.type === 'text' &&
-      editingText.data.text.trim().length === 0
-    ) {
-      removeDiaryItem('text', currentEditingTextId);
-    }
-  };
-
-  const handleChangePhoto = (changedPhoto: DiaryPhoto) => {
-    setItems(currentItems =>
-      currentItems.map(item =>
-        item.type === 'photo' && item.data.id === changedPhoto.id
-          ? {
-              type: 'photo',
-              data: changedPhoto,
-            }
-          : item,
-      ),
-    );
-  };
-
-  const handleSelectPhoto = (photoId: string) => {
-    finishCurrentTextEditing();
-
-    setSelectedItem({
-      type: 'photo',
-      id: photoId,
-    });
-  };
-
-  const handleDeletePhoto = (photoId: string) => {
-    removeDiaryItem('photo', photoId);
-
-    setSelectedItem(currentItem =>
-      currentItem?.type === 'photo' && currentItem.id === photoId
-        ? null
-        : currentItem,
-    );
-  };
-
-  const handleChangeSticker = (changedSticker: DiarySticker) => {
-    setItems(currentItems =>
-      currentItems.map(item =>
-        item.type === 'sticker' && item.data.id === changedSticker.id
-          ? {
-              type: 'sticker',
-              data: changedSticker,
-            }
-          : item,
-      ),
-    );
-  };
-
-  const handleSelectSticker = (stickerId: string) => {
-    finishCurrentTextEditing();
-
-    setSelectedItem({
-      type: 'sticker',
-      id: stickerId,
-    });
-  };
-
-  const handleDeleteSticker = (stickerId: string) => {
-    removeDiaryItem('sticker', stickerId);
-
-    setSelectedItem(currentItem =>
-      currentItem?.type === 'sticker' && currentItem.id === stickerId
-        ? null
-        : currentItem,
-    );
-  };
-
-  const handleAddText = () => {
-    finishCurrentTextEditing();
-    editingPageWidthRef.current = pageWidth;
-
-    const newText = createDiaryText(activeEditorSize);
-
-    if (newText === null) {
-      Alert.alert(
-        '텍스트를 추가할 수 없습니다',
-        '다이어리 화면을 다시 열어주세요.',
-      );
-
-      return;
-    }
-
-    setItems(currentItems => [
-      ...currentItems,
-      {
-        type: 'text',
-        data: newText,
-      },
-    ]);
-
-    setSelectedItem({
-      type: 'text',
-      id: newText.id,
+    const [editorWrapperSize, setEditorWrapperSize] = useState({
+      width: 0,
+      height: 0,
     });
 
-    setEditingTextId(newText.id);
-    setSelectedTool(null);
-  };
-
-  const handleSelectText = (textId: string) => {
-    finishCurrentTextEditing();
-
-    setSelectedItem({
-      type: 'text',
-      id: textId,
+    const [editorCanvasRegionSize, setEditorCanvasRegionSize] = useState({
+      width: 0,
+      height: 0,
     });
-  };
+    const [isPhotoSourceSheetVisible, setIsPhotoSourceSheetVisible] =
+      useState(false);
+    const pendingPhotoSourceRef = useRef<DiaryPhotoSource | null>(null);
+    const editingPageWidthRef = useRef(0);
 
-  const handleStartTextEditing = (textId: string) => {
-    editingPageWidthRef.current = pageWidth;
+    const pageSize = getDiaryPageSize(orientation);
+    const editorSize = getDiaryEditorSize(orientation);
 
-    setSelectedItem({
-      type: 'text',
-      id: textId,
-    });
+    const isLandscape = orientation === 'landscape';
 
-    setEditingTextId(textId);
-  };
-
-  const handleChangeTextContent = (textId: string, value: string) => {
-    setItems(currentItems =>
-      currentItems.map(item =>
-        item.type === 'text' && item.data.id === textId
-          ? {
-              type: 'text',
-              data: {
-                ...item.data,
-
-                text: value,
-              },
-            }
-          : item,
-      ),
+    const availableEditorHeight = Math.max(0, editorCanvasRegionSize.height);
+    const { pageWidth: measuredPageWidth } = getDiaryPageLayout(
+      editorWrapperSize,
+      availableEditorHeight,
+      pageSize,
     );
-  };
+    const shouldKeepEditingPageSize =
+      editingTextId !== null || Keyboard.isVisible();
+    const pageWidth =
+      shouldKeepEditingPageSize && editingPageWidthRef.current > 0
+        ? editingPageWidthRef.current
+        : measuredPageWidth;
+    const editorScale = Math.max(0.01, pageWidth / editorSize.width);
+    const displayedEditorWidth = pageWidth;
+    const displayedEditorHeight =
+      pageSize.height * (pageWidth / pageSize.width);
+    const displayScaleY = displayedEditorHeight / editorSize.height;
+    const activeEditorSize = editorSize;
 
-  const handleChangeTextFrame = (textId: string, frame: DiaryTextFrame) => {
-    setItems(currentItems =>
-      currentItems.map(item =>
-        item.type === 'text' && item.data.id === textId
-          ? {
-              type: 'text',
-              data: {
-                ...item.data,
+    const selectedText =
+      selectedItem?.type === 'text'
+        ? items.find(
+            item => item.type === 'text' && item.data.id === selectedItem.id,
+          )
+        : null;
 
-                ...frame,
-              },
-            }
-          : item,
-      ),
+    const layerPanelItems = createLayerPanelItems(
+      items,
+      drawingIndex,
+      hasDrawing,
     );
-  };
+    const selectedLayerId =
+      selectedTool === 'drawing'
+        ? DRAWING_LAYER_ID
+        : selectedItem
+        ? `${selectedItem.type}:${selectedItem.id}`
+        : null;
 
-  const handleChangeTextHeight = (textId: string, height: number) => {
-    setItems(currentItems =>
-      currentItems.map(item =>
-        item.type === 'text' && item.data.id === textId
-          ? {
-              type: 'text',
-              data: {
-                ...item.data,
+    const handleEditorWrapperLayout = ({ nativeEvent }: LayoutChangeEvent) => {
+      const { width, height } = nativeEvent.layout;
 
-                height,
-              },
-            }
-          : item,
-      ),
-    );
-  };
-
-  const handleFinishTextEditing = (textId: string) => {
-    setEditingTextId(currentId => (currentId === textId ? null : currentId));
-  };
-
-  const handleDeleteText = (textId: string) => {
-    removeDiaryItem('text', textId);
-
-    setSelectedItem(currentItem =>
-      currentItem?.type === 'text' && currentItem.id === textId
-        ? null
-        : currentItem,
-    );
-
-    setEditingTextId(currentId => (currentId === textId ? null : currentId));
-
-    Keyboard.dismiss();
-  };
-
-  const handleChangeSelectedTextStyle = (patch: Partial<DiaryTextStyle>) => {
-    if (selectedItem?.type !== 'text') {
-      return;
-    }
-
-    const selectedTextId = selectedItem.id;
-
-    setItems(currentItems =>
-      currentItems.map(item =>
-        item.type === 'text' && item.data.id === selectedTextId
-          ? {
-              type: 'text',
-              data: {
-                ...item.data,
-                style: {
-                  ...item.data.style,
-
-                  ...patch,
-                },
-              },
-            }
-          : item,
-      ),
-    );
-  };
-
-  const handleAddSticker = (stickerDefinition: DiaryStickerDefinition) => {
-    finishCurrentTextEditing();
-
-    const newSticker = createDiarySticker(stickerDefinition, activeEditorSize);
-
-    if (newSticker === null) {
-      return;
-    }
-
-    setItems(currentItems => [
-      ...currentItems,
-      {
-        type: 'sticker',
-        data: newSticker,
-      },
-    ]);
-    setSelectedItem({
-      type: 'sticker',
-      id: newSticker.id,
-    });
-    setSelectedTool(null);
-  };
-
-  const handleDeselectDiaryItem = () => {
-    finishCurrentTextEditing();
-
-    setSelectedItem(null);
-
-    if (selectedTool === 'sticker') {
-      setSelectedTool(null);
-    }
-  };
-
-  const handleAddPhoto = async (source: DiaryPhotoSource) => {
-    const selectedPhoto = await selectDiaryPhoto(activeEditorSize, source);
-
-    if (selectedPhoto === null) {
-      return;
-    }
-
-    setItems(currentItems => [
-      ...currentItems,
-      {
-        type: 'photo',
-        data: selectedPhoto,
-      },
-    ]);
-
-    setSelectedItem({
-      type: 'photo',
-      id: selectedPhoto.id,
-    });
-  };
-
-  const handlePressSelectPhoto = () => {
-    finishCurrentTextEditing();
-
-    const photoCount = items.filter(item => item.type === 'photo').length;
-
-    if (photoCount >= MAXIMUM_DIARY_PHOTO_COUNT) {
-      setSelectedTool(null);
-      Alert.alert(
-        '사진을 추가할 수 없습니다',
-        '사진은 최대 2장까지 추가할 수 있습니다.',
-      );
-
-      return;
-    }
-
-    setIsPhotoSourceSheetVisible(true);
-  };
-
-  const requestDiaryPhoto = (source: DiaryPhotoSource) => {
-    pendingPhotoSourceRef.current = source;
-    setIsPhotoSourceSheetVisible(false);
-  };
-
-  const handlePhotoSourceSheetClosed = () => {
-    const source = pendingPhotoSourceRef.current;
-    pendingPhotoSourceRef.current = null;
-    setSelectedTool(null);
-
-    if (source) {
-      handleAddPhoto(source);
-    }
-  };
-
-  const prepareExportComposition = (paperUri: string) =>
-    new Promise<void>((resolve, reject) => {
-      exportCardReadyRef.current = { resolve, reject };
-      setExportPaperUri(paperUri);
-    });
-
-  const handleExportCardImageLoad = () => {
-    const pending = exportCardReadyRef.current;
-    exportCardReadyRef.current = null;
-
-    if (pending) {
-      waitForViewUpdate().then(pending.resolve);
-    }
-  };
-
-  const handleExportCardImageError = () => {
-    const pending = exportCardReadyRef.current;
-    exportCardReadyRef.current = null;
-    pending?.reject(new Error('다이어리 이미지를 합성할 수 없습니다.'));
-  };
-
-  const handleExportDiary = async (mode: DiaryExportMode) => {
-    if (isExporting) {
-      return;
-    }
-
-    setIsExporting(true);
-    finishCurrentTextEditing();
-    setSelectedItem(null);
-    setSelectedTool(null);
-    setIsLayerPanelVisible(false);
-
-    try {
-      await waitForViewUpdate();
-
-      await exportDiaryImage({
-        mode,
-        paperRef: exportCanvasRef,
-        compositionRef: exportCardRef,
-        prepareComposition: prepareExportComposition,
+      setEditorWrapperSize({
+        width,
+        height,
       });
-    } catch (error) {
-      console.error('다이어리를 내보내지 못했습니다.', error);
-      Alert.alert(
-        '다이어리를 내보내지 못했어요',
-        '잠시 후 다시 시도해 주세요.',
+    };
+
+    const handleEditorCanvasRegionLayout = ({
+      nativeEvent,
+    }: LayoutChangeEvent) => {
+      const { width, height } = nativeEvent.layout;
+
+      setEditorCanvasRegionSize({
+        width,
+        height,
+      });
+    };
+
+    const handlePaperSelect = (next: PaperType) => {
+      setPaperType(next);
+      setSelectedTool(null);
+    };
+
+    const removeDiaryItem = (itemType: DiaryItem['type'], itemId: string) => {
+      const removedItemIndex = items.findIndex(
+        item => item.type === itemType && item.data.id === itemId,
       );
-    } finally {
+
+      if (removedItemIndex === -1) {
+        return;
+      }
+
+      setItems(currentItems =>
+        currentItems.filter(
+          item => item.type !== itemType || item.data.id !== itemId,
+        ),
+      );
+
+      if (removedItemIndex < drawingIndex) {
+        setDrawingIndex(currentIndex => Math.max(0, currentIndex - 1));
+      }
+    };
+
+    const finishCurrentTextEditing = () => {
+      const currentEditingTextId = editingTextId;
+
+      if (currentEditingTextId === null) {
+        return;
+      }
+
+      Keyboard.dismiss();
+      setEditingTextId(null);
+
+      const editingText = items.find(
+        item => item.type === 'text' && item.data.id === currentEditingTextId,
+      );
+
+      if (
+        editingText?.type === 'text' &&
+        editingText.data.text.trim().length === 0
+      ) {
+        removeDiaryItem('text', currentEditingTextId);
+      }
+    };
+
+    const handleChangePhoto = (changedPhoto: DiaryPhoto) => {
+      setItems(currentItems =>
+        currentItems.map(item =>
+          item.type === 'photo' && item.data.id === changedPhoto.id
+            ? {
+                type: 'photo',
+                data: changedPhoto,
+              }
+            : item,
+        ),
+      );
+    };
+
+    const handleSelectPhoto = (photoId: string) => {
+      finishCurrentTextEditing();
+
+      setSelectedItem({
+        type: 'photo',
+        id: photoId,
+      });
+    };
+
+    const handleDeletePhoto = (photoId: string) => {
+      removeDiaryItem('photo', photoId);
+
+      setSelectedItem(currentItem =>
+        currentItem?.type === 'photo' && currentItem.id === photoId
+          ? null
+          : currentItem,
+      );
+    };
+
+    const handleChangeSticker = (changedSticker: DiarySticker) => {
+      setItems(currentItems =>
+        currentItems.map(item =>
+          item.type === 'sticker' && item.data.id === changedSticker.id
+            ? {
+                type: 'sticker',
+                data: changedSticker,
+              }
+            : item,
+        ),
+      );
+    };
+
+    const handleSelectSticker = (stickerId: string) => {
+      finishCurrentTextEditing();
+
+      setSelectedItem({
+        type: 'sticker',
+        id: stickerId,
+      });
+    };
+
+    const handleDeleteSticker = (stickerId: string) => {
+      removeDiaryItem('sticker', stickerId);
+
+      setSelectedItem(currentItem =>
+        currentItem?.type === 'sticker' && currentItem.id === stickerId
+          ? null
+          : currentItem,
+      );
+    };
+
+    const handleAddText = () => {
+      finishCurrentTextEditing();
+      editingPageWidthRef.current = pageWidth;
+
+      const newText = createDiaryText(activeEditorSize);
+
+      if (newText === null) {
+        Alert.alert(
+          '텍스트를 추가할 수 없습니다',
+          '다이어리 화면을 다시 열어주세요.',
+        );
+
+        return;
+      }
+
+      setItems(currentItems => [
+        ...currentItems,
+        {
+          type: 'text',
+          data: newText,
+        },
+      ]);
+
+      setSelectedItem({
+        type: 'text',
+        id: newText.id,
+      });
+
+      setEditingTextId(newText.id);
+      setSelectedTool(null);
+    };
+
+    const handleSelectText = (textId: string) => {
+      finishCurrentTextEditing();
+
+      setSelectedItem({
+        type: 'text',
+        id: textId,
+      });
+    };
+
+    const handleStartTextEditing = (textId: string) => {
+      editingPageWidthRef.current = pageWidth;
+
+      setSelectedItem({
+        type: 'text',
+        id: textId,
+      });
+
+      setEditingTextId(textId);
+    };
+
+    const handleChangeTextContent = (textId: string, value: string) => {
+      setItems(currentItems =>
+        currentItems.map(item =>
+          item.type === 'text' && item.data.id === textId
+            ? {
+                type: 'text',
+                data: {
+                  ...item.data,
+
+                  text: value,
+                },
+              }
+            : item,
+        ),
+      );
+    };
+
+    const handleChangeTextFrame = (textId: string, frame: DiaryTextFrame) => {
+      setItems(currentItems =>
+        currentItems.map(item =>
+          item.type === 'text' && item.data.id === textId
+            ? {
+                type: 'text',
+                data: {
+                  ...item.data,
+
+                  ...frame,
+                },
+              }
+            : item,
+        ),
+      );
+    };
+
+    const handleChangeTextHeight = (textId: string, height: number) => {
+      setItems(currentItems =>
+        currentItems.map(item =>
+          item.type === 'text' && item.data.id === textId
+            ? {
+                type: 'text',
+                data: {
+                  ...item.data,
+
+                  height,
+                },
+              }
+            : item,
+        ),
+      );
+    };
+
+    const handleFinishTextEditing = (textId: string) => {
+      setEditingTextId(currentId => (currentId === textId ? null : currentId));
+    };
+
+    const handleDeleteText = (textId: string) => {
+      removeDiaryItem('text', textId);
+
+      setSelectedItem(currentItem =>
+        currentItem?.type === 'text' && currentItem.id === textId
+          ? null
+          : currentItem,
+      );
+
+      setEditingTextId(currentId => (currentId === textId ? null : currentId));
+
+      Keyboard.dismiss();
+    };
+
+    const handleChangeSelectedTextStyle = (patch: Partial<DiaryTextStyle>) => {
+      if (selectedItem?.type !== 'text') {
+        return;
+      }
+
+      const selectedTextId = selectedItem.id;
+
+      setItems(currentItems =>
+        currentItems.map(item =>
+          item.type === 'text' && item.data.id === selectedTextId
+            ? {
+                type: 'text',
+                data: {
+                  ...item.data,
+                  style: {
+                    ...item.data.style,
+
+                    ...patch,
+                  },
+                },
+              }
+            : item,
+        ),
+      );
+    };
+
+    const handleAddSticker = (stickerDefinition: DiaryStickerDefinition) => {
+      finishCurrentTextEditing();
+
+      const newSticker = createDiarySticker(
+        stickerDefinition,
+        activeEditorSize,
+      );
+
+      if (newSticker === null) {
+        return;
+      }
+
+      setItems(currentItems => [
+        ...currentItems,
+        {
+          type: 'sticker',
+          data: newSticker,
+        },
+      ]);
+      setSelectedItem({
+        type: 'sticker',
+        id: newSticker.id,
+      });
+      setSelectedTool(null);
+    };
+
+    const handleDeselectDiaryItem = () => {
+      finishCurrentTextEditing();
+
+      setSelectedItem(null);
+
+      if (selectedTool === 'sticker') {
+        setSelectedTool(null);
+      }
+    };
+
+    const handleAddPhoto = async (source: DiaryPhotoSource) => {
+      const selectedPhoto = await selectDiaryPhoto(activeEditorSize, source);
+
+      if (selectedPhoto === null) {
+        return;
+      }
+
+      setItems(currentItems => [
+        ...currentItems,
+        {
+          type: 'photo',
+          data: selectedPhoto,
+        },
+      ]);
+
+      setSelectedItem({
+        type: 'photo',
+        id: selectedPhoto.id,
+      });
+    };
+
+    const handlePressSelectPhoto = () => {
+      finishCurrentTextEditing();
+
+      const photoCount = items.filter(item => item.type === 'photo').length;
+
+      if (photoCount >= MAXIMUM_DIARY_PHOTO_COUNT) {
+        setSelectedTool(null);
+        Alert.alert(
+          '사진을 추가할 수 없습니다',
+          '사진은 최대 2장까지 추가할 수 있습니다.',
+        );
+
+        return;
+      }
+
+      setIsPhotoSourceSheetVisible(true);
+    };
+
+    const requestDiaryPhoto = (source: DiaryPhotoSource) => {
+      pendingPhotoSourceRef.current = source;
+      setIsPhotoSourceSheetVisible(false);
+    };
+
+    const handlePhotoSourceSheetClosed = () => {
+      const source = pendingPhotoSourceRef.current;
+      pendingPhotoSourceRef.current = null;
+      setSelectedTool(null);
+
+      if (source) {
+        handleAddPhoto(source);
+      }
+    };
+
+    const prepareExportComposition = (paperUri: string) =>
+      new Promise<void>((resolve, reject) => {
+        exportCardReadyRef.current = { resolve, reject };
+        setExportPaperUri(paperUri);
+      });
+
+    const handleExportCardImageLoad = () => {
+      const pending = exportCardReadyRef.current;
       exportCardReadyRef.current = null;
-      setExportPaperUri(null);
-      setIsExporting(false);
-    }
-  };
 
-  const requestDiaryExport = (mode: DiaryExportMode) => {
-    pendingExportModeRef.current = mode;
-    setIsExportSheetVisible(false);
-  };
+      if (pending) {
+        waitForViewUpdate().then(pending.resolve);
+      }
+    };
 
-  const handleExportSheetClosed = () => {
-    const mode = pendingExportModeRef.current;
-    pendingExportModeRef.current = null;
+    const handleExportCardImageError = () => {
+      const pending = exportCardReadyRef.current;
+      exportCardReadyRef.current = null;
+      pending?.reject(new Error('다이어리 이미지를 합성할 수 없습니다.'));
+    };
 
-    if (mode) {
-      handleExportDiary(mode);
-    }
-  };
+    const handleExportDiary = async (mode: DiaryExportMode) => {
+      if (isExporting) {
+        return;
+      }
 
-  const handlePressTool = (toolId: DiaryToolId) => {
-    if (toolId === 'layers') {
-      finishCurrentTextEditing();
-      setSelectedTool(null);
-      setIsLayerPanelVisible(currentValue => !currentValue);
-      return;
-    }
-
-    setIsLayerPanelVisible(false);
-    setSelectedTool(toolId);
-
-    if (toolId === 'drawing') {
-      finishCurrentTextEditing();
-      setSelectedItem(null);
-    }
-
-    if (toolId === 'photo') {
-      handlePressSelectPhoto();
-    }
-
-    if (toolId === 'text') {
-      handleAddText();
-    }
-  };
-
-  const handleSelectLayer = (layerId: string) => {
-    if (layerId === DRAWING_LAYER_ID) {
+      setIsExporting(true);
       finishCurrentTextEditing();
       setSelectedItem(null);
       setSelectedTool(null);
-      return;
-    }
+      setIsLayerPanelVisible(false);
 
-    const selectedLayerItem = items.find(
-      item => getDiaryItemLayerId(item) === layerId,
-    );
+      try {
+        await waitForViewUpdate();
 
-    if (!selectedLayerItem) {
-      return;
-    }
+        await exportDiaryImage({
+          mode,
+          paperRef: exportCanvasRef,
+          compositionRef: exportCardRef,
+          prepareComposition: prepareExportComposition,
+        });
+      } catch (error) {
+        console.error('다이어리를 내보내지 못했습니다.', error);
+        Alert.alert(
+          '다이어리를 내보내지 못했어요',
+          '잠시 후 다시 시도해 주세요.',
+        );
+      } finally {
+        exportCardReadyRef.current = null;
+        setExportPaperUri(null);
+        setIsExporting(false);
+      }
+    };
 
-    setSelectedTool(null);
+    const requestDiaryExport = (mode: DiaryExportMode) => {
+      pendingExportModeRef.current = mode;
+      setIsExportSheetVisible(false);
+    };
 
-    if (selectedLayerItem.type === 'photo') {
-      handleSelectPhoto(selectedLayerItem.data.id);
-    } else if (selectedLayerItem.type === 'sticker') {
-      handleSelectSticker(selectedLayerItem.data.id);
-    } else {
-      handleSelectText(selectedLayerItem.data.id);
-    }
-  };
+    const handleExportSheetClosed = () => {
+      const mode = pendingExportModeRef.current;
+      pendingExportModeRef.current = null;
 
-  const handleMoveLayer = (layerId: string, targetIndex: number) => {
-    const topToBottom = [...layerPanelItems];
-    const sourceIndex = topToBottom.findIndex(item => item.id === layerId);
+      if (mode) {
+        handleExportDiary(mode);
+      }
+    };
 
-    if (sourceIndex === -1 || sourceIndex === targetIndex) {
-      return;
-    }
+    const handlePressTool = (toolId: DiaryToolId) => {
+      if (toolId === 'layers') {
+        finishCurrentTextEditing();
+        setSelectedTool(null);
+        setIsLayerPanelVisible(currentValue => !currentValue);
+        return;
+      }
 
-    const [movedLayer] = topToBottom.splice(sourceIndex, 1);
-    topToBottom.splice(targetIndex, 0, movedLayer);
+      setIsLayerPanelVisible(false);
+      setSelectedTool(toolId);
 
-    const itemByLayerId = new Map(
-      items.map(item => [getDiaryItemLayerId(item), item]),
-    );
-    const bottomToTop = topToBottom.reverse();
-    const nextItems = bottomToTop.flatMap(layer => {
-      const item = itemByLayerId.get(layer.id);
-      return item ? [item] : [];
-    });
+      if (toolId === 'drawing') {
+        finishCurrentTextEditing();
+        setSelectedItem(null);
+      }
 
-    const nextDrawingIndex = bottomToTop.findIndex(
-      layer => layer.id === DRAWING_LAYER_ID,
-    );
+      if (toolId === 'photo') {
+        handlePressSelectPhoto();
+      }
 
-    setItems(nextItems);
+      if (toolId === 'text') {
+        handleAddText();
+      }
+    };
 
-    if (nextDrawingIndex !== -1) {
-      setDrawingIndex(nextDrawingIndex);
-    }
-  };
+    const handleSelectLayer = (layerId: string) => {
+      if (layerId === DRAWING_LAYER_ID) {
+        finishCurrentTextEditing();
+        setSelectedItem(null);
+        setSelectedTool(null);
+        return;
+      }
 
-  const renderDiaryItem = (item: DiaryItem) => {
-    if (item.type === 'photo') {
-      const photo = item.data;
+      const selectedLayerItem = items.find(
+        item => getDiaryItemLayerId(item) === layerId,
+      );
+
+      if (!selectedLayerItem) {
+        return;
+      }
+
+      setSelectedTool(null);
+
+      if (selectedLayerItem.type === 'photo') {
+        handleSelectPhoto(selectedLayerItem.data.id);
+      } else if (selectedLayerItem.type === 'sticker') {
+        handleSelectSticker(selectedLayerItem.data.id);
+      } else {
+        handleSelectText(selectedLayerItem.data.id);
+      }
+    };
+
+    const handleMoveLayer = (layerId: string, targetIndex: number) => {
+      const topToBottom = [...layerPanelItems];
+      const sourceIndex = topToBottom.findIndex(item => item.id === layerId);
+
+      if (sourceIndex === -1 || sourceIndex === targetIndex) {
+        return;
+      }
+
+      const [movedLayer] = topToBottom.splice(sourceIndex, 1);
+      topToBottom.splice(targetIndex, 0, movedLayer);
+
+      const itemByLayerId = new Map(
+        items.map(item => [getDiaryItemLayerId(item), item]),
+      );
+      const bottomToTop = topToBottom.reverse();
+      const nextItems = bottomToTop.flatMap(layer => {
+        const item = itemByLayerId.get(layer.id);
+        return item ? [item] : [];
+      });
+
+      const nextDrawingIndex = bottomToTop.findIndex(
+        layer => layer.id === DRAWING_LAYER_ID,
+      );
+
+      setItems(nextItems);
+
+      if (nextDrawingIndex !== -1) {
+        setDrawingIndex(nextDrawingIndex);
+      }
+    };
+
+    const renderDiaryItem = (item: DiaryItem) => {
+      if (item.type === 'photo') {
+        const photo = item.data;
+
+        return (
+          <DiaryPhotoItem
+            key={`photo-${photo.id}`}
+            photo={photo}
+            editorSize={activeEditorSize}
+            editorScale={editorScale}
+            displayScaleY={displayScaleY}
+            isSelected={
+              selectedItem?.type === 'photo' && selectedItem.id === photo.id
+            }
+            onSelect={() => handleSelectPhoto(photo.id)}
+            onChange={handleChangePhoto}
+            onDelete={() => handleDeletePhoto(photo.id)}
+          />
+        );
+      }
+
+      if (item.type === 'sticker') {
+        const sticker = item.data;
+
+        return (
+          <DiaryStickerItem
+            key={`sticker-${sticker.id}`}
+            sticker={sticker}
+            editorSize={activeEditorSize}
+            editorScale={editorScale}
+            displayScaleY={displayScaleY}
+            isSelected={
+              selectedItem?.type === 'sticker' && selectedItem.id === sticker.id
+            }
+            onSelect={() => handleSelectSticker(sticker.id)}
+            onChange={handleChangeSticker}
+            onDelete={() => handleDeleteSticker(sticker.id)}
+          />
+        );
+      }
+
+      const textItem = item.data;
 
       return (
-        <DiaryPhotoItem
-          key={`photo-${photo.id}`}
-          photo={photo}
+        <DiaryTextItem
+          key={`text-${textItem.id}`}
+          textItem={textItem}
           editorSize={activeEditorSize}
-          editorScale={editorScale}
+          displayScale={editorScale}
           displayScaleY={displayScaleY}
           isSelected={
-            selectedItem?.type === 'photo' && selectedItem.id === photo.id
+            selectedItem?.type === 'text' && selectedItem.id === textItem.id
           }
-          onSelect={() => handleSelectPhoto(photo.id)}
-          onChange={handleChangePhoto}
-          onDelete={() => handleDeletePhoto(photo.id)}
+          isEditing={editingTextId === textItem.id}
+          onSelect={() => handleSelectText(textItem.id)}
+          onStartEditing={() => handleStartTextEditing(textItem.id)}
+          onChangeText={value => handleChangeTextContent(textItem.id, value)}
+          onChangeFrame={frame => handleChangeTextFrame(textItem.id, frame)}
+          onChangeHeight={height => handleChangeTextHeight(textItem.id, height)}
+          onFinishEditing={() => handleFinishTextEditing(textItem.id)}
+          onDelete={() => handleDeleteText(textItem.id)}
         />
+      );
+    };
+
+    if (hasLoadError) {
+      return (
+        <SafeAreaView
+          style={[styles.container, styles.loadErrorContainer]}
+          edges={['bottom']}
+        >
+          <AppText
+            size={17}
+            weight="semiBold"
+            align="center"
+            accessibilityRole="alert"
+          >
+            다이어리를 불러오지 못했어요
+          </AppText>
+          <AppText
+            size={14}
+            color={colors.textSecondary}
+            align="center"
+            lineHeight={20}
+          >
+            네트워크 상태를 확인하고 다시 시도해 주세요.
+          </AppText>
+          <InlineActionButton
+            label="다시 시도"
+            tone="primary"
+            onPress={retryLoadDiary}
+          />
+        </SafeAreaView>
       );
     }
 
-    if (item.type === 'sticker') {
-      const sticker = item.data;
-
-      return (
-        <DiaryStickerItem
-          key={`sticker-${sticker.id}`}
-          sticker={sticker}
-          editorSize={activeEditorSize}
-          editorScale={editorScale}
-          displayScaleY={displayScaleY}
-          isSelected={
-            selectedItem?.type === 'sticker' && selectedItem.id === sticker.id
-          }
-          onSelect={() => handleSelectSticker(sticker.id)}
-          onChange={handleChangeSticker}
-          onDelete={() => handleDeleteSticker(sticker.id)}
-        />
-      );
-    }
-
-    const textItem = item.data;
-
-    return (
-      <DiaryTextItem
-        key={`text-${textItem.id}`}
-        textItem={textItem}
-        editorSize={activeEditorSize}
-        displayScale={editorScale}
-        displayScaleY={displayScaleY}
-        isSelected={
-          selectedItem?.type === 'text' && selectedItem.id === textItem.id
-        }
-        isEditing={editingTextId === textItem.id}
-        onSelect={() => handleSelectText(textItem.id)}
-        onStartEditing={() => handleStartTextEditing(textItem.id)}
-        onChangeText={value => handleChangeTextContent(textItem.id, value)}
-        onChangeFrame={frame => handleChangeTextFrame(textItem.id, frame)}
-        onChangeHeight={height => handleChangeTextHeight(textItem.id, height)}
-        onFinishEditing={() => handleFinishTextEditing(textItem.id)}
-        onDelete={() => handleDeleteText(textItem.id)}
-      />
-    );
-  };
-
-  if (hasLoadError) {
     return (
       <SafeAreaView
-        style={[styles.container, styles.loadErrorContainer]}
-        edges={['bottom']}
+        style={styles.container}
+        edges={selectedTool === 'sticker' ? [] : ['bottom']}
       >
-        <AppText
-          size={17}
-          weight="semiBold"
-          align="center"
-          accessibilityRole="alert"
+        <KeyboardAvoidingView
+          behavior="padding"
+          keyboardVerticalOffset={
+            top + DETAIL_HEADER_HEIGHT + DETAIL_TAB_HEIGHT
+          }
+          style={styles.keyboardAvoidingContainer}
         >
-          다이어리를 불러오지 못했어요
-        </AppText>
-        <AppText
-          size={14}
-          color={colors.textSecondary}
-          align="center"
-          lineHeight={20}
+          <DiaryCanvasArea
+            displayedEditorWidth={displayedEditorWidth}
+            displayedEditorHeight={displayedEditorHeight}
+            editorSize={editorSize}
+            pageSize={pageSize}
+            editorScale={editorScale}
+            displayScaleY={displayScaleY}
+            isLandscape={isLandscape}
+            isTextEditing={editingTextId !== null}
+            layerPanelItems={layerPanelItems}
+            selectedLayerId={selectedLayerId}
+            drawingCanvasRef={drawingCanvasRef}
+            exportCanvasRef={exportCanvasRef}
+            onEditorWrapperLayout={handleEditorWrapperLayout}
+            onEditorCanvasRegionLayout={handleEditorCanvasRegionLayout}
+            onDeselectDiaryItem={handleDeselectDiaryItem}
+            onDrawingChange={handleDrawingChange}
+            onFinishDrawing={handleFinishDrawing}
+            onSelectLayer={handleSelectLayer}
+            onMoveLayer={handleMoveLayer}
+            onCloseLayerPanel={() => setIsLayerPanelVisible(false)}
+            renderDiaryItem={renderDiaryItem}
+          >
+            <DiaryEditorOverlayUI
+              onAddSticker={handleAddSticker}
+              onCloseStickerPicker={() => setSelectedTool(null)}
+              onSelectPaper={handlePaperSelect}
+            />
+          </DiaryCanvasArea>
+
+          <DiaryEditorUI
+            selectedTextItem={selectedText}
+            onChangeTextStyle={handleChangeSelectedTextStyle}
+            onPressTool={handlePressTool}
+          />
+        </KeyboardAvoidingView>
+
+        <AppBottomSheet
+          visible={isPhotoSourceSheetVisible}
+          title="사진 추가"
+          description="다이어리에 추가할 사진을 선택해 주세요"
+          onClose={() => setIsPhotoSourceSheetVisible(false)}
+          onClosed={handlePhotoSourceSheetClosed}
+          closeAccessibilityLabel="사진 추가 닫기"
         >
-          네트워크 상태를 확인하고 다시 시도해 주세요.
-        </AppText>
-        <InlineActionButton
-          label="다시 시도"
-          tone="primary"
-          onPress={retryLoadDiary}
+          <View style={styles.sheetActionList}>
+            <SheetActionRow
+              title="사진 촬영"
+              onPress={() => requestDiaryPhoto('camera')}
+            />
+
+            <View style={styles.sheetActionDivider} />
+
+            <SheetActionRow
+              title="앨범에서 선택"
+              onPress={() => requestDiaryPhoto('library')}
+            />
+          </View>
+        </AppBottomSheet>
+
+        <AppBottomSheet
+          visible={isExportSheetVisible}
+          title="다이어리 내보내기"
+          description="내보낼 이미지 형태를 선택해 주세요"
+          onClose={() => setIsExportSheetVisible(false)}
+          onClosed={handleExportSheetClosed}
+          closeAccessibilityLabel="다이어리 내보내기 닫기"
+        >
+          <View style={styles.sheetActionList}>
+            <SheetActionRow
+              title="경기 정보와 함께"
+              onPress={() => requestDiaryExport('withGameInfo')}
+            />
+
+            <View style={styles.sheetActionDivider} />
+
+            <SheetActionRow
+              title="다이어리만"
+              onPress={() => requestDiaryExport('diaryOnly')}
+            />
+          </View>
+        </AppBottomSheet>
+
+        {exportPaperUri ? (
+          <View pointerEvents="none" style={styles.exportCardHost}>
+            <DiaryExportCard
+              ref={exportCardRef}
+              ticket={ticket}
+              diaryImageUri={exportPaperUri}
+              pageSize={pageSize}
+              onImageLoad={handleExportCardImageLoad}
+              onImageError={handleExportCardImageError}
+            />
+          </View>
+        ) : null}
+
+        <DiaryEditorFeedbackUI
+          isLoading={isLoading || isSavingBeforeLeave || isExporting}
+          snackbarMessage={snackbarMessage}
         />
       </SafeAreaView>
     );
-  }
-
-  return (
-    <SafeAreaView
-      style={styles.container}
-      edges={selectedTool === 'sticker' ? [] : ['bottom']}
-    >
-      <KeyboardAvoidingView
-        behavior="padding"
-        keyboardVerticalOffset={
-          top + DETAIL_HEADER_HEIGHT + DETAIL_TAB_HEIGHT
-        }
-        style={styles.keyboardAvoidingContainer}
-      >
-        <DiaryCanvasArea
-          displayedEditorWidth={displayedEditorWidth}
-          displayedEditorHeight={displayedEditorHeight}
-          editorSize={editorSize}
-          pageSize={pageSize}
-          editorScale={editorScale}
-          displayScaleY={displayScaleY}
-          isLandscape={isLandscape}
-          isTextEditing={editingTextId !== null}
-          layerPanelEditorSize={layerPanelEditorSize}
-          layerPanelItems={layerPanelItems}
-          selectedLayerId={selectedLayerId}
-          drawingCanvasRef={drawingCanvasRef}
-          exportCanvasRef={exportCanvasRef}
-          onEditorWrapperLayout={handleEditorWrapperLayout}
-          onEditorCanvasRegionLayout={handleEditorCanvasRegionLayout}
-          onDeselectDiaryItem={handleDeselectDiaryItem}
-          onDrawingChange={handleDrawingChange}
-          onFinishDrawing={handleFinishDrawing}
-          onSelectLayer={handleSelectLayer}
-          onMoveLayer={handleMoveLayer}
-          onCloseLayerPanel={() => setIsLayerPanelVisible(false)}
-          renderDiaryItem={renderDiaryItem}
-        >
-          <DiaryEditorOverlayUI
-            onAddSticker={handleAddSticker}
-            onCloseStickerPicker={() => setSelectedTool(null)}
-            onSelectPaper={handlePaperSelect}
-          />
-        </DiaryCanvasArea>
-
-        <DiaryEditorUI
-          selectedTextItem={selectedText}
-          onChangeTextStyle={handleChangeSelectedTextStyle}
-          onPressTool={handlePressTool}
-        />
-      </KeyboardAvoidingView>
-
-      <AppBottomSheet
-        visible={isPhotoSourceSheetVisible}
-        title="사진 추가"
-        description="다이어리에 추가할 사진을 선택해 주세요"
-        onClose={() => setIsPhotoSourceSheetVisible(false)}
-        onClosed={handlePhotoSourceSheetClosed}
-        closeAccessibilityLabel="사진 추가 닫기"
-      >
-        <View style={styles.sheetActionList}>
-          <SheetActionRow
-            title="사진 촬영"
-            onPress={() => requestDiaryPhoto('camera')}
-          />
-
-          <View style={styles.sheetActionDivider} />
-
-          <SheetActionRow
-            title="앨범에서 선택"
-            onPress={() => requestDiaryPhoto('library')}
-          />
-        </View>
-      </AppBottomSheet>
-
-      <AppBottomSheet
-        visible={isExportSheetVisible}
-        title="다이어리 내보내기"
-        description="내보낼 이미지 형태를 선택해 주세요"
-        onClose={() => setIsExportSheetVisible(false)}
-        onClosed={handleExportSheetClosed}
-        closeAccessibilityLabel="다이어리 내보내기 닫기"
-      >
-        <View style={styles.sheetActionList}>
-          <SheetActionRow
-            title="경기 정보와 함께"
-            onPress={() => requestDiaryExport('withGameInfo')}
-          />
-
-          <View style={styles.sheetActionDivider} />
-
-          <SheetActionRow
-            title="다이어리만"
-            onPress={() => requestDiaryExport('diaryOnly')}
-          />
-        </View>
-      </AppBottomSheet>
-
-      {exportPaperUri ? (
-        <View pointerEvents="none" style={styles.exportCardHost}>
-          <DiaryExportCard
-            ref={exportCardRef}
-            ticket={ticket}
-            diaryImageUri={exportPaperUri}
-            pageSize={pageSize}
-            onImageLoad={handleExportCardImageLoad}
-            onImageError={handleExportCardImageError}
-          />
-        </View>
-      ) : null}
-
-      <DiaryEditorFeedbackUI
-        isLoading={isLoading || isSavingBeforeLeave || isExporting}
-        snackbarMessage={snackbarMessage}
-      />
-    </SafeAreaView>
-  );
-});
+  },
+);
 
 export default TicketDiaryPage;
 

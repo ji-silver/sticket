@@ -24,15 +24,12 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 import AppText from '../../../../components/common/AppText.tsx';
 import { colors } from '../../../../styles/colors.ts';
-import { type EditorSize } from './photoTransform.ts';
 
 const PANEL_HORIZONTAL_INSET = 12;
 const PANEL_TOP_INSET = 12;
-const PHONE_PANEL_WIDTH = 104;
-const TABLET_PANEL_WIDTH = 112;
+const PANEL_WIDTH = 104;
 const PANEL_HEADER_HEIGHT = 52;
 const LAYER_ROW_HEIGHT = 58;
-const PANEL_MAX_HEIGHT = 500;
 
 export interface DiaryLayerPanelItem {
   id: string;
@@ -42,8 +39,6 @@ export interface DiaryLayerPanelItem {
 }
 
 interface DiaryLayerPanelProps {
-  editorSize: EditorSize;
-  editorScale: number;
   placement: 'overlay' | 'side';
   items: DiaryLayerPanelItem[];
   selectedLayerId: string | null;
@@ -194,8 +189,6 @@ function DiaryLayerRow({
 }
 
 function DiaryLayerPanel({
-  editorSize,
-  editorScale,
   placement,
   items,
   selectedLayerId,
@@ -203,24 +196,6 @@ function DiaryLayerPanel({
   onMoveLayer,
   onClose,
 }: DiaryLayerPanelProps) {
-  const preferredPanelWidth =
-    editorSize.width >= 600 ? TABLET_PANEL_WIDTH : PHONE_PANEL_WIDTH;
-  const safeEditorScale = Math.max(editorScale, 0.0001);
-  const physicalEditorWidth = editorSize.width * safeEditorScale;
-  const physicalEditorHeight = editorSize.height * safeEditorScale;
-  const panelWidth = Math.min(
-    preferredPanelWidth,
-    Math.max(0, physicalEditorWidth - PANEL_HORIZONTAL_INSET * 2),
-  );
-  const panelHeight = Math.max(
-    0,
-    Math.min(PANEL_MAX_HEIGHT, physicalEditorHeight - PANEL_TOP_INSET * 2),
-  );
-
-  if (panelWidth === 0 || panelHeight === 0) {
-    return null;
-  }
-
   const isOverlay = placement === 'overlay';
 
   return (
@@ -228,16 +203,6 @@ function DiaryLayerPanel({
       style={[
         styles.panel,
         isOverlay ? styles.overlayPanel : styles.sidePanel,
-        {
-          width: panelWidth,
-          height: panelHeight,
-          ...(isOverlay
-            ? {
-                top: PANEL_TOP_INSET,
-                right: PANEL_HORIZONTAL_INSET,
-              }
-            : null),
-        },
         isOverlay && styles.panelTransformOrigin,
       ]}
     >
@@ -294,6 +259,11 @@ export default DiaryLayerPanel;
 
 const styles = StyleSheet.create({
   panel: {
+    position: 'absolute',
+    top: PANEL_TOP_INSET,
+    bottom: PANEL_TOP_INSET,
+    width: PANEL_WIDTH,
+    zIndex: 50,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: colors.border,
@@ -307,15 +277,11 @@ const styles = StyleSheet.create({
   },
 
   overlayPanel: {
-    position: 'absolute',
-    zIndex: 50,
+    right: PANEL_HORIZONTAL_INSET,
   },
 
   sidePanel: {
-    position: 'absolute',
-    top: PANEL_TOP_INSET,
     right: 24,
-    zIndex: 50,
   },
 
   panelTransformOrigin: {

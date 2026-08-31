@@ -31,7 +31,6 @@ interface DiaryCanvasAreaProps {
   displayScaleY: number;
   isLandscape: boolean;
   isTextEditing: boolean;
-  layerPanelEditorSize: EditorSize;
   layerPanelItems: DiaryLayerPanelItem[];
   selectedLayerId: string | null;
   drawingCanvasRef: RefObject<DiaryDrawingCanvasRef | null>;
@@ -57,7 +56,6 @@ export default function DiaryCanvasArea({
   displayScaleY,
   isLandscape,
   isTextEditing,
-  layerPanelEditorSize,
   layerPanelItems,
   selectedLayerId,
   drawingCanvasRef,
@@ -170,34 +168,19 @@ export default function DiaryCanvasArea({
               ) : null}
             </View>
           </View>
-
-          {!isLandscape && isLayerPanelVisible ? (
-            <DiaryLayerPanel
-              editorSize={layerPanelEditorSize}
-              editorScale={editorScale}
-              placement="overlay"
-              items={layerPanelItems}
-              selectedLayerId={selectedLayerId}
-              onSelectLayer={onSelectLayer}
-              onMoveLayer={onMoveLayer}
-              onClose={onCloseLayerPanel}
-            />
-          ) : null}
         </View>
-
-        {isLandscape && isLayerPanelVisible ? (
-          <DiaryLayerPanel
-            editorSize={layerPanelEditorSize}
-            editorScale={editorScale}
-            placement="side"
-            items={layerPanelItems}
-            selectedLayerId={selectedLayerId}
-            onSelectLayer={onSelectLayer}
-            onMoveLayer={onMoveLayer}
-            onClose={onCloseLayerPanel}
-          />
-        ) : null}
       </ScrollView>
+
+      {isLayerPanelVisible ? (
+        <DiaryLayerPanel
+          placement={isLandscape ? 'side' : 'overlay'}
+          items={layerPanelItems}
+          selectedLayerId={selectedLayerId}
+          onSelectLayer={onSelectLayer}
+          onMoveLayer={onMoveLayer}
+          onClose={onCloseLayerPanel}
+        />
+      ) : null}
 
       {children}
     </View>
