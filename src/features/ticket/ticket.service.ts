@@ -16,6 +16,7 @@ import {
 const ORIGINAL_TICKET_BUCKET = 'ticket-originals';
 const SIGNED_URL_EXPIRES_IN_SECONDS = 60 * 60; // 유효시간 1시간
 const MAX_SEAT_NAME_LENGTH = 100;
+const MAX_SEAT_DETAIL_LENGTH = 100;
 const MAX_MEMO_LENGTH = 300;
 const MAX_FOOD_COUNT = 10;
 const BASEBALL_POSITIONS: BaseballPosition[] = [
@@ -34,19 +35,28 @@ const BASEBALL_POSITIONS: BaseballPosition[] = [
 interface CreateTicketParams {
   gameKey: string;
   seatName: string;
+  seatDetail: string;
   originalPhotoBase64?: string;
 }
 
 export async function createTicket({
   gameKey,
   seatName,
+  seatDetail,
   originalPhotoBase64,
 }: CreateTicketParams) {
   const normalizedSeatName = seatName.trim();
+  const normalizedSeatDetail = seatDetail.trim();
 
   if (normalizedSeatName.length > MAX_SEAT_NAME_LENGTH) {
     throw new Error(
       `좌석 정보는 ${MAX_SEAT_NAME_LENGTH}자 이하로 입력해 주세요.`,
+    );
+  }
+
+  if (normalizedSeatDetail.length > MAX_SEAT_DETAIL_LENGTH) {
+    throw new Error(
+      `상세 위치는 ${MAX_SEAT_DETAIL_LENGTH}자 이하로 입력해 주세요.`,
     );
   }
 
@@ -98,6 +108,7 @@ export async function createTicket({
       ticket_book_id: ticketBook.id,
       game_key: gameKey,
       seat_name: normalizedSeatName || null,
+      seat_detail: normalizedSeatDetail || null,
       original_photo_path: null,
     })
     .select()
@@ -181,6 +192,7 @@ export async function getTickets(): Promise<Ticket[]> {
       `
          id,
         seat_name,
+        seat_detail,
         rating,
         memo,
         foods,
@@ -258,6 +270,7 @@ export async function getTickets(): Promise<Ticket[]> {
         matchTime: game.start_time?.slice(0, 5) ?? '시간 미정',
         stadiumName: game.stadium_name ?? '경기장 미정',
         seatName: ticket.seat_name,
+        seatDetail: ticket.seat_detail,
         rating: ticket.rating,
         memo: ticket.memo,
         foods: ticket.foods,
@@ -340,8 +353,13 @@ function parseLineup(value: unknown): LineupPlayer[] {
   });
 }
 
-export async function updateTicketSeat(ticketId: string, seatName: string) {
+export async function updateTicketSeat(
+  ticketId: string,
+  seatName: string,
+  seatDetail: string,
+) {
   const normalizedSeatName = seatName.trim();
+  const normalizedSeatDetail = seatDetail.trim();
 
   if (normalizedSeatName.length > MAX_SEAT_NAME_LENGTH) {
     throw new Error(
@@ -349,20 +367,30 @@ export async function updateTicketSeat(ticketId: string, seatName: string) {
     );
   }
 
+  if (normalizedSeatDetail.length > MAX_SEAT_DETAIL_LENGTH) {
+    throw new Error(
+      `상세 위치는 ${MAX_SEAT_DETAIL_LENGTH}자 이하로 입력해 주세요.`,
+    );
+  }
+
   const { data, error } = await supabase
     .from('tickets')
     .update({
       seat_name: normalizedSeatName || null,
+      seat_detail: normalizedSeatDetail || null,
     })
     .eq('id', ticketId)
-    .select('seat_name')
+    .select('seat_name, seat_detail')
     .single();
 
   if (error) {
     throw error;
   }
 
-  return data.seat_name;
+  return {
+    seatName: data.seat_name,
+    seatDetail: data.seat_detail,
+  };
 }
 
 export async function updateTicketRating(

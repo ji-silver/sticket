@@ -18,6 +18,7 @@ import { useDeleteTicketOriginalPhoto } from '../../../features/ticket/api/useDe
 import { useUpdateTicketOriginalPhoto } from '../../../features/ticket/api/useUpdateTicketOriginalPhoto.ts';
 import { colors } from '../../../styles/colors.ts';
 import { fonts } from '../../../styles/fonts.ts';
+import { formatTicketSeat } from '../../../features/ticket/seatCatalog.ts';
 import {
   type OriginalTicketImageSource,
   pickOriginalTicketImage,
@@ -26,19 +27,26 @@ import TicketSeatEditSheet from './TicketSeatEditSheet.tsx';
 
 interface TicketVisitInfoSectionProps {
   ticketId: string;
+  stadiumName: string;
+  homeTeamName: string;
   initialSeatName: string | null;
+  initialSeatDetail: string | null;
   initialOriginalTicketImageUri?: string;
   onFeedback: (message: string) => void;
 }
 
 function TicketVisitInfoSection({
   ticketId,
+  stadiumName,
+  homeTeamName,
   initialSeatName,
+  initialSeatDetail,
   initialOriginalTicketImageUri,
   onFeedback,
 }: TicketVisitInfoSectionProps) {
   const { top, bottom } = useSafeAreaInsets();
   const [seatName, setSeatName] = useState(initialSeatName);
+  const [seatDetail, setSeatDetail] = useState(initialSeatDetail);
   const [isSeatSheetVisible, setIsSeatSheetVisible] = useState(false);
   const [isOriginalTicketVisible, setIsOriginalTicketVisible] = useState(false);
   const [originalTicketImageUri, setOriginalTicketImageUri] = useState(
@@ -66,6 +74,7 @@ function TicketVisitInfoSection({
   const shouldOpenOriginalTicketEditSheet = useRef(false);
   const pendingOriginalTicketImageSource =
     useRef<OriginalTicketImageSource | null>(null);
+  const seatDisplay = formatTicketSeat(seatName, seatDetail);
 
   const handlePressOriginalTicket = () => {
     if (isSavingOriginalTicket) return;
@@ -175,19 +184,22 @@ function TicketVisitInfoSection({
               <AppText style={styles.blockTitle}>좌석 정보</AppText>
 
               <InlineActionButton
-                label={seatName ? '수정' : '추가'}
+                label={seatDisplay ? '수정' : '추가'}
                 tone="primary"
                 onPress={() => setIsSeatSheetVisible(true)}
                 accessibilityLabel={
-                  seatName ? '좌석 정보 수정' : '좌석 정보 추가'
+                  seatDisplay ? '좌석 정보 수정' : '좌석 정보 추가'
                 }
               />
             </View>
 
             <AppText
-              style={[styles.seatValue, !seatName && styles.placeholderText]}
+              style={[
+                styles.seatValue,
+                !seatDisplay && styles.placeholderText,
+              ]}
             >
-              {seatName ?? '오늘 앉은 좌석을 남겨보세요'}
+              {seatDisplay ?? '오늘 앉은 좌석을 남겨보세요'}
             </AppText>
           </View>
 
@@ -213,11 +225,15 @@ function TicketVisitInfoSection({
       <TicketSeatEditSheet
         visible={isSeatSheetVisible}
         ticketId={ticketId}
+        stadiumName={stadiumName}
+        homeTeamName={homeTeamName}
         seatName={seatName}
-        onSaved={savedSeatName => {
-          setSeatName(savedSeatName);
+        seatDetail={seatDetail}
+        onSaved={savedSeat => {
+          setSeatName(savedSeat.seatName);
+          setSeatDetail(savedSeat.seatDetail);
           onFeedback(
-            savedSeatName
+            formatTicketSeat(savedSeat.seatName, savedSeat.seatDetail)
               ? '좌석 정보를 저장했어요.'
               : '좌석 정보를 삭제했어요.',
           );

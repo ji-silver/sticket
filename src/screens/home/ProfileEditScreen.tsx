@@ -174,10 +174,10 @@ function ProfileEditScreen() {
                   accessibilityLabel={`${currentSeason} 시즌권 좌석`}
                 />
               </View>
-              <AppText style={styles.helperText}>
-                {currentSeason}년 {favoriteTeam || '응원 구단'} 정규시즌 홈경기
-                티켓에 자동으로 입력돼요.
-              </AppText>
+              {/*<AppText style={styles.helperText}>*/}
+              {/*  {currentSeason}년 {favoriteTeam || '응원 구단'} 정규시즌 홈경기*/}
+              {/*  티켓에 자동으로 입력돼요.*/}
+              {/*</AppText>*/}
             </View>
           </View>
         </ScrollView>

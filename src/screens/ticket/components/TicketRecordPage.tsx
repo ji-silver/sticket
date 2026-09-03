@@ -205,7 +205,10 @@ function TicketRecordPage({ ticket, orientation }: TicketRecordPageProps) {
 
         <TicketVisitInfoSection
           ticketId={ticket.id}
+          stadiumName={ticket.stadiumName}
+          homeTeamName={ticket.homeTeamName}
           initialSeatName={ticket.seatName}
+          initialSeatDetail={ticket.seatDetail}
           initialOriginalTicketImageUri={ticket.originalTicketImageUri}
           onFeedback={showSnackbar}
         />

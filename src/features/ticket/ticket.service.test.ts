@@ -8,11 +8,67 @@ jest.mock('../../lib/supabase.ts', () => ({
 
 import { supabase } from '../../lib/supabase.ts';
 import {
+  createTicket,
   deleteTicket,
   getTickets,
   setTicketPageOrientation,
+  updateTicketSeat,
   updateTicketOriginalPhoto,
 } from './ticket.service.ts';
+
+describe('createTicket', () => {
+  it('좌석명과 상세 위치를 다듬어 새 티켓에 저장한다', async () => {
+    const gameSingle = jest.fn().mockResolvedValue({
+      data: { game_date: '2026-08-30' },
+      error: null,
+    });
+    const gameEq = jest.fn().mockReturnValue({ single: gameSingle });
+    const gameSelect = jest.fn().mockReturnValue({ eq: gameEq });
+
+    const bookMaybeSingle = jest.fn().mockResolvedValue({
+      data: { id: 'book-1' },
+      error: null,
+    });
+    const bookEqBySport = jest
+      .fn()
+      .mockReturnValue({ maybeSingle: bookMaybeSingle });
+    const bookEqByUser = jest.fn().mockReturnValue({ eq: bookEqBySport });
+    const bookSelect = jest.fn().mockReturnValue({ eq: bookEqByUser });
+
+    const createdTicket = { id: 'ticket-1' };
+    const ticketSingle = jest.fn().mockResolvedValue({
+      data: createdTicket,
+      error: null,
+    });
+    const ticketSelect = jest.fn().mockReturnValue({ single: ticketSingle });
+    const insert = jest.fn().mockReturnValue({ select: ticketSelect });
+
+    (supabase.auth.getUser as jest.Mock).mockResolvedValue({
+      data: { user: { id: 'user-1' } },
+      error: null,
+    });
+    (supabase.from as jest.Mock)
+      .mockReturnValueOnce({ select: gameSelect })
+      .mockReturnValueOnce({ select: bookSelect })
+      .mockReturnValueOnce({ insert });
+
+    await expect(
+      createTicket({
+        gameKey: 'game-1',
+        seatName: ' 덕아웃 상단석 ',
+        seatDetail: ' 9블록 J열 12번 ',
+      }),
+    ).resolves.toBe(createdTicket);
+
+    expect(insert).toHaveBeenCalledWith({
+      ticket_book_id: 'book-1',
+      game_key: 'game-1',
+      seat_name: '덕아웃 상단석',
+      seat_detail: '9블록 J열 12번',
+      original_photo_path: null,
+    });
+  });
+});
 
 describe('getTickets', () => {
   it('취소된 경기 상태를 티켓에 전달한다', async () => {
@@ -21,6 +77,7 @@ describe('getTickets', () => {
         {
           id: 'ticket-1',
           seat_name: null,
+          seat_detail: '3블록 J열 12번',
           rating: null,
           memo: null,
           foods: [],
@@ -59,6 +116,7 @@ describe('getTickets', () => {
     expect(tickets[0].isCancelled).toBe(true);
     expect(tickets[0].gameStatus).toBe('CANCELLED');
     expect(tickets[0].pageOrientation).toBe('landscape');
+    expect(tickets[0].seatDetail).toBe('3블록 J열 12번');
     expect(tickets[0].awayLineup).toEqual([
       {
         battingOrder: 1,
@@ -66,6 +124,40 @@ describe('getTickets', () => {
         playerName: '홍창기',
       },
     ]);
+  });
+});
+
+describe('updateTicketSeat', () => {
+  it('좌석명과 상세 위치를 다듬어 함께 저장한다', async () => {
+    const single = jest.fn().mockResolvedValue({
+      data: {
+        seat_name: '덕아웃 상단석',
+        seat_detail: '9블록 J열 12번',
+      },
+      error: null,
+    });
+    const select = jest.fn().mockReturnValue({ single });
+    const eq = jest.fn().mockReturnValue({ select });
+    const update = jest.fn().mockReturnValue({ eq });
+
+    (supabase.from as jest.Mock).mockReturnValue({ update });
+
+    await expect(
+      updateTicketSeat(
+        'ticket-1',
+        ' 덕아웃 상단석 ',
+        ' 9블록 J열 12번 ',
+      ),
+    ).resolves.toEqual({
+      seatName: '덕아웃 상단석',
+      seatDetail: '9블록 J열 12번',
+    });
+
+    expect(update).toHaveBeenCalledWith({
+      seat_name: '덕아웃 상단석',
+      seat_detail: '9블록 J열 12번',
+    });
+    expect(select).toHaveBeenCalledWith('seat_name, seat_detail');
   });
 });
 

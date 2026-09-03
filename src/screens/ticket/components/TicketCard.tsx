@@ -4,6 +4,7 @@ import AppText from '../../../components/common/AppText.tsx';
 import { colors } from '../../../styles/colors.ts';
 import { fonts } from '../../../styles/fonts.ts';
 import { Ticket } from '../../../features/ticket/types.ts';
+import { formatTicketSeat } from '../../../features/ticket/seatCatalog.ts';
 
 interface TicketCardProps {
   ticket: Ticket;
@@ -32,6 +33,7 @@ const teamColors: Record<string, string> = {
 
 function TicketCard({ ticket, onPress }: TicketCardProps) {
   const [perforationWidth, setPerforationWidth] = useState(0);
+  const seatDisplay = formatTicketSeat(ticket.seatName, ticket.seatDetail);
   const date = new Date(ticket.matchDate);
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
@@ -148,14 +150,14 @@ function TicketCard({ ticket, onPress }: TicketCardProps) {
       <View
         style={[
           styles.stubArea,
-          !ticket.seatName && styles.stubAreaWithoutSeat,
+          !seatDisplay && styles.stubAreaWithoutSeat,
         ]}
       >
-        {ticket.seatName ? (
+        {seatDisplay ? (
           <View style={styles.seatBox}>
             <AppText style={styles.stubSeatLabel}>좌석</AppText>
             <AppText style={styles.stubSeat} numberOfLines={1}>
-              {ticket.seatName}
+              {seatDisplay}
             </AppText>
           </View>
         ) : null}

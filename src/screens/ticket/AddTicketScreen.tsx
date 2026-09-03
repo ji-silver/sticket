@@ -2,6 +2,7 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
+  Pressable,
   ScrollView,
   StyleSheet,
   TextInput,
@@ -12,7 +13,8 @@ import AppButton from '../../components/common/AppButton.tsx';
 import AppText from '../../components/common/AppText.tsx';
 import { fonts } from '../../styles/fonts.ts';
 import { useNavigation, useRoute } from '@react-navigation/core';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { ChevronDown } from 'lucide-react-native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { DateData } from 'react-native-calendars';
 import { colors } from '../../styles/colors.ts';
@@ -31,6 +33,9 @@ import AddTicketDateSection from './components/AddTicketDateSection.tsx';
 import AddTicketGameSection from './components/AddTicketGameSection.tsx';
 import type { UserProfile } from '../../features/auth/auth.types.ts';
 import type { KboGame } from '../../features/game/types.ts';
+import AppBottomSheet from '../../components/common/AppBottomSheet.tsx';
+import { getSeatNamesForGame } from '../../features/ticket/seatCatalog.ts';
+import StadiumSeatNameList from './components/StadiumSeatNameList.tsx';
 
 type AddTicketRouteProp = RouteProp<RootStackParamList, 'AddTicket'>;
 
@@ -72,6 +77,10 @@ function AddTicketScreen() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(!initialDate);
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
   const [seatName, setSeatName] = useState('');
+  const [seatDetail, setSeatDetail] = useState('');
+  const [isSeatNameSheetVisible, setIsSeatNameSheetVisible] = useState(false);
+  const seatDetailInputRef = useRef<TextInput>(null);
+  const shouldFocusSeatDetail = useRef(false);
   const queryDate = !isCalendarOpen && selectedDate ? selectedDate : '';
 
   const {
@@ -94,6 +103,7 @@ function AddTicketScreen() {
         setSeatName(
           getSeasonTicketSeatName(profile, favoriteTeamGame, currentSeason),
         );
+        setSeatDetail('');
       }
     }
   }, [currentSeason, games, favoriteTeamName, profile, selectedGameId]);
@@ -108,6 +118,12 @@ function AddTicketScreen() {
 
     return Number(isSecondFavoriteTeamGame) - Number(isFirstFavoriteTeamGame);
   });
+  const selectedGame = games.find(game => game.id === selectedGameId);
+  const stadiumSeatNames = getSeatNamesForGame(
+    selectedGame?.stadiumName,
+    selectedGame?.homeTeamName,
+  );
+  const canSelectSeatName = stadiumSeatNames.length > 0;
 
   const [originalTicketImage, setOriginalTicketImage] =
     useState<SelectedOriginalTicketImage | null>(null);
@@ -127,6 +143,7 @@ function AddTicketScreen() {
 
     setSelectedGameId(null);
     setSeatName('');
+    setSeatDetail('');
   };
 
   const handlePressDateSummary = () => {
@@ -142,6 +159,7 @@ function AddTicketScreen() {
           currentSeason,
         ),
       );
+      setSeatDetail('');
     }
 
     setSelectedGameId(gameId);
@@ -156,6 +174,7 @@ function AddTicketScreen() {
       await createTicketMutation.mutateAsync({
         gameKey: selectedGameId,
         seatName,
+        seatDetail,
         originalPhotoBase64: originalTicketImage?.base64,
       });
 
@@ -176,6 +195,18 @@ function AddTicketScreen() {
       } else {
         Alert.alert('티켓을 추가하지 못했어요', '잠시 후 다시 시도해 주세요.');
       }
+    }
+  };
+
+  const closeSeatNameSheetAndFocusDetail = () => {
+    shouldFocusSeatDetail.current = true;
+    setIsSeatNameSheetVisible(false);
+  };
+
+  const handleSeatNameSheetClosed = () => {
+    if (shouldFocusSeatDetail.current) {
+      shouldFocusSeatDetail.current = false;
+      seatDetailInputRef.current?.focus();
     }
   };
 
@@ -227,19 +258,58 @@ function AddTicketScreen() {
                   <AppText style={styles.optionalLabel}>선택</AppText>
                 </View>
 
-                <View style={styles.seatInputCard}>
-                  <TextInput
-                    allowFontScaling={false}
-                    maxLength={100}
-                    value={seatName}
-                    onChangeText={setSeatName}
-                    style={styles.seatInput}
-                    placeholder="예: 덕아웃상단석 9블럭 J열"
-                    placeholderTextColor={colors.textSecondary}
-                    returnKeyType="done"
-                    clearButtonMode="while-editing"
-                    accessibilityLabel="좌석 정보"
-                  />
+                <View style={styles.seatFields}>
+                  <View style={styles.seatInputFrame}>
+                    <TextInput
+                      allowFontScaling={false}
+                      maxLength={100}
+                      value={seatName}
+                      onChangeText={setSeatName}
+                      style={styles.seatInput}
+                      placeholder="좌석명 직접 입력"
+                      placeholderTextColor={colors.textSecondary}
+                      returnKeyType="next"
+                      onSubmitEditing={() =>
+                        seatDetailInputRef.current?.focus()
+                      }
+                      clearButtonMode="while-editing"
+                      accessibilityLabel="좌석명"
+                    />
+
+                    {canSelectSeatName ? (
+                      <Pressable
+                        style={({ pressed }) => [
+                          styles.seatNameSelectButton,
+                          pressed && styles.seatNameSelectButtonPressed,
+                        ]}
+                        onPress={() => setIsSeatNameSheetVisible(true)}
+                        accessibilityRole="button"
+                        accessibilityLabel="좌석명 목록 열기"
+                      >
+                        <ChevronDown
+                          size={20}
+                          color={colors.textSecondary}
+                          strokeWidth={2}
+                        />
+                      </Pressable>
+                    ) : null}
+                  </View>
+
+                  <View style={styles.seatInputFrame}>
+                    <TextInput
+                      ref={seatDetailInputRef}
+                      allowFontScaling={false}
+                      maxLength={100}
+                      value={seatDetail}
+                      onChangeText={setSeatDetail}
+                      style={styles.seatInput}
+                      placeholder="블록 열 좌석 번호 입력"
+                      placeholderTextColor={colors.textSecondary}
+                      returnKeyType="done"
+                      clearButtonMode="while-editing"
+                      accessibilityLabel="상세 위치"
+                    />
+                  </View>
                 </View>
               </View>
             )}
@@ -283,6 +353,24 @@ function AddTicketScreen() {
           </ResponsiveContent>
         </View>
       </KeyboardAvoidingView>
+
+      <AppBottomSheet
+        visible={isSeatNameSheetVisible}
+        title="좌석명 선택"
+        onClose={() => setIsSeatNameSheetVisible(false)}
+        onClosed={handleSeatNameSheetClosed}
+        large
+        closeAccessibilityLabel="좌석명 선택 닫기"
+      >
+        <StadiumSeatNameList
+          seatNames={stadiumSeatNames}
+          seatName={seatName}
+          onSelect={selectedSeatName => {
+            setSeatName(selectedSeatName);
+            closeSeatNameSheetAndFocusDetail();
+          }}
+        />
+      </AppBottomSheet>
     </SafeAreaView>
   );
 }
@@ -326,22 +414,39 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     color: colors.textSecondary,
   },
-  seatInputCard: {
-    minHeight: 58,
-    paddingHorizontal: 16,
-    borderRadius: 18,
+  seatFields: {
+    gap: 12,
+  },
+  seatInputFrame: {
+    height: 52,
+    paddingLeft: 16,
+    borderRadius: 12,
     borderCurve: 'continuous',
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    justifyContent: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   seatInput: {
-    minHeight: 46,
+    flex: 1,
+    height: 50,
+    paddingRight: 16,
     padding: 0,
     fontSize: 16,
     fontFamily: fonts.regular,
     color: colors.text,
+  },
+  seatNameSelectButton: {
+    width: 48,
+    height: 50,
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    borderLeftColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  seatNameSelectButtonPressed: {
+    opacity: 0.55,
   },
   footer: {
     paddingTop: 12,

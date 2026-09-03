@@ -4,6 +4,10 @@ import { Alert } from 'react-native';
 import AddTicketScreen from './AddTicketScreen';
 import { getGamesByDate } from '../../features/game/game.service';
 import { useCreateTicket } from '../../features/ticket/api/useCreateTicket';
+import {
+  INCHEON_SEAT_NAMES,
+  LG_SEAT_NAMES,
+} from '../../features/ticket/seatCatalog.ts';
 
 const mockGoBack = jest.fn();
 const mockUseRoute = jest.fn();
@@ -236,7 +240,7 @@ describe('AddTicketScreen', () => {
         await screen.findByRole('button', { name: /두산 원정 대 LG 홈/ }),
       );
       await waitFor(() => {
-        expect(screen.getByLabelText('좌석 정보').props.value).toBe(
+        expect(screen.getByLabelText('좌석명').props.value).toBe(
           '1루 응원지정석 23블록',
         );
       });
@@ -245,24 +249,24 @@ describe('AddTicketScreen', () => {
         screen.getByRole('button', { name: /LG 원정 대 두산 홈/ }),
       );
       await waitFor(() => {
-        expect(screen.getByLabelText('좌석 정보').props.value).toBe('');
+        expect(screen.getByLabelText('좌석명').props.value).toBe('');
       });
 
       await fireEvent.press(
         screen.getByRole('button', { name: /두산 원정 대 LG 홈/ }),
       );
       await waitFor(() => {
-        expect(screen.getByLabelText('좌석 정보').props.value).toBe(
+        expect(screen.getByLabelText('좌석명').props.value).toBe(
           '1루 응원지정석 23블록',
         );
       });
 
       await fireEvent.changeText(
-        screen.getByLabelText('좌석 정보'),
+        screen.getByLabelText('좌석명'),
         '테이블석 3열',
       );
       await waitFor(() => {
-        expect(screen.getByLabelText('좌석 정보').props.value).toBe(
+        expect(screen.getByLabelText('좌석명').props.value).toBe(
           '테이블석 3열',
         );
       });
@@ -275,9 +279,91 @@ describe('AddTicketScreen', () => {
         expect(mockMutateAsync).toHaveBeenCalledWith({
           gameKey: 'home-game',
           seatName: '테이블석 3열',
+          seatDetail: '',
           originalPhotoBase64: undefined,
         });
       });
+    });
+
+    it('인천구장에서는 좌석명을 선택하거나 직접 입력하고 상세 위치를 따로 남긴다', async () => {
+      (getGamesByDate as jest.Mock).mockResolvedValueOnce([
+        {
+          id: 'incheon-game',
+          awayTeamName: 'LG',
+          homeTeamName: 'SSG',
+          time: '18:30',
+          stadiumName: '인천 SSG랜더스필드',
+        },
+      ]);
+
+      await setup();
+      await fireEvent.press(screen.getByText('Mock Date 1'));
+      await fireEvent.press(
+        await screen.findByRole('button', { name: /LG 원정 대 SSG 홈/ }),
+      );
+
+      expect(screen.getByPlaceholderText('좌석명 직접 입력')).toBeVisible();
+      expect(
+        screen.getByPlaceholderText('블록 열 좌석 번호 입력'),
+      ).toBeVisible();
+      expect(screen.queryByText('좌석명')).not.toBeOnTheScreen();
+      expect(screen.queryByText('상세 위치')).not.toBeOnTheScreen();
+
+      await fireEvent.changeText(
+        screen.getByLabelText('좌석명'),
+        '현장 안내 좌석',
+      );
+      expect(screen.getByLabelText('좌석명').props.value).toBe(
+        '현장 안내 좌석',
+      );
+
+      await fireEvent.press(
+        screen.getByRole('button', { name: '좌석명 목록 열기' }),
+      );
+      expect(screen.queryByText('직접 입력')).not.toBeOnTheScreen();
+      const selectedSeatName = INCHEON_SEAT_NAMES[0];
+      await fireEvent.press(screen.getByText(selectedSeatName));
+      await fireEvent.changeText(
+        screen.getByLabelText('상세 위치'),
+        '9블록 J열 12번',
+      );
+
+      await fireEvent.press(
+        screen.getByRole('button', { name: '티켓 추가' }),
+      );
+
+      await waitFor(() => {
+        expect(mockMutateAsync).toHaveBeenCalledWith({
+          gameKey: 'incheon-game',
+          seatName: selectedSeatName,
+          seatDetail: '9블록 J열 12번',
+          originalPhotoBase64: undefined,
+        });
+      });
+    });
+
+    it('잠실 LG 홈경기에서는 LG 좌석명 목록을 보여준다', async () => {
+      (getGamesByDate as jest.Mock).mockResolvedValueOnce([
+        {
+          id: 'seoul-game',
+          awayTeamName: 'SSG',
+          homeTeamName: 'LG',
+          time: '18:30',
+          stadiumName: '잠실',
+        },
+      ]);
+
+      await setup();
+      await fireEvent.press(screen.getByText('Mock Date 1'));
+      await fireEvent.press(
+        await screen.findByRole('button', { name: /SSG 원정 대 LG 홈/ }),
+      );
+
+      await fireEvent.press(
+        screen.getByRole('button', { name: '좌석명 목록 열기' }),
+      );
+
+      expect(screen.getByText(LG_SEAT_NAMES[0])).toBeVisible();
     });
 
     it('달력에서 날짜를 선택하면, 해당 날짜의 경기를 서버에서 불러온다', async () => {
@@ -393,6 +479,7 @@ describe('AddTicketScreen', () => {
         expect(mockMutateAsync).toHaveBeenCalledWith({
           gameKey: 'g1',
           seatName: '',
+          seatDetail: '',
           originalPhotoBase64: undefined,
         });
       });

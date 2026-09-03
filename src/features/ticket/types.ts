@@ -26,6 +26,7 @@ export interface Ticket {
   stadiumName: string;
 
   seatName: string | null;
+  seatDetail: string | null;
   rating: number | null;
   memo: string | null;
   foods: string[];

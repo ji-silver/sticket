@@ -23,6 +23,7 @@ const createTicket = (patch: Partial<Ticket> = {}): Ticket => ({
   matchTime: '18:30',
   stadiumName: '잠실',
   seatName: null,
+  seatDetail: null,
   rating: null,
   memo: null,
   foods: [],

@@ -4,8 +4,15 @@ import { updateTicketSeat } from '../ticket.service';
 export function useUpdateTicketSeat() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ ticketId, seatName }: { ticketId: string; seatName: string }) =>
-      updateTicketSeat(ticketId, seatName),
+    mutationFn: ({
+      ticketId,
+      seatName,
+      seatDetail,
+    }: {
+      ticketId: string;
+      seatName: string;
+      seatDetail: string;
+    }) => updateTicketSeat(ticketId, seatName, seatDetail),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tickets'] });
     },
