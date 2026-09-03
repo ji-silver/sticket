@@ -91,7 +91,7 @@ async function exchangeAppleAuthorizationCode(authorizationCode: string) {
   const body = (await response.json()) as AppleTokenResponse;
 
   if (!response.ok) {
-    console.error('Apple authorization code exchange failed.', {
+    console.error('Apple 인증 코드 교환에 실패했습니다.', {
       error: body.error,
       description: body.error_description,
       status: response.status,
@@ -170,7 +170,7 @@ async function revokeAppleAuthorization(
   });
 
   if (!response.ok) {
-    console.error('Apple token revocation failed.', response.status);
+    console.error('Apple 계정 연결 해제에 실패했습니다.', response.status);
     throw new Error('Apple 계정 연결을 해제하지 못했습니다.');
   }
 }
@@ -310,18 +310,6 @@ Deno.serve(async request => {
       );
     }
 
-    for (const bucketName of STORAGE_BUCKETS) {
-      const filePaths = await getStorageFilePaths(
-        adminClient,
-        bucketName,
-        user.id,
-      );
-
-      if (filePaths.length > 0) {
-        await removeStorageFiles(adminClient, bucketName, filePaths);
-      }
-    }
-
     const { error: deleteUserError } = await adminClient.auth.admin.deleteUser(
       user.id,
     );
@@ -330,9 +318,28 @@ Deno.serve(async request => {
       throw deleteUserError;
     }
 
+    try {
+      for (const bucketName of STORAGE_BUCKETS) {
+        const filePaths = await getStorageFilePaths(
+          adminClient,
+          bucketName,
+          user.id,
+        );
+
+        if (filePaths.length > 0) {
+          await removeStorageFiles(adminClient, bucketName, filePaths);
+        }
+      }
+    } catch (storageCleanupError) {
+      console.error('회원 탈퇴 후 스토리지 정리에 실패했습니다.', {
+        userId: user.id,
+        error: storageCleanupError,
+      });
+    }
+
     return jsonResponse({ deleted: true }, 200);
   } catch (error) {
-    console.error('Account deletion failed.', error);
+    console.error('회원 탈퇴에 실패했습니다.', error);
 
     return jsonResponse(
       {
