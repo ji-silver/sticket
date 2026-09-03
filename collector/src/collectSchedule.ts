@@ -11,6 +11,7 @@ import {
   getUpcomingScheduleMonths,
 } from './dateWindow.ts';
 import { syncGameLineups, syncMissingGameLineups } from './gameLineups.ts';
+import { assertScheduleCollectionHealth } from './scheduleCollectionHealth.ts';
 import { upsertGames } from './saveGames.ts';
 
 const KBO_SCHEDULE_URL = 'https://www.koreabaseball.com/Schedule/Schedule.aspx';
@@ -150,6 +151,8 @@ async function main() {
     await page.waitForSelector('#tblScheduleList');
 
     let totalSavedGameCount = 0;
+    let totalRawRowCount = 0;
+    let totalParsedGameCount = 0;
 
     for (const [targetIndex, target] of targets.entries()) {
       const targetYear = String(target.year);
@@ -182,6 +185,10 @@ async function main() {
           seriesType,
           rawRows,
         );
+
+        totalRawRowCount += rawRows.length;
+        totalParsedGameCount += parsedGames.length;
+
         const games = isAutomaticCollection
           ? parsedGames.filter(game => automaticGameDates.has(game.gameDate))
           : isScheduleCollection
@@ -220,6 +227,12 @@ async function main() {
         await page.waitForTimeout(300);
       }
     }
+
+    assertScheduleCollectionHealth({
+      shouldRequireGames: isAutomaticCollection || isScheduleCollection,
+      rawRowCount: totalRawRowCount,
+      parsedGameCount: totalParsedGameCount,
+    });
 
     if (isAutomaticCollection && gameDateTarget === undefined) {
       const backfilledLineupCount = await syncMissingGameLineups();
