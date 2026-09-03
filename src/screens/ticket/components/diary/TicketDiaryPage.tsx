@@ -942,14 +942,14 @@ const TicketDiaryPage = forwardRef<TicketDiaryPageHandle, TicketDiaryPageProps>(
         <AppBottomSheet
           visible={isPhotoSourceSheetVisible}
           title="사진 추가"
-          description="다이어리에 추가할 사진을 선택해 주세요"
           onClose={() => setIsPhotoSourceSheetVisible(false)}
           onClosed={handlePhotoSourceSheetClosed}
           closeAccessibilityLabel="사진 추가 닫기"
         >
-          <View style={styles.sheetActionList}>
+          <View style={[styles.sheetActionList, styles.photoSheetActionList]}>
             <SheetActionRow
               title="사진 촬영"
+              weight="regular"
               onPress={() => requestDiaryPhoto('camera')}
             />
 
@@ -957,6 +957,7 @@ const TicketDiaryPage = forwardRef<TicketDiaryPageHandle, TicketDiaryPageProps>(
 
             <SheetActionRow
               title="앨범에서 선택"
+              weight="regular"
               onPress={() => requestDiaryPhoto('library')}
             />
           </View>
@@ -1011,9 +1012,11 @@ export default TicketDiaryPage;
 
 function SheetActionRow({
   title,
+  weight = 'semiBold',
   onPress,
 }: {
   title: string;
+  weight?: 'regular' | 'semiBold';
   onPress: () => void;
 }) {
   return (
@@ -1026,7 +1029,7 @@ function SheetActionRow({
         pressed && styles.sheetActionRowPressed,
       ]}
     >
-      <AppText size={16} weight="semiBold">
+      <AppText size={16} weight={weight}>
         {title}
       </AppText>
     </Pressable>
@@ -1053,6 +1056,10 @@ const styles = StyleSheet.create({
   sheetActionList: {
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
+  },
+
+  photoSheetActionList: {
+    marginTop: -12,
   },
 
   sheetActionRow: {
