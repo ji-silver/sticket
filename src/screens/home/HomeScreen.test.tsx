@@ -167,7 +167,7 @@ describe('HomeScreen', () => {
       await waitFor(() => {
         expect(screen.getByText('야구장 가서 치킨 먹기')).toBeVisible();
       });
-      expect(screen.getByText('다이어리 추가')).toBeVisible();
+      expect(screen.queryByText('다이어리 추가')).toBeNull();
     });
 
     it('티켓북 데이터가 비어있을 경우 빈 상태에 맞게 화면을 처리한다', async () => {
@@ -197,32 +197,14 @@ describe('HomeScreen', () => {
   });
 
   describe('화면 네비게이션 로직', () => {
-    it('헤더의 다이어리 추가 버튼을 누르면 AddDiary 화면으로 이동한다', async () => {
+    it('티켓북이 없을 때 만들기 버튼을 누르면 AddDiary 화면으로 이동한다', async () => {
       const user = userEvent.setup();
-      (useGetTicketBooks as jest.Mock).mockReturnValue({
-        data: [
-          {
-            id: 'ticket-1',
-            sport: 'baseball',
-            coverColor: '#DF9EAF',
-            coverPattern: 'solid',
-          },
-        ],
-        isLoading: false,
-        isError: false,
-      });
-      (useGetBucketList as jest.Mock).mockReturnValue({
-        data: [],
-        isError: false,
-      });
 
       await render(<HomeScreen />);
 
-      await waitFor(() => {
-        expect(screen.getByText('다이어리 추가')).toBeVisible();
+      const addButton = await screen.findByRole('button', {
+        name: '티켓북 만들기',
       });
-
-      const addButton = screen.getByText('다이어리 추가');
       await user.press(addButton);
 
       expect(mockNavigate).toHaveBeenCalledWith('AddDiary');

@@ -16,7 +16,7 @@ import type { RootStackParamList } from '../../navigation/RootStackNavigator.tsx
 import { useCreateTicketBook } from '../../features/ticket-book/api/useCreateTicketBook.ts';
 import { useUpdateTicketBook } from '../../features/ticket-book/api/useUpdateTicketBook.ts';
 
-type SportId = 'baseball' | 'soccer' | 'basketball' | 'volleyball';
+type SportId = 'baseball' | 'soccer';
 
 interface SportOption {
   id: SportId;
@@ -46,16 +46,6 @@ const SPORTS: SportOption[] = [
   {
     id: 'soccer',
     label: '축구',
-    isReady: false,
-  },
-  {
-    id: 'basketball',
-    label: '농구',
-    isReady: false,
-  },
-  {
-    id: 'volleyball',
-    label: '배구',
     isReady: false,
   },
 ];
@@ -121,7 +111,7 @@ function AddDiaryScreen() {
   const isEditing = ticketBook !== undefined;
 
   const [selectedSportId, setSelectedSportId] = useState<SportId>(
-    ticketBook?.sport ?? 'baseball',
+    ticketBook?.sport === 'soccer' ? 'soccer' : 'baseball',
   );
   const [selectedCoverColorId, setSelectedCoverColorId] = useState(
     COVER_COLORS.find(
@@ -134,8 +124,8 @@ function AddDiaryScreen() {
     ticketBook?.photoUri ? { uri: ticketBook.photoUri } : null,
   );
 
-  const selectSport = SPORTS.find(sport => sport.id === selectedSportId);
-  const isSelectedSportReady = selectSport?.isReady ?? false;
+  const selectedSport = SPORTS.find(sport => sport.id === selectedSportId);
+  const isSelectedSportReady = selectedSport?.isReady ?? false;
   const selectedCoverColor =
     COVER_COLORS.find(color => color.id === selectedCoverColorId) ??
     COVER_COLORS[0];
@@ -183,11 +173,7 @@ function AddDiaryScreen() {
     createTicketBookMutation.isPending || updateTicketBookMutation.isPending;
 
   const handleSaveTicketBook = async () => {
-    if (
-      !isSelectedSportReady ||
-      selectedSportId !== 'baseball' ||
-      isSavingTicketBook
-    ) {
+    if (!isSelectedSportReady || isSavingTicketBook) {
       return;
     }
 
@@ -201,7 +187,7 @@ function AddDiaryScreen() {
         });
       } else {
         await createTicketBookMutation.mutateAsync({
-          sport: selectedSportId,
+          sport: 'baseball',
           coverColor: selectedCoverColor.color,
           coverPattern: selectedCoverColor.type,
           coverImageBase64: coverPhoto?.base64,
@@ -254,18 +240,14 @@ function AddDiaryScreen() {
         <View style={styles.formSection}>
           <AppText style={styles.sectionTitle}>스포츠</AppText>
           <View style={styles.sportList}>
-            {SPORTS.map(sport => {
-              const isSelected = selectedSportId === sport.id;
-
-              return (
-                <FilterChip
-                  key={sport.id}
-                  label={sport.label}
-                  selected={isSelected}
-                  onPress={() => setSelectedSportId(sport.id)}
-                />
-              );
-            })}
+            {SPORTS.map(sport => (
+              <FilterChip
+                key={sport.id}
+                label={sport.label}
+                selected={selectedSportId === sport.id}
+                onPress={() => setSelectedSportId(sport.id)}
+              />
+            ))}
           </View>
         </View>
 
@@ -330,7 +312,7 @@ function AddDiaryScreen() {
         ) : (
           <View style={styles.readySoonBox}>
             <AppText style={styles.readySoonTitle}>
-              {selectSport?.label} 티켓북은 준비중이에요
+              {selectedSport?.label} 티켓북은 준비중이에요
             </AppText>
           </View>
         )}

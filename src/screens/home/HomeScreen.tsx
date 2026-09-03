@@ -1,6 +1,5 @@
 import { Alert, Image, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Plus } from 'lucide-react-native';
 import DiarySection from './components/DiarySection.tsx';
 import { Bucket, Diary } from './types.ts';
 import BucketListSection from './components/BucketListSection.tsx';
@@ -8,10 +7,7 @@ import { useNavigation } from '@react-navigation/core';
 import { useEffect, useState, type RefObject } from 'react';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
-import { fonts } from '../../styles/fonts.ts';
-import AppButton from '../../components/common/AppButton.tsx';
 import AppSnackbar from '../../components/common/AppSnackbar.tsx';
-import AppText from '../../components/common/AppText.tsx';
 import AppPopoverMenu from '../../components/common/AppPopoverMenu.tsx';
 import { colors } from '../../styles/colors.ts';
 import { useGetTicketBooks } from '../../features/ticket-book/api/useGetTicketBooks';
@@ -65,8 +61,6 @@ function HomeScreen() {
     coverPhotoPath: ticketBook.coverPhotoPath,
     photoUri: ticketBook.coverPhotoUrl ?? undefined,
   }));
-
-  const hasDiaries = diaryList.length > 0;
 
   const bucketsByDiaryId: Record<string, Bucket[]> = {};
   ticketBooks.forEach(b => {
@@ -237,12 +231,6 @@ function HomeScreen() {
               </View>
             </View>
 
-            {hasDiaries && (
-              <AppButton style={styles.addButton} onPress={handlePressAddDiary}>
-                <Plus size={16} color={colors.onPrimary} strokeWidth={2.5} />
-                <AppText style={styles.addButtonText}>다이어리 추가</AppText>
-              </AppButton>
-            )}
           </View>
 
           <View style={styles.headerDivider} />
@@ -345,27 +333,6 @@ const styles = StyleSheet.create({
   headerDivider: {
     height: 1,
     backgroundColor: '#F1F1F1',
-  },
-
-  addButton: {
-    height: 42,
-    paddingHorizontal: 14,
-    borderRadius: 21,
-    backgroundColor: colors.primary,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    shadowColor: colors.shadow,
-    shadowOpacity: 0.18,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 5 },
-    elevation: 5,
-  },
-  addButtonText: {
-    fontSize: 13,
-    fontFamily: fonts.bold,
-    fontWeight: '700',
-    color: colors.onPrimary,
   },
 
   logoFrame: {

@@ -61,17 +61,20 @@ describe('AddDiaryScreen (티켓북 폼 비즈니스 로직 검증)', () => {
       expect(Alert.alert).not.toHaveBeenCalled();
     });
 
-    it('야구 외 스포츠(축구 등)을 선택할 경우 폼 제출 로직이 Disabled 된다', async () => {
+    it('축구를 선택하면 준비중 안내를 표시하고 티켓북 생성을 막는다', async () => {
       const user = userEvent.setup();
       await render(<AddDiaryScreen />);
 
-      const soccerChip = screen.getByText('축구');
-      await user.press(soccerChip);
+      expect(screen.getByRole('button', { name: '야구' })).toBeEnabled();
+      expect(screen.getByRole('button', { name: '축구' })).toBeEnabled();
+      await user.press(screen.getByRole('button', { name: '축구' }));
 
-      const submitButton = screen.getByRole('button', {
-        name: '티켓북 만들기',
-      });
-      expect(submitButton).toBeDisabled();
+      expect(screen.getByText('축구 티켓북은 준비중이에요')).toBeVisible();
+      expect(screen.queryByText('농구')).toBeNull();
+      expect(screen.queryByText('배구')).toBeNull();
+      expect(
+        screen.getByRole('button', { name: '티켓북 만들기' }),
+      ).toBeDisabled();
     });
   });
 

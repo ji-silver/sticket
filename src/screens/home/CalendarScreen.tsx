@@ -53,24 +53,24 @@ function CalendarScreen() {
       }
 
       Alert.alert(
-        '다이어리가 없어요',
-        '직관 기록을 추가하려면 먼저 다이어리를 만들어 주세요.',
+        '티켓북이 없어요',
+        '직관 기록을 추가하려면 먼저 티켓북을 만들어 주세요.',
         [
           {
             text: '취소',
             style: 'cancel',
           },
           {
-            text: '다이어리 추가',
+            text: '티켓북 만들기',
             onPress: () => navigation.navigate('AddDiary'),
           },
         ],
       );
     } catch (error) {
-      console.error('다이어리 목록을 확인하지 못했습니다.', error);
+      console.error('티켓북 목록을 확인하지 못했습니다.', error);
 
       Alert.alert(
-        '다이어리 정보를 확인하지 못했어요',
+        '티켓북 정보를 확인하지 못했어요',
         '잠시 후 다시 시도해 주세요.',
       );
     }
