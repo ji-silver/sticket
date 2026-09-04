@@ -200,6 +200,92 @@ describe('TicketListScreen', () => {
   });
 
   describe('스크롤 중 월 표시', () => {
+    const createLayoutEvent = (y: number, height = 0) => ({
+      nativeEvent: { layout: { x: 0, y, width: 0, height } },
+    });
+
+    const layoutCell = (list: any, item: any, index: number, y: number) => {
+      const cell = list.props.CellRendererComponent({
+        cellKey: String(index),
+        children: null,
+        index,
+        item,
+        onLayout: jest.fn(),
+        style: undefined,
+      });
+
+      cell.props.onLayout(createLayoutEvent(y));
+    };
+
+    const scrollList = (list: any, y: number) => {
+      list.props.onScroll({
+        timeStamp: y + 1,
+        nativeEvent: {
+          contentOffset: { x: 0, y },
+          contentSize: { width: 0, height: 1000 },
+          layoutMeasurement: { width: 0, height: 600 },
+          zoomScale: 1,
+        },
+      });
+    };
+
+    it('새 월의 첫 티켓이 월 표시 중앙선을 통과할 때 표시 월을 바꾼다', async () => {
+      const mayTicket = {
+        id: 'may',
+        matchDate: '2024-05-10',
+        homeTeamName: 'LG',
+        awayTeamName: '두산',
+      };
+      const aprilTicket = {
+        id: 'april',
+        matchDate: '2024-04-20',
+        homeTeamName: '기아',
+        awayTeamName: '삼성',
+      };
+      (getTicketSeasonSummaries as jest.Mock).mockResolvedValueOnce([
+        { season: 2024, ticketCount: 2 },
+      ]);
+      (getTicketsBySeason as jest.Mock).mockResolvedValueOnce([
+        mayTicket,
+        aprilTicket,
+      ]);
+
+      const view = await setup();
+      await screen.findByText('LG vs 두산');
+
+      const [list] = view.container.queryAll(
+        instance => typeof instance.props.CellRendererComponent === 'function',
+      );
+      const [monthOverlay] = view.container.queryAll(
+        instance =>
+          instance.props.pointerEvents === 'none' &&
+          typeof instance.props.onLayout === 'function',
+      );
+
+      expect(list).toBeDefined();
+      expect(monthOverlay).toBeDefined();
+
+      await act(async () => {
+        list.props.onLayout(createLayoutEvent(100, 600));
+        monthOverlay.props.onLayout(createLayoutEvent(278, 44));
+        layoutCell(list, mayTicket, 0, 100);
+        layoutCell(list, aprilTicket, 1, 300);
+        scrollList(list, 99);
+      });
+
+      expect(
+        screen.getByText('5월', { includeHiddenElements: true }),
+      ).toBeOnTheScreen();
+
+      await act(async () => {
+        scrollList(list, 100);
+      });
+
+      expect(
+        screen.getByText('4월', { includeHiddenElements: true }),
+      ).toBeOnTheScreen();
+    });
+
     it('티켓이 아닌 항목이 먼저 보여도 유효한 티켓의 월을 표시한다', async () => {
       const ticket = {
         id: '1',
@@ -216,22 +302,22 @@ describe('TicketListScreen', () => {
       await screen.findByText('LG vs 두산');
 
       const [list] = view.container.queryAll(
-        instance => typeof instance.props.onViewableItemsChanged === 'function',
+        instance => typeof instance.props.CellRendererComponent === 'function',
+      );
+      const [monthOverlay] = view.container.queryAll(
+        instance =>
+          instance.props.pointerEvents === 'none' &&
+          typeof instance.props.onLayout === 'function',
       );
       expect(list).toBeDefined();
+      expect(monthOverlay).toBeDefined();
+
       await act(async () => {
-        list.props.onViewableItemsChanged({
-          viewableItems: [
-            {
-              index: 0,
-              key: 'section-header',
-              item: { title: '2024' },
-              isViewable: true,
-            },
-            { index: 1, key: ticket.id, item: ticket, isViewable: true },
-          ],
-          changed: [],
-        });
+        list.props.onLayout(createLayoutEvent(100, 600));
+        monthOverlay.props.onLayout(createLayoutEvent(278, 44));
+        layoutCell(list, { data: [ticket] }, 0, 50);
+        layoutCell(list, ticket, 1, 200);
+        scrollList(list, 0);
       });
 
       expect(
