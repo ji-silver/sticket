@@ -1,6 +1,15 @@
+const supabaseConfig = __DEV__
+  ? {
+      supabaseUrl: 'https://ffvvuetmpkykqqkojorb.supabase.co',
+      supabasePublishableKey: 'sb_publishable_z5GP6pYKhT0uSUsqRCni7w_BgnKP3Fn',
+    }
+  : {
+      supabaseUrl: 'https://eydagqigwsdbrmlswiiv.supabase.co',
+      supabasePublishableKey: 'sb_publishable_f0_gVHdSMcf3jprX_DVTUQ_CP289dsq',
+    };
+
 export const publicConfig = {
-  supabaseUrl: 'https://eydagqigwsdbrmlswiiv.supabase.co',
-  supabasePublishableKey: 'sb_publishable_f0_gVHdSMcf3jprX_DVTUQ_CP289dsq',
+  ...supabaseConfig,
 
   googleWebClientId:
     '473008559992-qbf6j53826m06daodhm2fgi59d8on9qh.apps.googleusercontent.com',
