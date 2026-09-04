@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Animated,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
   ScrollView,
+  SectionList,
   StyleSheet,
   View,
+  ViewToken,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Plus } from 'lucide-react-native';
@@ -22,7 +22,10 @@ import FilterChip from '../../components/common/FilterChip.tsx';
 import InlineActionButton from '../../components/common/InlineActionButton.tsx';
 import ScreenHeader from '../../components/common/ScreenHeader.tsx';
 import ResponsiveContent from '../../components/common/ResponsiveContent.tsx';
-import { useGetTickets } from '../../features/ticket/api/useGetTickets';
+import {
+  useGetTicketsBySeason,
+  useGetTicketSeasonSummaries,
+} from '../../features/ticket/api/useGetTickets';
 import { Ticket } from '../../features/ticket/types.ts';
 import TicketCard from './components/TicketCard.tsx';
 
@@ -36,51 +39,41 @@ function getMonthLabel(ticket: Ticket | undefined) {
   return `${new Date(ticket.matchDate).getMonth() + 1}월`;
 }
 
-export function getTicketIndexAtScrollOffset(
-  ticketOffsets: number[],
-  targetOffset: number,
-) {
-  let firstIndex = 0;
-  let lastIndex = ticketOffsets.length - 1;
-  let ticketIndex = 0;
-
-  while (firstIndex <= lastIndex) {
-    const middleIndex = Math.floor((firstIndex + lastIndex) / 2);
-
-    if (ticketOffsets[middleIndex] > targetOffset) {
-      lastIndex = middleIndex - 1;
-    } else {
-      ticketIndex = middleIndex;
-      firstIndex = middleIndex + 1;
-    }
-  }
-
-  return ticketIndex;
-}
-
 function TicketListScreen() {
   const horizontalPadding = 20;
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const {
+    data: seasonSummaries = [],
+    isLoading: isLoadingSeasons,
+    error: seasonError,
+  } = useGetTicketSeasonSummaries();
+  const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
+  const seasons = seasonSummaries.map(summary => summary.season);
+  const activeSeason =
+    selectedSeason !== null && seasons.includes(selectedSeason)
+      ? selectedSeason
+      : seasons[0] ?? null;
+  const {
     data: tickets = [],
     isLoading: isLoadingTickets,
-    error,
-  } = useGetTickets();
-  const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
+    error: ticketsError,
+  } = useGetTicketsBySeason(activeSeason);
   const [visibleMonth, setVisibleMonth] = useState<string | null>(null);
   const visibleMonthRef = useRef<string | null>(null);
   const monthOverlayOpacity = useRef(new Animated.Value(0)).current;
   const monthOverlayHideTimer = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
-  const ticketListOffset = useRef(0);
-  const ticketOffsets = useRef<number[]>([]);
 
   const diaryTitle = '야구';
-  const ticketCount = tickets.length;
+  const ticketCount = seasonSummaries.reduce(
+    (count, summary) => count + summary.ticketCount,
+    0,
+  );
   const hasTickets = ticketCount > 0;
+  const error = seasonError ?? ticketsError;
 
   useEffect(() => {
     if (!error) {
@@ -90,31 +83,6 @@ function TicketListScreen() {
     console.error('티켓 목록을 불러오지 못했습니다.', error);
     Alert.alert('티켓 목록을 불러오지 못했어요', '잠시 후 다시 시도해 주세요.');
   }, [error]);
-
-  const seasons = Array.from(
-    new Set(tickets.map(ticket => new Date(ticket.matchDate).getFullYear())),
-  ).sort((firstSeason, secondSeason) => secondSeason - firstSeason);
-
-  const activeSeason =
-    selectedSeason !== null && seasons.includes(selectedSeason)
-      ? selectedSeason
-      : seasons[0] ?? null;
-
-  const filteredTickets = useMemo(
-    () =>
-      tickets
-        .filter(
-          ticket =>
-            activeSeason === null ||
-            new Date(ticket.matchDate).getFullYear() === activeSeason,
-        )
-        .sort(
-          (firstTicket, secondTicket) =>
-            new Date(secondTicket.matchDate).getTime() -
-            new Date(firstTicket.matchDate).getTime(),
-        ),
-    [activeSeason, tickets],
-  );
 
   const clearMonthOverlayHideTimer = () => {
     if (monthOverlayHideTimer.current) {
@@ -144,33 +112,25 @@ function TicketListScreen() {
     }, MONTH_OVERLAY_HIDE_DELAY);
   };
 
-  const updateVisibleMonth = (scrollY: number) => {
-    const targetOffset = scrollY - ticketListOffset.current;
-    const ticketIndex = getTicketIndexAtScrollOffset(
-      ticketOffsets.current,
-      targetOffset,
-    );
+  const handleViewableItemsChanged = useRef(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      const firstVisibleTicket = viewableItems.find(
+        item => item.isViewable && typeof item.item?.matchDate === 'string',
+      )?.item as Ticket | undefined;
+      const nextVisibleMonth = getMonthLabel(firstVisibleTicket);
 
-    const nextVisibleMonth = getMonthLabel(filteredTickets[ticketIndex]);
-
-    if (visibleMonthRef.current !== nextVisibleMonth) {
-      visibleMonthRef.current = nextVisibleMonth;
-      setVisibleMonth(nextVisibleMonth);
-    }
-  };
-
-  const handleScroll = ({
-    nativeEvent,
-  }: NativeSyntheticEvent<NativeScrollEvent>) => {
-    updateVisibleMonth(nativeEvent.contentOffset.y);
-  };
+      if (visibleMonthRef.current !== nextVisibleMonth) {
+        visibleMonthRef.current = nextVisibleMonth;
+        setVisibleMonth(nextVisibleMonth);
+      }
+    },
+  ).current;
 
   useEffect(() => {
-    ticketOffsets.current = [];
-    const firstMonth = getMonthLabel(filteredTickets[0]);
+    const firstMonth = getMonthLabel(tickets[0]);
     visibleMonthRef.current = firstMonth;
     setVisibleMonth(firstMonth);
-  }, [filteredTickets]);
+  }, [tickets]);
 
   useEffect(
     () => () => {
@@ -201,36 +161,40 @@ function TicketListScreen() {
         }
       />
 
-      <ScrollView
+      <SectionList
         style={styles.content}
-        stickyHeaderIndices={hasTickets ? [1] : []}
+        sections={hasTickets ? [{ data: tickets }] : []}
+        keyExtractor={ticket => ticket.id}
+        stickySectionHeadersEnabled={hasTickets}
         showsVerticalScrollIndicator={false}
-        onScroll={handleScroll}
+        onViewableItemsChanged={handleViewableItemsChanged}
         onScrollBeginDrag={showMonthOverlay}
         onScrollEndDrag={hideMonthOverlay}
         onMomentumScrollBegin={showMonthOverlay}
         onMomentumScrollEnd={hideMonthOverlay}
         scrollEventThrottle={32}
-      >
-        <View style={styles.hero}>
-          <ResponsiveContent
-            style={[
-              styles.horizontalContent,
-              { paddingHorizontal: horizontalPadding },
-            ]}
-          >
-            <View style={styles.ticketCountRow}>
-              <AppText style={styles.ticketCountNumber}>{ticketCount}</AppText>
+        ListHeaderComponent={
+          <View style={styles.hero}>
+            <ResponsiveContent
+              style={[
+                styles.horizontalContent,
+                { paddingHorizontal: horizontalPadding },
+              ]}
+            >
+              <View style={styles.ticketCountRow}>
+                <AppText style={styles.ticketCountNumber}>
+                  {ticketCount}
+                </AppText>
 
-              <View style={styles.ticketCountTextBox}>
-                <AppText style={styles.ticketCountUnit}>개의</AppText>
-                <AppText style={styles.ticketCountTitle}>직관 티켓</AppText>
+                <View style={styles.ticketCountTextBox}>
+                  <AppText style={styles.ticketCountUnit}>개의</AppText>
+                  <AppText style={styles.ticketCountTitle}>직관 티켓</AppText>
+                </View>
               </View>
-            </View>
-          </ResponsiveContent>
-        </View>
-
-        {hasTickets && seasons.length > 0 && (
+            </ResponsiveContent>
+          </View>
+        }
+        renderSectionHeader={() => (
           <View style={styles.seasonBar}>
             <ResponsiveContent>
               <ScrollView
@@ -241,65 +205,58 @@ function TicketListScreen() {
                   { paddingHorizontal: horizontalPadding },
                 ]}
               >
-                {seasons.map(season => {
-                  const isSelected = activeSeason === season;
-
-                  return (
-                    <FilterChip
-                      key={season}
-                      label={season}
-                      selected={isSelected}
-                      onPress={() => setSelectedSeason(season)}
-                    />
-                  );
-                })}
+                {seasons.map(season => (
+                  <FilterChip
+                    key={season}
+                    label={season}
+                    selected={activeSeason === season}
+                    onPress={() => setSelectedSeason(season)}
+                  />
+                ))}
               </ScrollView>
             </ResponsiveContent>
           </View>
         )}
-
-        <ResponsiveContent
-          style={[
-            styles.horizontalContent,
-            { paddingHorizontal: horizontalPadding },
-          ]}
-        >
-          <View style={styles.contentContainer}>
-            {isLoadingTickets ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size={'small'} color={colors.primary} />
-              </View>
-            ) : hasTickets ? (
-              <View
-                style={styles.ticketList}
-                onLayout={({ nativeEvent }) => {
-                  ticketListOffset.current = nativeEvent.layout.y;
-                }}
-              >
-                {filteredTickets.map((ticket, index) => (
-                  <View
-                    key={ticket.id}
-                    onLayout={({ nativeEvent }) => {
-                      ticketOffsets.current[index] = nativeEvent.layout.y;
-                    }}
-                  >
-                    <TicketCard
-                      ticket={ticket}
-                      onPress={() =>
-                        navigation.navigate('TicketDetail', {
-                          ticketId: ticket.id,
-                        })
-                      }
-                    />
-                  </View>
-                ))}
-              </View>
-            ) : (
-              <EmptyTicketState onPressAddTicket={handlePressAddTicket} />
-            )}
-          </View>
-        </ResponsiveContent>
-      </ScrollView>
+        renderItem={({ item: ticket, index }) => (
+          <ResponsiveContent
+            style={[
+              styles.horizontalContent,
+              { paddingHorizontal: horizontalPadding },
+              index === 0 && styles.firstTicket,
+            ]}
+          >
+            <View style={styles.ticketItem}>
+              <TicketCard
+                ticket={ticket}
+                onPress={() =>
+                  navigation.navigate('TicketDetail', {
+                    ticketId: ticket.id,
+                  })
+                }
+              />
+            </View>
+          </ResponsiveContent>
+        )}
+        ListEmptyComponent={
+          <ResponsiveContent
+            style={[
+              styles.horizontalContent,
+              { paddingHorizontal: horizontalPadding },
+            ]}
+          >
+            <View style={styles.contentContainer}>
+              {isLoadingSeasons || isLoadingTickets ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size={'small'} color={colors.primary} />
+                </View>
+              ) : (
+                <EmptyTicketState onPressAddTicket={handlePressAddTicket} />
+              )}
+            </View>
+          </ResponsiveContent>
+        }
+        ListFooterComponent={<View style={styles.listFooter} />}
+      />
 
       {hasTickets && visibleMonth ? (
         <Animated.View
@@ -410,8 +367,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  ticketList: {
-    gap: 16,
+  firstTicket: {
+    paddingTop: 28,
+  },
+  ticketItem: {
+    marginBottom: 16,
+  },
+  listFooter: {
+    height: 16,
   },
   monthOverlay: {
     position: 'absolute',

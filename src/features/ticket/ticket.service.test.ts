@@ -10,7 +10,9 @@ import { supabase } from '../../lib/supabase.ts';
 import {
   createTicket,
   deleteTicket,
+  getTicketSeasonSummaries,
   getTickets,
+  getTicketsBySeason,
   setTicketPageOrientation,
   updateTicketSeat,
   updateTicketOriginalPhoto,
@@ -124,6 +126,50 @@ describe('getTickets', () => {
         playerName: '홍창기',
       },
     ]);
+  });
+
+  it('선택한 시즌의 티켓만 서버에 요청한다', async () => {
+    const order = jest.fn().mockResolvedValue({ data: [], error: null });
+    const eq = jest.fn().mockReturnValue({ order });
+    const select = jest.fn().mockReturnValue({ eq });
+
+    (supabase.from as jest.Mock).mockReturnValue({ select });
+
+    await expect(getTicketsBySeason(2025)).resolves.toEqual([]);
+
+    expect(eq).toHaveBeenCalledWith('game.season', 2025);
+    expect(select.mock.calls[0][0]).toContain(
+      'game:games!tickets_game_key_fkey!inner',
+    );
+  });
+});
+
+describe('getTicketSeasonSummaries', () => {
+  it('사용자 티켓이 1000개를 넘어도 시즌을 빠짐없이 최신순으로 집계한다', async () => {
+    const range = jest
+      .fn()
+      .mockResolvedValueOnce({
+        data: Array.from({ length: 1000 }, () => ({
+          game: { season: 2025 },
+        })),
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: [{ game: { season: 2023 } }],
+        error: null,
+      });
+    const order = jest.fn().mockReturnValue({ range });
+    const select = jest.fn().mockReturnValue({ order });
+
+    (supabase.from as jest.Mock).mockReturnValue({ select });
+
+    await expect(getTicketSeasonSummaries()).resolves.toEqual([
+      { season: 2025, ticketCount: 1000 },
+      { season: 2023, ticketCount: 1 },
+    ]);
+    expect(order).toHaveBeenCalledWith('created_at', { ascending: false });
+    expect(range).toHaveBeenNthCalledWith(1, 0, 999);
+    expect(range).toHaveBeenNthCalledWith(2, 1000, 1999);
   });
 });
 

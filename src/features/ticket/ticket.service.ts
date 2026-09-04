@@ -7,6 +7,7 @@ import type {
   LineupPlayer,
   Ticket,
   TicketDiaryOrientation,
+  TicketSeasonSummary,
 } from './types';
 import {
   getTicketDiaryFilePaths,
@@ -15,6 +16,7 @@ import {
 
 const ORIGINAL_TICKET_BUCKET = 'ticket-originals';
 const SIGNED_URL_EXPIRES_IN_SECONDS = 60 * 60; // 유효시간 1시간
+const TICKET_SEASON_PAGE_SIZE = 1000;
 const MAX_SEAT_NAME_LENGTH = 100;
 const MAX_SEAT_DETAIL_LENGTH = 100;
 const MAX_MEMO_LENGTH = 300;
@@ -183,10 +185,53 @@ export async function createTicket({
   }
 }
 
+export async function getTicketSeasonSummaries(): Promise<
+  TicketSeasonSummary[]
+> {
+  const ticketCountBySeason = new Map<number, number>();
+  let from = 0;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from('tickets')
+      .select(
+        `
+          game:games!tickets_game_key_fkey!inner (
+            season
+          )
+        `,
+      )
+      .order('created_at', { ascending: false })
+      .range(from, from + TICKET_SEASON_PAGE_SIZE - 1);
+
+    if (error) {
+      throw error;
+    }
+
+    data.forEach(({ game }) => {
+      ticketCountBySeason.set(
+        game.season,
+        (ticketCountBySeason.get(game.season) ?? 0) + 1,
+      );
+    });
+
+    if (data.length < TICKET_SEASON_PAGE_SIZE) {
+      break;
+    }
+
+    from += TICKET_SEASON_PAGE_SIZE;
+  }
+
+  return Array.from(ticketCountBySeason, ([season, ticketCount]) => ({
+    season,
+    ticketCount,
+  })).sort((first, second) => second.season - first.season);
+}
+
 // ticket 테이블 조회
 // game:games!tickets_game_key_fkey는 tickets 테이블의 game_key 컬럼과 games 테이블의 key 컬럼을 조인하는 것
-export async function getTickets(): Promise<Ticket[]> {
-  const { data, error } = await supabase
+async function fetchTickets(season?: number): Promise<Ticket[]> {
+  const query = supabase
     .from('tickets')
     .select(
       `
@@ -200,7 +245,8 @@ export async function getTickets(): Promise<Ticket[]> {
         page_orientation,
         created_at,
 
-        game:games!tickets_game_key_fkey (
+        game:games!tickets_game_key_fkey!inner (
+          season,
           game_date,
           start_time,
           stadium_name,
@@ -217,10 +263,14 @@ export async function getTickets(): Promise<Ticket[]> {
           )
         )
       `,
-    )
-    .order('created_at', {
-      ascending: false,
-    });
+    );
+
+  const filteredQuery =
+    season === undefined ? query : query.eq('game.season', season);
+
+  const { data, error } = await filteredQuery.order('created_at', {
+    ascending: false,
+  });
 
   if (error) {
     throw error;
@@ -298,6 +348,14 @@ export async function getTickets(): Promise<Ticket[]> {
 
       return secondTicket.matchTime.localeCompare(firstTicket.matchTime);
     });
+}
+
+export function getTickets(): Promise<Ticket[]> {
+  return fetchTickets();
+}
+
+export function getTicketsBySeason(season: number): Promise<Ticket[]> {
+  return fetchTickets(season);
 }
 
 export async function setTicketPageOrientation(

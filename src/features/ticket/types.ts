@@ -43,6 +43,11 @@ export interface Ticket {
   originalTicketImageUri?: string;
 }
 
+export interface TicketSeasonSummary {
+  season: number;
+  ticketCount: number;
+}
+
 export const TICKET_DIARY_VERSION = 1 as const;
 
 export type TicketDiaryPaperType = 'plain' | 'grid' | 'lined';
