@@ -24,7 +24,7 @@
 ## 미리보기
 
 <p align="center">
-  <img src="./docs/images/sticket1.p리ng" width="200" alt="티켓 목록 화면" />
+  <img src="./docs/images/sticket1.png" width="200" alt="티켓 목록 화면" />
   <img src="./docs/images/sticket2.png" width="200" alt="다이어리 화면" />
   <img src="./docs/images/sticket3.png" width="200" alt="티켓북 화면" />
 </p>
