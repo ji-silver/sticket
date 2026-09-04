@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Animated,
   ScrollView,
@@ -22,6 +21,7 @@ import FilterChip from '../../components/common/FilterChip.tsx';
 import InlineActionButton from '../../components/common/InlineActionButton.tsx';
 import ScreenHeader from '../../components/common/ScreenHeader.tsx';
 import ResponsiveContent from '../../components/common/ResponsiveContent.tsx';
+import AppSkeleton from '../../components/common/AppSkeleton.tsx';
 import {
   useGetTicketsBySeason,
   useGetTicketSeasonSummaries,
@@ -246,8 +246,20 @@ function TicketListScreen() {
           >
             <View style={styles.contentContainer}>
               {isLoadingSeasons || isLoadingTickets ? (
-                <View style={styles.loadingContainer}>
-                  <ActivityIndicator size={'small'} color={colors.primary} />
+                <View
+                  accessible
+                  accessibilityRole="progressbar"
+                  accessibilityLabel="티켓 목록을 불러오는 중"
+                  style={styles.loadingContainer}
+                >
+                  {[0, 1, 2].map(index => (
+                    <AppSkeleton
+                      key={`ticket-skeleton-${index}`}
+                      width="100%"
+                      height={204}
+                      borderRadius={18}
+                    />
+                  ))}
                 </View>
               ) : (
                 <EmptyTicketState onPressAddTicket={handlePressAddTicket} />
@@ -364,8 +376,7 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     minHeight: 214,
-    alignItems: 'center',
-    justifyContent: 'center',
+    gap: 16,
   },
   firstTicket: {
     paddingTop: 28,

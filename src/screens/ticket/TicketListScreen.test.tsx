@@ -25,6 +25,18 @@ jest.mock('../../features/ticket/ticket.service.ts', () => ({
   getTicketsBySeason: jest.fn(),
 }));
 
+jest.mock('../../components/common/AppSkeleton.tsx', () => {
+  const { View } = require('react-native');
+  return function MockAppSkeleton({ width, height, borderRadius }: any) {
+    return (
+      <View
+        testID="ticket-list-skeleton"
+        style={{ width, height, borderRadius }}
+      />
+    );
+  };
+});
+
 jest.mock('./components/TicketCard.tsx', () => {
   const { Pressable, Text } = require('react-native');
   return function MockTicketCard({ ticket, onPress }: any) {
@@ -79,6 +91,24 @@ describe('TicketListScreen', () => {
   };
 
   describe('데이터 페칭 및 빈 화면 상태 처리', () => {
+    it('티켓 목록을 불러오는 동안 카드 스켈레톤 세 개를 표시한다', async () => {
+      (getTicketSeasonSummaries as jest.Mock).mockReturnValueOnce(
+        new Promise(() => {}),
+      );
+
+      await setup();
+
+      const skeletons = screen.getAllByTestId('ticket-list-skeleton');
+      expect(skeletons).toHaveLength(3);
+      skeletons.forEach(skeleton => {
+        expect(skeleton).toHaveStyle({
+          width: '100%',
+          height: 204,
+          borderRadius: 18,
+        });
+      });
+    });
+
     it('티켓 데이터가 없으면, 빈 화면 전용 안내 문구와 추가 버튼이 노출된다', async () => {
       await setup();
 
