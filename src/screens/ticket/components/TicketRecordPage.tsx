@@ -55,8 +55,8 @@ function TicketRecordPage({ ticket, orientation }: TicketRecordPageProps) {
   const matchDateText = formatMatchDate(ticket.matchDate);
   const isFinished = ticket.gameStatus === 'FINISHED';
   const isInProgress = ticket.gameStatus === 'IN_PROGRESS';
-  const awayScoreText = isFinished ? ticket.awayScore ?? '-' : '-';
-  const homeScoreText = isFinished ? ticket.homeScore ?? '-' : '-';
+  const awayScoreText = ticket.awayScore ?? '-';
+  const homeScoreText = ticket.homeScore ?? '-';
   const matchResult =
     isFinished && favoriteTeamName
       ? getFavoriteTeamMatchResult(ticket, favoriteTeamName)

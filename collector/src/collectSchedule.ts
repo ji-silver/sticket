@@ -1,7 +1,6 @@
 import { chromium, type Page } from 'playwright';
 import type {
   KboGame,
-  KboGameStatus,
   KboSeriesType,
   KboTeamId,
 } from './types.ts';
@@ -11,6 +10,7 @@ import {
   getUpcomingScheduleMonths,
 } from './dateWindow.ts';
 import { syncGameLineups, syncMissingGameLineups } from './gameLineups.ts';
+import { parseGameStatus } from './gameStatus.ts';
 import { assertScheduleCollectionHealth } from './scheduleCollectionHealth.ts';
 import { upsertGames } from './saveGames.ts';
 
@@ -516,42 +516,6 @@ function parseSeriesType(value: string): KboSeriesType {
     default:
       throw new Error(`지원하지 않는 경기 종류입니다: ${value}`);
   }
-}
-
-function parseGameStatus(
-  gameDate: string,
-  today: string,
-  time: string,
-  relay: string,
-  note: string,
-  awayScore: number | null,
-  homeScore: number | null,
-): KboGameStatus {
-  const statusText = `${time} ${relay} ${note}`;
-
-  if (statusText.includes('연기')) {
-    return 'POSTPONED';
-  }
-
-  if (statusText.includes('취소')) {
-    return 'CANCELLED';
-  }
-
-  if (relay.trim() === '리뷰') {
-    return 'FINISHED';
-  }
-
-  if (awayScore !== null && homeScore !== null) {
-    return 'IN_PROGRESS';
-  }
-
-  // 이미 날짜가 지났지만 점수와 취소 정보가 없으면
-  // 예정 경기로 단정하지 않습니다.
-  if (gameDate < today) {
-    return 'UNKNOWN';
-  }
-
-  return 'SCHEDULED';
 }
 
 function normalizeNote(note: string): string | null {
