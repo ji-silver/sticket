@@ -1,17 +1,17 @@
-import React, {useEffect, useState} from 'react';
-import {Image, StyleSheet, View} from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Image, StyleSheet, View } from 'react-native';
 import Svg, {
-  Defs,
-  LinearGradient,
-  Stop,
-  Rect,
   Circle,
-  Path,
-  G,
-  Line,
-  RadialGradient,
   ClipPath,
+  Defs,
+  G,
   Image as SvgImage,
+  Line,
+  LinearGradient,
+  Path,
+  RadialGradient,
+  Rect,
+  Stop,
 } from 'react-native-svg';
 import AppSkeleton from './common/AppSkeleton.tsx';
 
@@ -69,7 +69,7 @@ function DiaryCover({
   }, [photoUri]);
 
   return (
-    <View style={[styles.container, {width: w, height: h}]}>
+    <View style={[styles.container, { width: w, height: h }]}>
       <Svg width={w} height={h} viewBox="-12 0 250 300">
         <Defs>
           {/* ── 바인더 봉 금속 ── */}
@@ -117,14 +117,17 @@ function DiaryCover({
           {/* ── 포켓 그라디언트 ── */}
           <LinearGradient id="pocketGrad" x1="0" y1="0" x2="0" y2="1">
             <Stop offset="0" stopColor="#FFFFFF" stopOpacity="0.0" />
-            <Stop offset="0.25" stopColor="#FFFFFF" stopOpacity="0.12" />
-            <Stop offset="1" stopColor="#FFFFFF" stopOpacity="0.35" />
+            <Stop offset="0.25" stopColor="#FFFFFF" stopOpacity="0.1" />
+            <Stop offset="1" stopColor="#FFFFFF" stopOpacity="0.1" />
           </LinearGradient>
         </Defs>
 
         {/* PVC 커버의 깊이는 한 겹의 옅은 그림자로만 표현 */}
         <Rect
-          x="7" y="9" width="198" height="260"
+          x="7"
+          y="9"
+          width="198"
+          height="260"
           rx="22"
           fill="rgba(143,164,178,0.14)"
         />
@@ -159,39 +162,57 @@ function DiaryCover({
         <Path
           d="M 38 14 H 172 Q 186 14, 186 28 V 240 Q 186 254, 172 254 H 38 Z"
           fill="none"
-          stroke="rgba(0,0,0,0.05)" strokeWidth="0.5"
+          stroke="rgba(0,0,0,0.05)"
+          strokeWidth="0.5"
         />
 
         {/* ═══════════════════════════════════════════
             5) 속지 페이지 뭉치
         ═══════════════════════════════════════════ */}
-        <Line x1="35.5" y1="22" x2="35.5" y2="248" stroke="rgba(238,243,246,0.7)" strokeWidth="1" />
+        <Line
+          x1="35.5"
+          y1="22"
+          x2="35.5"
+          y2="248"
+          stroke="rgba(238,243,246,0.7)"
+          strokeWidth="1"
+        />
 
         {/* ═══════════════════════════════════════════
             6) 바인더 봉
         ═══════════════════════════════════════════ */}
-        <Rect x="20" y="17" width="10" height="232" rx="3" fill="url(#barGrad)" />
-        <Line x1="24.5" y1="22" x2="24.5" y2="244" stroke="rgba(255,255,255,0.45)" strokeWidth="0.8" />
+        <Rect
+          x="20"
+          y="17"
+          width="10"
+          height="232"
+          rx="3"
+          fill="url(#barGrad)"
+        />
+        <Line
+          x1="24.5"
+          y1="22"
+          x2="24.5"
+          y2="244"
+          stroke="rgba(255,255,255,0.45)"
+          strokeWidth="0.8"
+        />
 
         {/* ═══════════════════════════════════════════
             7) 표지 구멍
         ═══════════════════════════════════════════ */}
         {RING_Y.map(y => (
           <G key={`hole-${y}`}>
+            <Circle cx="48" cy={y + 0.8} r="6.2" fill="rgba(70,82,90,0.10)" />
             <Circle
-              cx="48" cy={y + 0.8} r="6.2"
-              fill="rgba(70,82,90,0.10)"
-            />
-            <Circle
-              cx="48" cy={y} r="5.8"
+              cx="48"
+              cy={y}
+              r="5.8"
               fill="rgba(255,255,255,0.42)"
               stroke="rgba(178,190,198,0.55)"
               strokeWidth="1.2"
             />
-            <Circle
-              cx="48" cy={y} r="3.4"
-              fill="rgba(185,195,202,0.35)"
-            />
+            <Circle cx="48" cy={y} r="3.4" fill="rgba(185,195,202,0.35)" />
           </G>
         ))}
 
@@ -200,7 +221,14 @@ function DiaryCover({
         ═══════════════════════════════════════════ */}
         {RING_Y.map(y => (
           <G key={`ring-${y}`}>
-            <Rect x="28" y={y + 0.8} width="24" height="3.8" rx="1.9" fill="rgba(60,75,85,0.10)" />
+            <Rect
+              x="28"
+              y={y + 0.8}
+              width="24"
+              height="3.8"
+              rx="1.9"
+              fill="rgba(60,75,85,0.10)"
+            />
             <Rect
               x="27"
               y={y - 2.2}
@@ -225,14 +253,20 @@ function DiaryCover({
 
         {/* PVC 앞면 — 바깥선과 안쪽 하이라이트만 유지 */}
         <Rect
-          x="4" y="4" width="200" height="260"
+          x="4"
+          y="4"
+          width="200"
+          height="260"
           rx="22"
           fill="url(#pvcFrost)"
           stroke="rgba(190,205,214,0.34)"
           strokeWidth="1.2"
         />
         <Rect
-          x="6.5" y="6.5" width="195" height="255"
+          x="6.5"
+          y="6.5"
+          width="195"
+          height="255"
           rx="20"
           fill="none"
           stroke="rgba(255,255,255,0.28)"
@@ -271,8 +305,12 @@ function DiaryCover({
           </>
         )}
         <Rect
-          x="78" y="143" width="68" height="101"
-          rx="8" fill="rgba(255,255,255,0.13)"
+          x="78"
+          y="143"
+          width="68"
+          height="101"
+          rx="8"
+          fill="rgba(255,255,255,0.13)"
         />
         <Path
           d={`
@@ -285,7 +323,8 @@ function DiaryCover({
           `}
           fill="url(#pocketGrad)"
           stroke="rgba(232,238,241,0.52)"
-          strokeWidth="1.2" strokeLinejoin="round"
+          strokeWidth="1.2"
+          strokeLinejoin="round"
         />
         <Path
           d="M 82 145 H 142"
@@ -348,7 +387,9 @@ function DiaryCover({
         {/* 버튼 */}
         <Circle cx="192" cy="137" r="12.5" fill="rgba(100,115,125,0.08)" />
         <Circle
-          cx="192" cy="135" r="12"
+          cx="192"
+          cy="135"
+          r="12"
           fill="url(#snapGrad)"
           stroke="rgba(170,182,190,0.45)"
           strokeWidth="1.2"
