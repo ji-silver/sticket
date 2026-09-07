@@ -2,22 +2,25 @@ name: KBO 경기 자동 수집
 
 on:
   workflow_dispatch:
-
-  schedule:
-    - cron: '7 10 * 3-7 *'
-      timezone: 'Asia/Seoul'
-
-    - cron: '7 10 * 8-11 *'
-      timezone: 'Asia/Seoul'
-
-    - cron: '17,47 10-23 * 3-11 *'
-      timezone: 'Asia/Seoul'
-
-    - cron: '17 0,9 * 3-11 *'
-      timezone: 'Asia/Seoul'
+    inputs:
+      mode:
+        description: 수집 범위
+        required: true
+        default: today
+        type: choice
+        options:
+          - today
+          - yesterday
+          - upcoming
+          - schedule
+          - recent
 
 permissions:
   contents: read
+
+concurrency:
+  group: kbo-collector
+  cancel-in-progress: false
 
 jobs:
   collect:
@@ -46,35 +49,35 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: KBO 향후 2개월 일정 수집
-        if: github.event.schedule == '7 10 * 3-7 *'
+        if: inputs.mode == 'upcoming'
         run: npm run collect:schedule:upcoming
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
 
       - name: KBO 잔여 시즌 일정 수집
-        if: github.event.schedule == '7 10 * 8-11 *'
+        if: inputs.mode == 'schedule'
         run: npm run collect:schedule
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
 
       - name: KBO 당일 경기 상태 수집
-        if: github.event.schedule == '17,47 10-23 * 3-11 *'
+        if: inputs.mode == 'today'
         run: npm run collect:today
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
 
       - name: KBO 전날 경기 최종 보정
-        if: github.event.schedule == '17 0,9 * 3-11 *'
+        if: inputs.mode == 'yesterday'
         run: npm run collect:yesterday
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
 
-      - name: KBO 경기 상태 수동 수집
-        if: github.event_name == 'workflow_dispatch'
+      - name: KBO 최근 경기 수동 수집
+        if: inputs.mode == 'recent'
         run: npm run collect
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
