@@ -10,6 +10,7 @@ import { supabase } from '../../lib/supabase.ts';
 import {
   createTicket,
   deleteTicket,
+  getTicketById,
   getTicketGameSnapshot,
   getTicketSeasonSummaries,
   getTickets,
@@ -141,6 +142,63 @@ describe('getTickets', () => {
     expect(eq).toHaveBeenCalledWith('game.season', 2025);
     expect(select.mock.calls[0][0]).toContain(
       'game:games!tickets_game_key_fkey!inner',
+    );
+  });
+});
+
+describe('getTicketById', () => {
+  it('요청한 티켓 한 건과 그 티켓의 원본 사진 URL만 조회한다', async () => {
+    const order = jest.fn().mockResolvedValue({
+      data: [
+        {
+          id: 'ticket-1',
+          seat_name: '네이비석',
+          seat_detail: '309블록',
+          rating: 5,
+          memo: '승리',
+          foods: ['치킨'],
+          original_photo_path: 'user-1/book-1/ticket-1/original.jpg',
+          page_orientation: null,
+          created_at: '2026-08-05T00:00:00Z',
+          game: {
+            game_date: '2026-08-05',
+            start_time: '18:30:00',
+            stadium_name: '잠실',
+            status: 'FINISHED',
+            away_lineup: [],
+            home_lineup: [],
+            away_score: 2,
+            home_score: 3,
+            awayTeam: { short_name: '두산' },
+            homeTeam: { short_name: 'LG' },
+          },
+        },
+      ],
+      error: null,
+    });
+    const eq = jest.fn().mockReturnValue({ order });
+    const select = jest.fn().mockReturnValue({ eq });
+    const createSignedUrls = jest.fn().mockResolvedValue({
+      data: [
+        {
+          path: 'user-1/book-1/ticket-1/original.jpg',
+          signedUrl: 'https://example.com/ticket-1.jpg',
+        },
+      ],
+      error: null,
+    });
+
+    (supabase.from as jest.Mock).mockReturnValue({ select });
+    (supabase.storage.from as jest.Mock).mockReturnValue({ createSignedUrls });
+
+    await expect(getTicketById('ticket-1')).resolves.toMatchObject({
+      id: 'ticket-1',
+      originalTicketImageUri: 'https://example.com/ticket-1.jpg',
+    });
+    expect(eq).toHaveBeenCalledWith('id', 'ticket-1');
+    expect(createSignedUrls).toHaveBeenCalledWith(
+      ['user-1/book-1/ticket-1/original.jpg'],
+      3600,
     );
   });
 });

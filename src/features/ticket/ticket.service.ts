@@ -230,7 +230,15 @@ export async function getTicketSeasonSummaries(): Promise<
 
 // ticket 테이블 조회
 // game:games!tickets_game_key_fkey는 tickets 테이블의 game_key 컬럼과 games 테이블의 key 컬럼을 조인하는 것
-async function fetchTickets(season?: number): Promise<Ticket[]> {
+interface FetchTicketsParams {
+  season?: number;
+  ticketId?: string;
+}
+
+async function fetchTickets({
+  season,
+  ticketId,
+}: FetchTicketsParams = {}): Promise<Ticket[]> {
   const query = supabase
     .from('tickets')
     .select(
@@ -265,8 +273,15 @@ async function fetchTickets(season?: number): Promise<Ticket[]> {
       `,
     );
 
-  const filteredQuery =
-    season === undefined ? query : query.eq('game.season', season);
+  let filteredQuery = query;
+
+  if (season !== undefined) {
+    filteredQuery = filteredQuery.eq('game.season', season);
+  }
+
+  if (ticketId !== undefined) {
+    filteredQuery = filteredQuery.eq('id', ticketId);
+  }
 
   const { data, error } = await filteredQuery.order('created_at', {
     ascending: false,
@@ -354,6 +369,11 @@ export function getTickets(): Promise<Ticket[]> {
   return fetchTickets();
 }
 
+export async function getTicketById(ticketId: string): Promise<Ticket | null> {
+  const [ticket] = await fetchTickets({ ticketId });
+  return ticket ?? null;
+}
+
 export async function getTicketGameSnapshot(ticketId: string) {
   const { data, error } = await supabase
     .from('tickets')
@@ -388,7 +408,7 @@ export async function getTicketGameSnapshot(ticketId: string) {
 }
 
 export function getTicketsBySeason(season: number): Promise<Ticket[]> {
-  return fetchTickets(season);
+  return fetchTickets({ season });
 }
 
 export async function setTicketPageOrientation(

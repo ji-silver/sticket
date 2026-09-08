@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import {
+  getTicketById,
   getTicketGameSnapshot,
   getTicketSeasonSummaries,
   getTickets,
@@ -12,6 +13,13 @@ export function useGetTickets() {
   return useQuery({
     queryKey: TICKETS_QUERY_KEY,
     queryFn: getTickets,
+  });
+}
+
+export function useGetTicket(ticketId: string) {
+  return useQuery({
+    queryKey: [...TICKETS_QUERY_KEY, 'detail', ticketId],
+    queryFn: () => getTicketById(ticketId),
   });
 }
 

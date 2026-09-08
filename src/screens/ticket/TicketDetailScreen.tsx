@@ -1,5 +1,12 @@
 import { useLayoutEffect, useRef, useState } from 'react';
-import { Alert, Keyboard, Pressable, StyleSheet, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Keyboard,
+  Pressable,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MoreHorizontal, Share } from 'lucide-react-native';
 import { useNavigation, useRoute } from '@react-navigation/core';
@@ -8,6 +15,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AppText from '../../components/common/AppText.tsx';
 import AppPopoverMenu from '../../components/common/AppPopoverMenu.tsx';
 import ConfirmDialog from '../../components/common/ConfirmDialog.tsx';
+import InlineActionButton from '../../components/common/InlineActionButton.tsx';
 import ScreenHeader from '../../components/common/ScreenHeader.tsx';
 import type { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
 import { colors } from '../../styles/colors.ts';
@@ -19,8 +27,8 @@ import TicketRecordPage from './components/TicketRecordPage.tsx';
 import TicketPageOrientationSheet from './components/TicketPageOrientationSheet.tsx';
 import { useDeleteTicket } from '../../features/ticket/api/useDeleteTicket';
 import {
+  useGetTicket,
   useGetTicketGameSnapshot,
-  useGetTickets,
 } from '../../features/ticket/api/useGetTickets';
 import { useSetTicketPageOrientation } from '../../features/ticket/api/useSetTicketPageOrientation.ts';
 import type { TicketDiaryOrientation } from '../../features/ticket/types.ts';
@@ -38,11 +46,15 @@ function TicketDetailScreen() {
   const [activeTab, setActiveTab] = useState<DetailTab>('record');
   const isFocused = useIsFocused();
 
-  const { data: tickets = [] } = useGetTickets();
-  const ticket = tickets.find(t => t.id === ticketId);
+  const {
+    data: ticket,
+    isLoading: isLoadingTicket,
+    isError: isTicketError,
+    refetch: refetchTicket,
+  } = useGetTicket(ticketId);
   const { data: gameSnapshot } = useGetTicketGameSnapshot(
     ticketId,
-    isFocused && activeTab === 'record' && ticket !== undefined,
+    isFocused && activeTab === 'record' && Boolean(ticket),
   );
   const currentTicket =
     ticket && gameSnapshot ? { ...ticket, ...gameSnapshot } : ticket;
@@ -140,8 +152,40 @@ function TicketDetailScreen() {
     }
   };
 
-  if (!currentTicket) {
-    return null;
+  if (isLoadingTicket || isTicketError || !currentTicket) {
+    const statusTitle = isLoadingTicket
+      ? '티켓 정보를 불러오고 있어요'
+      : isTicketError
+        ? '티켓을 불러오지 못했어요'
+        : '티켓을 찾을 수 없어요';
+
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <ScreenHeader
+          title="직관 기록"
+          onPressBack={() => navigation.goBack()}
+        />
+
+        <View style={styles.statusContainer}>
+          {isLoadingTicket ? (
+            <ActivityIndicator color={colors.primary} />
+          ) : null}
+          <AppText style={styles.statusTitle}>{statusTitle}</AppText>
+          {isTicketError ? (
+            <>
+              <AppText style={styles.statusDescription}>
+                네트워크 상태를 확인하고 다시 시도해 주세요.
+              </AppText>
+              <InlineActionButton
+                label="다시 시도"
+                tone="primary"
+                onPress={refetchTicket}
+              />
+            </>
+          ) : null}
+        </View>
+      </SafeAreaView>
+    );
   }
 
   return (
@@ -313,6 +357,25 @@ const styles = StyleSheet.create({
   },
   page: {
     flex: 1,
+  },
+  statusContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    paddingHorizontal: 24,
+  },
+  statusTitle: {
+    fontSize: 16,
+    fontFamily: fonts.semiBold,
+    color: colors.text,
+    textAlign: 'center',
+  },
+  statusDescription: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.textSecondary,
+    textAlign: 'center',
   },
   hidden: {
     display: 'none',
