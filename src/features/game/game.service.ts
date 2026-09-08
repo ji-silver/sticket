@@ -103,6 +103,8 @@ export async function getTeamGamesByMonth(
         game_key,
         game_date,
         start_time,
+        season,
+        series_type,
         stadium_name,
         status,
         away_team_id,
@@ -144,7 +146,10 @@ export async function getTeamGamesByMonth(
       id: game.game_key,
       date: game.game_date,
       time: game.start_time?.slice(0, 5) ?? '시간 미정',
+      season: game.season,
+      seriesType: game.series_type,
       stadiumName: game.stadium_name ?? '경기장 미정',
+      homeTeamId: game.home_team_id,
       homeAway: isHome ? 'H' : 'A',
       opponentName: isHome
         ? game.awayTeam.short_name

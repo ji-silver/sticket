@@ -18,7 +18,8 @@ interface CalendarTicketListProps {
   favoriteTeamName: string;
   isLoading: boolean;
   onPressTicket: (ticketId: string) => void;
-  onPressAddTicket: () => void;
+  onPressAddTicket: (game?: TeamCalendarGame) => void;
+  isAddingTicket: boolean;
 }
 
 const formatSelectedDate = (dateString: string) => {
@@ -40,6 +41,7 @@ function CalendarTicketList({
   isLoading,
   onPressTicket,
   onPressAddTicket,
+  isAddingTicket,
 }: CalendarTicketListProps) {
   return (
     <View style={styles.recordSection}>
@@ -125,7 +127,8 @@ function CalendarTicketList({
                       styles.teamGameAddButton,
                       pressed && styles.addTicketButtonPressed,
                     ]}
-                    onPress={onPressAddTicket}
+                    onPress={() => onPressAddTicket(game)}
+                    isLoading={isAddingTicket}
                     accessibilityRole="button"
                     accessibilityLabel="선택한 경기에 직관 기록 추가"
                   >
@@ -164,7 +167,7 @@ function CalendarTicketList({
                 styles.addTicketButton,
                 pressed && styles.addTicketButtonPressed,
               ]}
-              onPress={onPressAddTicket}
+              onPress={() => onPressAddTicket()}
               accessibilityRole="button"
               accessibilityLabel="선택한 날짜에 티켓 추가"
             >
@@ -260,6 +263,7 @@ const styles = StyleSheet.create({
 
   teamGameAddButton: {
     marginTop: 20,
+    minWidth: 106,
   },
 
   emptyCard: {

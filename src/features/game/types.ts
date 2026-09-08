@@ -17,7 +17,10 @@ export interface TeamCalendarGame {
   id: string;
   date: string;
   time: string;
+  season: number;
+  seriesType: string;
   stadiumName: string;
+  homeTeamId: string;
   homeAway: 'H' | 'A';
   opponentName: string;
   status: string;

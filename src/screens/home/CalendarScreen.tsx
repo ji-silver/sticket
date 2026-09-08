@@ -18,6 +18,8 @@ import { getTicketBooks } from '../../features/ticket-book/ticketBook.service.ts
 import type { TeamCalendarGame } from '../../features/game/types.ts';
 import CalendarMonthView from './components/CalendarMonthView.tsx';
 import CalendarTicketList from './components/CalendarTicketList.tsx';
+import { useCreateTicket } from '../../features/ticket/api/useCreateTicket.ts';
+import { getSeasonTicketSeatName } from '../../features/ticket/seasonTicketSeat.ts';
 
 type CalendarNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -26,6 +28,8 @@ function CalendarScreen() {
 
   const navigation = useNavigation<CalendarNavigationProp>();
   const { profile } = useAuth();
+  const createTicketMutation = useCreateTicket();
+  const [isAddingTicket, setIsAddingTicket] = useState(false);
 
   const today = getTodayInKorea();
 
@@ -40,11 +44,38 @@ function CalendarScreen() {
   const { data: leagueGameDates = [] } =
     useGetLeagueGameDatesByMonth(visibleMonth);
 
-  const handlePressAddTicket = async () => {
+  const handlePressAddTicket = async (game?: TeamCalendarGame) => {
+    if (game && isAddingTicket) {
+      return;
+    }
+
+    if (game) {
+      setIsAddingTicket(true);
+    }
+
     try {
       const ticketBooks = await getTicketBooks();
 
       if (ticketBooks.length > 0) {
+        if (game) {
+          const createdTicket = await createTicketMutation.mutateAsync({
+            gameKey: game.id,
+            seatName: getSeasonTicketSeatName(
+              profile,
+              game,
+              Number(today.slice(0, 4)),
+            ),
+            seatDetail: '',
+            originalPhotoBase64: undefined,
+          });
+
+          navigation.navigate('TicketDetail', {
+            ticketId: createdTicket.id,
+          });
+
+          return;
+        }
+
         navigation.navigate('AddTicket', {
           initialDate: selectedDate,
         });
@@ -67,12 +98,22 @@ function CalendarScreen() {
         ],
       );
     } catch (error) {
+      if (game) {
+        console.error('티켓을 저장하지 못했습니다.', error);
+        Alert.alert('티켓을 추가하지 못했어요', '잠시 후 다시 시도해 주세요.');
+        return;
+      }
+
       console.error('티켓북 목록을 확인하지 못했습니다.', error);
 
       Alert.alert(
         '티켓북 정보를 확인하지 못했어요',
         '잠시 후 다시 시도해 주세요.',
       );
+    } finally {
+      if (game) {
+        setIsAddingTicket(false);
+      }
     }
   };
 
@@ -158,6 +199,7 @@ function CalendarScreen() {
               })
             }
             onPressAddTicket={handlePressAddTicket}
+            isAddingTicket={isAddingTicket}
           />
         </ResponsiveContent>
       </ScrollView>

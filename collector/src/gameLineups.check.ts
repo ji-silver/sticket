@@ -17,7 +17,7 @@ function createTeamTable(prefix: string) {
     row: [{ Text: '3' }, { Text: '주' }, { Text: `${prefix}대주자` }],
   });
 
-  return { table1: JSON.stringify({ rows }) };
+  return JSON.stringify({ rows });
 }
 
 test('발표된 KBO 라인업에서 양 팀의 실제 선발 1~9번만 추출한다', () => {

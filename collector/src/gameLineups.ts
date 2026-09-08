@@ -195,14 +195,14 @@ export function parseKboLineupsResponse(value: unknown): GameLineups | null {
 }
 
 function parseTeamLineup(value: unknown): KboLineupPlayer[] {
-  if (!isRecord(value) || typeof value.table1 !== 'string') {
+  if (typeof value !== 'string') {
     return [];
   }
 
   let table: unknown;
 
   try {
-    table = JSON.parse(value.table1) as unknown;
+    table = JSON.parse(value) as unknown;
   } catch {
     return [];
   }

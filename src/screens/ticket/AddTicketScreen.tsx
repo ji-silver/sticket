@@ -31,33 +31,12 @@ import type { RouteProp } from '@react-navigation/native';
 import { useCreateTicket } from '../../features/ticket/api/useCreateTicket';
 import AddTicketDateSection from './components/AddTicketDateSection.tsx';
 import AddTicketGameSection from './components/AddTicketGameSection.tsx';
-import type { UserProfile } from '../../features/auth/auth.types.ts';
-import type { KboGame } from '../../features/game/types.ts';
 import AppBottomSheet from '../../components/common/AppBottomSheet.tsx';
 import { getSeatNamesForGame } from '../../features/ticket/seatCatalog.ts';
 import StadiumSeatNameList from './components/StadiumSeatNameList.tsx';
+import { getSeasonTicketSeatName } from '../../features/ticket/seasonTicketSeat.ts';
 
 type AddTicketRouteProp = RouteProp<RootStackParamList, 'AddTicket'>;
-
-function getSeasonTicketSeatName(
-  profile: UserProfile | null,
-  game: KboGame | undefined,
-  currentSeason: number,
-) {
-  if (
-    !game ||
-    !profile?.season_ticket_seat_name ||
-    profile.season_ticket_season !== currentSeason ||
-    profile.season_ticket_team_id !== game.homeTeamId ||
-    profile.favorite_team_id !== game.homeTeamId ||
-    game.season !== currentSeason ||
-    game.seriesType !== 'REGULAR'
-  ) {
-    return '';
-  }
-
-  return profile.season_ticket_seat_name;
-}
 
 function AddTicketScreen() {
   const horizontalPadding = 20;
