@@ -2,8 +2,8 @@ import type { KboGame, KboLineupPlayer } from './types.ts';
 
 const KBO_GAME_LIST_URL =
   'https://www.koreabaseball.com/ws/Main.asmx/GetKboGameList';
-const KBO_BOX_SCORE_URL =
-  'https://www.koreabaseball.com/ws/Schedule.asmx/GetBoxScoreScroll';
+const KBO_LINEUP_URL =
+  'https://www.koreabaseball.com/ws/Schedule.asmx/GetLineUpAnalysis';
 
 const kboHeaders = {
   'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
@@ -76,7 +76,7 @@ export async function syncGameLineups(games: LineupGame[]): Promise<number> {
 
         if (seriesId === undefined) continue;
 
-        const response = await postKbo(KBO_BOX_SCORE_URL, {
+        const response = await postKbo(KBO_LINEUP_URL, {
           leId: '1',
           srId: String(seriesId),
           seasonId: String(game.season),
@@ -174,12 +174,18 @@ async function postKbo(url: string, values: Record<string, string>) {
 }
 
 export function parseKboLineupsResponse(value: unknown): GameLineups | null {
-  if (!isRecord(value) || !Array.isArray(value.arrHitter)) {
+  if (!Array.isArray(value)) {
     return null;
   }
 
-  const away = parseTeamLineup(value.arrHitter[0]);
-  const home = parseTeamLineup(value.arrHitter[1]);
+  const lineupStatus = Array.isArray(value[0]) ? value[0][0] : null;
+
+  if (!isRecord(lineupStatus) || lineupStatus.LINEUP_CK !== true) {
+    return null;
+  }
+
+  const away = parseTeamLineup(Array.isArray(value[4]) ? value[4][0] : null);
+  const home = parseTeamLineup(Array.isArray(value[3]) ? value[3][0] : null);
 
   if (away.length !== 9 || home.length !== 9) {
     return null;

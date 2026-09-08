@@ -3,7 +3,7 @@ import { Alert, Keyboard, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MoreHorizontal, Share } from 'lucide-react-native';
 import { useNavigation, useRoute } from '@react-navigation/core';
-import type { RouteProp } from '@react-navigation/native';
+import { useIsFocused, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AppText from '../../components/common/AppText.tsx';
 import AppPopoverMenu from '../../components/common/AppPopoverMenu.tsx';
@@ -18,7 +18,10 @@ import TicketDiaryPage, {
 import TicketRecordPage from './components/TicketRecordPage.tsx';
 import TicketPageOrientationSheet from './components/TicketPageOrientationSheet.tsx';
 import { useDeleteTicket } from '../../features/ticket/api/useDeleteTicket';
-import { useGetTickets } from '../../features/ticket/api/useGetTickets';
+import {
+  useGetTicketGameSnapshot,
+  useGetTickets,
+} from '../../features/ticket/api/useGetTickets';
 import { useSetTicketPageOrientation } from '../../features/ticket/api/useSetTicketPageOrientation.ts';
 import type { TicketDiaryOrientation } from '../../features/ticket/types.ts';
 
@@ -32,11 +35,18 @@ function TicketDetailScreen() {
   const { ticketId } = route.params;
   const diaryPageRef = useRef<TicketDiaryPageHandle>(null);
   const menuButtonRef = useRef<View>(null);
+  const [activeTab, setActiveTab] = useState<DetailTab>('record');
+  const isFocused = useIsFocused();
 
   const { data: tickets = [] } = useGetTickets();
   const ticket = tickets.find(t => t.id === ticketId);
+  const { data: gameSnapshot } = useGetTicketGameSnapshot(
+    ticketId,
+    isFocused && activeTab === 'record' && ticket !== undefined,
+  );
+  const currentTicket =
+    ticket && gameSnapshot ? { ...ticket, ...gameSnapshot } : ticket;
 
-  const [activeTab, setActiveTab] = useState<DetailTab>('record');
   const [hasOpenedDiary, setHasOpenedDiary] = useState(false);
   const [isDeleteDialogVisible, setIsDeleteDialogVisible] = useState(false);
   const [isResetDialogVisible, setIsResetDialogVisible] = useState(false);
@@ -130,7 +140,7 @@ function TicketDetailScreen() {
     }
   };
 
-  if (!ticket) {
+  if (!currentTicket) {
     return null;
   }
 
@@ -227,14 +237,18 @@ function TicketDetailScreen() {
 
       <View style={[styles.page, activeTab !== 'record' && styles.hidden]}>
         <TicketRecordPage
-          ticket={ticket}
+          ticket={currentTicket}
           orientation={pageOrientation ?? 'portrait'}
         />
       </View>
 
       {hasOpenedDiary ? (
         <View style={[styles.page, activeTab !== 'diary' && styles.hidden]}>
-          <TicketDiaryPage ref={diaryPageRef} key={ticket.id} ticket={ticket} />
+          <TicketDiaryPage
+            ref={diaryPageRef}
+            key={currentTicket.id}
+            ticket={currentTicket}
+          />
         </View>
       ) : null}
 

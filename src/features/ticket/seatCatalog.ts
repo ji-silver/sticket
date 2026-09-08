@@ -5,7 +5,7 @@ export const INCHEON_SEAT_NAMES = [
   'SKY탁자석',
   '미니스카이박스',
   '외야패밀리존',
-  '이마트 프렌들리존',
+  '프렌들리존',
   '랜더스 라이브존',
   '피코크 테이블석',
   '노브랜드 테이블석',
@@ -17,14 +17,14 @@ export const INCHEON_SEAT_NAMES = [
   '스카이박스',
   '도드람한돈 바비큐존',
   '이마트바비큐존',
-  '요기요 내야패밀리존',
+  '내야패밀리존',
   '초가정자',
   '로케트배터리 외야파티덱',
 ] as const;
 
 export const KT_WIZ_SEAT_NAMES = [
   '비씨카드존',
-  '티빙테이블석',
+  '테이블석',
   '스카이존',
   '네이버클립존',
   '휠체어석',
@@ -34,7 +34,7 @@ export const KT_WIZ_SEAT_NAMES = [
   '익사이팅석',
   '응원지정석',
   '스카이박스',
-  '위즈 캠핑존',
+  '캠핑존',
 ] as const;
 
 export const GOCHEOK_SEAT_NAMES = [

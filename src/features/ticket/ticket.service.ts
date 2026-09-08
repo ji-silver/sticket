@@ -354,6 +354,39 @@ export function getTickets(): Promise<Ticket[]> {
   return fetchTickets();
 }
 
+export async function getTicketGameSnapshot(ticketId: string) {
+  const { data, error } = await supabase
+    .from('tickets')
+    .select(
+      `
+        game:games!tickets_game_key_fkey!inner (
+          status,
+          away_lineup,
+          home_lineup,
+          away_score,
+          home_score
+        )
+      `,
+    )
+    .eq('id', ticketId)
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  const game = data.game;
+
+  return {
+    gameStatus: game.status,
+    isCancelled: game.status === 'CANCELLED',
+    awayScore: game.away_score,
+    homeScore: game.home_score,
+    awayLineup: parseLineup(game.away_lineup),
+    homeLineup: parseLineup(game.home_lineup),
+  };
+}
+
 export function getTicketsBySeason(season: number): Promise<Ticket[]> {
   return fetchTickets(season);
 }

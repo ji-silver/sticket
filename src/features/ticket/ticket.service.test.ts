@@ -10,6 +10,7 @@ import { supabase } from '../../lib/supabase.ts';
 import {
   createTicket,
   deleteTicket,
+  getTicketGameSnapshot,
   getTicketSeasonSummaries,
   getTickets,
   getTicketsBySeason,
@@ -141,6 +142,43 @@ describe('getTickets', () => {
     expect(select.mock.calls[0][0]).toContain(
       'game:games!tickets_game_key_fkey!inner',
     );
+  });
+});
+
+describe('getTicketGameSnapshot', () => {
+  it('사진 정보 없이 해당 티켓의 최신 점수와 라인업만 조회한다', async () => {
+    const single = jest.fn().mockResolvedValue({
+      data: {
+        game: {
+          status: 'IN_PROGRESS',
+          away_score: 2,
+          home_score: 3,
+          away_lineup: [
+            { battingOrder: 1, position: 'CF', playerName: '홍길동' },
+          ],
+          home_lineup: [],
+        },
+      },
+      error: null,
+    });
+    const eq = jest.fn().mockReturnValue({ single });
+    const select = jest.fn().mockReturnValue({ eq });
+
+    (supabase.from as jest.Mock).mockReturnValue({ select });
+
+    await expect(getTicketGameSnapshot('ticket-1')).resolves.toEqual({
+      gameStatus: 'IN_PROGRESS',
+      isCancelled: false,
+      awayScore: 2,
+      homeScore: 3,
+      awayLineup: [
+        { battingOrder: 1, position: 'CF', playerName: '홍길동' },
+      ],
+      homeLineup: [],
+    });
+
+    expect(eq).toHaveBeenCalledWith('id', 'ticket-1');
+    expect(select.mock.calls[0][0]).not.toContain('original_photo_path');
   });
 });
 

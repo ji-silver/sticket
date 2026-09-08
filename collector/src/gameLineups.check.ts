@@ -20,10 +20,14 @@ function createTeamTable(prefix: string) {
   return { table1: JSON.stringify({ rows }) };
 }
 
-test('KBO 박스스코어에서 양 팀의 실제 선발 1~9번만 추출한다', () => {
-  const lineups = parseKboLineupsResponse({
-    arrHitter: [createTeamTable('원정'), createTeamTable('홈')],
-  });
+test('발표된 KBO 라인업에서 양 팀의 실제 선발 1~9번만 추출한다', () => {
+  const lineups = parseKboLineupsResponse([
+    [{ LINEUP_CK: true }],
+    [],
+    [],
+    [createTeamTable('홈')],
+    [createTeamTable('원정')],
+  ]);
 
   assert.equal(lineups?.away.length, 9);
   assert.equal(lineups?.home.length, 9);
@@ -33,4 +37,16 @@ test('KBO 박스스코어에서 양 팀의 실제 선발 1~9번만 추출한다'
     playerName: '원정1',
   });
   assert.equal(lineups?.away[2].playerName, '원정3');
+});
+
+test('발표 전 KBO 라인업 응답은 저장하지 않는다', () => {
+  const lineups = parseKboLineupsResponse([
+    [{ LINEUP_CK: false }],
+    [],
+    [],
+    [createTeamTable('이전홈')],
+    [createTeamTable('이전원정')],
+  ]);
+
+  assert.equal(lineups, null);
 });
