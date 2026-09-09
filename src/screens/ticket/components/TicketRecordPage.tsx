@@ -48,6 +48,13 @@ const teamColors: Record<string, string> = {
   두산: '#1A1748',
 };
 
+const collectedTimeFormatter = new Intl.DateTimeFormat('ko-KR', {
+  timeZone: 'Asia/Seoul',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+});
+
 function TicketRecordPage({ ticket, orientation }: TicketRecordPageProps) {
   const insets = useSafeAreaInsets();
   const { profile } = useAuth();
@@ -55,8 +62,12 @@ function TicketRecordPage({ ticket, orientation }: TicketRecordPageProps) {
   const matchDateText = formatMatchDate(ticket.matchDate);
   const isFinished = ticket.gameStatus === 'FINISHED';
   const isInProgress = ticket.gameStatus === 'IN_PROGRESS';
-  const awayScoreText = ticket.awayScore ?? '-';
-  const homeScoreText = ticket.homeScore ?? '-';
+  const hasStarted = isInProgress || isFinished;
+  const awayScoreText = hasStarted ? ticket.awayScore ?? '-' : '-';
+  const homeScoreText = hasStarted ? ticket.homeScore ?? '-' : '-';
+  const gameUpdatedAtText = isInProgress
+    ? formatCollectedTime(ticket.gameUpdatedAt)
+    : null;
   const matchResult =
     isFinished && favoriteTeamName
       ? getFavoriteTeamMatchResult(ticket, favoriteTeamName)
@@ -124,7 +135,7 @@ function TicketRecordPage({ ticket, orientation }: TicketRecordPageProps) {
       >
         <View style={styles.matchSummary}>
           <AppText style={styles.matchMeta} numberOfLines={1}>
-            {matchDateText} · {ticket.matchTime} · {ticket.stadiumName}
+            {matchDateText} {ticket.matchTime} {ticket.stadiumName}
           </AppText>
 
           <View
@@ -201,6 +212,10 @@ function TicketRecordPage({ ticket, orientation }: TicketRecordPageProps) {
               </AppText>
             </View>
           ) : null}
+
+          {gameUpdatedAtText ? (
+            <AppText style={styles.gameUpdatedAt}>{gameUpdatedAtText}</AppText>
+          ) : null}
         </View>
 
         <TicketVisitInfoSection
@@ -249,7 +264,17 @@ function formatMatchDate(dateString: string) {
   const monthText = String(month).padStart(2, '0');
   const dayText = String(day).padStart(2, '0');
 
-  return `${monthText}.${dayText} ${weekday}`;
+  return `${monthText}.${dayText}(${weekday})`;
+}
+
+function formatCollectedTime(value?: string | null) {
+  if (!value) return null;
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return null;
+
+  return `${collectedTimeFormatter.format(date)} 기준`;
 }
 
 function getFavoriteTeamMatchResult(
@@ -396,5 +421,12 @@ const styles = StyleSheet.create({
   },
   matchResultTextProgress: {
     color: colors.textSecondary,
+  },
+  gameUpdatedAt: {
+    marginTop: 4,
+    fontSize: 10,
+    fontFamily: fonts.regular,
+    color: colors.textSecondary,
+    textAlign: 'center',
   },
 });

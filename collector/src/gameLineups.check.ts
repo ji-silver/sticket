@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  enrichGamesWithKboScores,
   parseKboLineupsResponse,
   resolveKboGameSource,
 } from './gameLineups.ts';
@@ -76,6 +77,8 @@ test('일정에 경기 ID가 없어도 KBO 경기 목록에서 같은 경기를 
             G_TM: '18:30',
             AWAY_NM: 'SSG',
             HOME_NM: '두산',
+            T_SCORE_CN: '2',
+            B_SCORE_CN: '3',
           },
         ],
       },
@@ -83,6 +86,55 @@ test('일정에 경기 ID가 없어도 KBO 경기 목록에서 같은 경기를 
     {
       gameId: '20260909SKOB0',
       seriesId: 0,
+      awayScore: 2,
+      homeScore: 3,
     },
   );
+});
+
+test('진행 중 경기 점수는 KBO 경기 목록 값으로 갱신한다', async t => {
+  const originalFetch = globalThis.fetch;
+
+  globalThis.fetch = async () =>
+    new Response(
+      JSON.stringify({
+        game: [
+          {
+            G_ID: '20260910SKOB0',
+            SR_ID: 0,
+            G_DT: '20260910',
+            G_TM: '18:30',
+            AWAY_NM: 'SSG',
+            HOME_NM: '두산',
+            T_SCORE_CN: '4',
+            B_SCORE_CN: '1',
+          },
+        ],
+      }),
+    );
+  t.after(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  const [game] = await enrichGamesWithKboScores([
+    {
+      gameKey: '20260910-ssg-doosan-1',
+      sourceGameId: null,
+      season: 2026,
+      seriesType: 'REGULAR',
+      gameDate: '2026-09-10',
+      startTime: '18:30',
+      awayTeamId: 'ssg',
+      homeTeamId: 'doosan',
+      awayScore: 0,
+      homeScore: 0,
+      stadiumName: '잠실',
+      status: 'IN_PROGRESS',
+      cancellationReason: null,
+    },
+  ]);
+
+  assert.equal(game.sourceGameId, '20260910SKOB0');
+  assert.equal(game.awayScore, 4);
+  assert.equal(game.homeScore, 1);
 });

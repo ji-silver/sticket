@@ -259,6 +259,7 @@ async function fetchTickets({
           start_time,
           stadium_name,
           status,
+          last_collected_at,
           away_lineup,
           home_lineup,
           away_score,
@@ -344,6 +345,7 @@ async function fetchTickets({
         homeScore: game.home_score,
         awayScore: game.away_score,
         gameStatus: game.status,
+        gameUpdatedAt: game.last_collected_at,
         isCancelled: game.status === 'CANCELLED',
         awayLineup: parseLineup(game.away_lineup),
         homeLineup: parseLineup(game.home_lineup),
@@ -381,6 +383,7 @@ export async function getTicketGameSnapshot(ticketId: string) {
       `
         game:games!tickets_game_key_fkey!inner (
           status,
+          last_collected_at,
           away_lineup,
           home_lineup,
           away_score,
@@ -399,6 +402,7 @@ export async function getTicketGameSnapshot(ticketId: string) {
 
   return {
     gameStatus: game.status,
+    gameUpdatedAt: game.last_collected_at,
     isCancelled: game.status === 'CANCELLED',
     awayScore: game.away_score,
     homeScore: game.home_score,

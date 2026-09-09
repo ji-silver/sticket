@@ -9,7 +9,11 @@ import {
   getRemainingSeasonMonths,
   getUpcomingScheduleMonths,
 } from './dateWindow.ts';
-import { syncGameLineups, syncMissingGameLineups } from './gameLineups.ts';
+import {
+  enrichGamesWithKboScores,
+  syncGameLineups,
+  syncMissingGameLineups,
+} from './gameLineups.ts';
 import { parseGameStatus } from './gameStatus.ts';
 import { assertScheduleCollectionHealth } from './scheduleCollectionHealth.ts';
 import { upsertGames } from './saveGames.ts';
@@ -189,11 +193,14 @@ async function main() {
         totalRawRowCount += rawRows.length;
         totalParsedGameCount += parsedGames.length;
 
-        const games = isAutomaticCollection
+        const selectedGames = isAutomaticCollection
           ? parsedGames.filter(game => automaticGameDates.has(game.gameDate))
           : isScheduleCollection
           ? parsedGames.filter(game => game.gameDate >= today)
           : parsedGames.filter(game => game.gameDate <= today);
+        const games = isScheduleCollection
+          ? selectedGames
+          : await enrichGamesWithKboScores(selectedGames);
 
         console.log('\n선택된 경기 종류:', seriesType);
 

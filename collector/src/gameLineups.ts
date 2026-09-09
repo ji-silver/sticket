@@ -63,6 +63,51 @@ type LineupGame = Pick<
 interface KboGameSource {
   gameId: string;
   seriesId: number;
+  awayScore: number | null;
+  homeScore: number | null;
+}
+
+const gameListResponseByDate = new Map<string, Promise<unknown>>();
+
+export async function enrichGamesWithKboScores(
+  games: KboGame[],
+): Promise<KboGame[]> {
+  const responses = new Map<string, unknown>();
+
+  await Promise.all(
+    Array.from(new Set(games.map(game => game.gameDate))).map(async gameDate => {
+      responses.set(gameDate, await fetchKboGameList(gameDate));
+    }),
+  );
+
+  return games.map(game => {
+    const source = resolveKboGameSource(game, responses.get(game.gameDate));
+    const needsScore =
+      game.status === 'IN_PROGRESS' || game.status === 'FINISHED';
+
+    if (!source) {
+      if (needsScore) {
+        throw new Error(`${game.gameKey}의 KBO 경기 정보를 찾지 못했습니다.`);
+      }
+
+      return game;
+    }
+
+    if (source.awayScore === null || source.homeScore === null) {
+      if (needsScore) {
+        throw new Error(`${game.gameKey}의 KBO 점수를 확인하지 못했습니다.`);
+      }
+
+      return { ...game, sourceGameId: source.gameId };
+    }
+
+    return {
+      ...game,
+      sourceGameId: source.gameId,
+      awayScore: source.awayScore,
+      homeScore: source.homeScore,
+    };
+  });
 }
 
 export async function syncGameLineups(games: LineupGame[]): Promise<number> {
@@ -163,11 +208,18 @@ export async function syncMissingGameLineups(): Promise<number> {
 }
 
 async function fetchKboGameList(gameDate: string) {
-  return postKbo(KBO_GAME_LIST_URL, {
-    leId: '1',
-    srId: '0,1,3,4,5,6,7,8,9',
-    date: gameDate.replaceAll('-', ''),
-  });
+  let response = gameListResponseByDate.get(gameDate);
+
+  if (!response) {
+    response = postKbo(KBO_GAME_LIST_URL, {
+      leId: '1',
+      srId: '0,1,3,4,5,6,7,8,9',
+      date: gameDate.replaceAll('-', ''),
+    });
+    gameListResponseByDate.set(gameDate, response);
+  }
+
+  return response;
 }
 
 export function resolveKboGameSource(
@@ -192,9 +244,7 @@ export function resolveKboGameSource(
   if (game.sourceGameId) {
     const source = sources.find(item => item.G_ID === game.sourceGameId);
 
-    return source
-      ? { gameId: source.G_ID as string, seriesId: source.SR_ID as number }
-      : null;
+    return source ? toKboGameSource(source) : null;
   }
 
   const candidates = sources.filter(
@@ -208,9 +258,28 @@ export function resolveKboGameSource(
       ? candidates[0]
       : candidates.find(item => item.G_TM.trim() === game.startTime);
 
-  return source
-    ? { gameId: source.G_ID as string, seriesId: source.SR_ID as number }
-    : null;
+  return source ? toKboGameSource(source) : null;
+}
+
+function toKboGameSource(source: Record<string, unknown>): KboGameSource {
+  return {
+    gameId: source.G_ID as string,
+    seriesId: source.SR_ID as number,
+    awayScore: parseKboScore(source.T_SCORE_CN),
+    homeScore: parseKboScore(source.B_SCORE_CN),
+  };
+}
+
+function parseKboScore(value: unknown): number | null {
+  if (typeof value === 'number') {
+    return Number.isInteger(value) && value >= 0 ? value : null;
+  }
+
+  if (typeof value !== 'string' || !/^\d+$/.test(value.trim())) {
+    return null;
+  }
+
+  return Number(value);
 }
 
 async function postKbo(url: string, values: Record<string, string>) {

@@ -209,6 +209,7 @@ describe('getTicketGameSnapshot', () => {
       data: {
         game: {
           status: 'IN_PROGRESS',
+          last_collected_at: '2026-09-09T09:47:00Z',
           away_score: 2,
           home_score: 3,
           away_lineup: [
@@ -226,6 +227,7 @@ describe('getTicketGameSnapshot', () => {
 
     await expect(getTicketGameSnapshot('ticket-1')).resolves.toEqual({
       gameStatus: 'IN_PROGRESS',
+      gameUpdatedAt: '2026-09-09T09:47:00Z',
       isCancelled: false,
       awayScore: 2,
       homeScore: 3,
