@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { parseKboLineupsResponse } from './gameLineups.ts';
+import {
+  parseKboLineupsResponse,
+  resolveKboGameSource,
+} from './gameLineups.ts';
 
 function createTeamTable(prefix: string) {
   const positions = ['중', '二', '우', '一', '지', '좌', '三', '포', '유'];
@@ -49,4 +52,37 @@ test('발표 전 KBO 라인업 응답은 저장하지 않는다', () => {
   ]);
 
   assert.equal(lineups, null);
+});
+
+test('일정에 경기 ID가 없어도 KBO 경기 목록에서 같은 경기를 찾는다', () => {
+  assert.deepEqual(
+    resolveKboGameSource(
+      {
+        gameKey: '20260909-ssg-doosan-1',
+        sourceGameId: null,
+        season: 2026,
+        gameDate: '2026-09-09',
+        startTime: '18:30',
+        awayTeamId: 'ssg',
+        homeTeamId: 'doosan',
+        status: 'SCHEDULED',
+      },
+      {
+        game: [
+          {
+            G_ID: '20260909SKOB0',
+            SR_ID: 0,
+            G_DT: '20260909',
+            G_TM: '18:30',
+            AWAY_NM: 'SSG',
+            HOME_NM: '두산',
+          },
+        ],
+      },
+    ),
+    {
+      gameId: '20260909SKOB0',
+      seriesId: 0,
+    },
+  );
 });

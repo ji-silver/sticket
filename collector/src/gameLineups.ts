@@ -1,4 +1,4 @@
-import type { KboGame, KboLineupPlayer } from './types.ts';
+import type { KboGame, KboLineupPlayer, KboTeamId } from './types.ts';
 
 const KBO_GAME_LIST_URL =
   'https://www.koreabaseball.com/ws/Main.asmx/GetKboGameList';
@@ -28,6 +28,21 @@ const positionByKboLabel: Record<string, string> = {
   지: 'DH',
 };
 
+const kboTeamNameById: Record<KboTeamId, string> = {
+  ssg: 'SSG',
+  sk: 'SK',
+  lg: 'LG',
+  doosan: '두산',
+  kia: 'KIA',
+  samsung: '삼성',
+  lotte: '롯데',
+  hanwha: '한화',
+  kiwoom: '키움',
+  nexen: '넥센',
+  kt: 'KT',
+  nc: 'NC',
+};
+
 interface GameLineups {
   away: KboLineupPlayer[];
   home: KboLineupPlayer[];
@@ -35,13 +50,24 @@ interface GameLineups {
 
 type LineupGame = Pick<
   KboGame,
-  'gameKey' | 'sourceGameId' | 'season' | 'gameDate' | 'status'
+  | 'gameKey'
+  | 'sourceGameId'
+  | 'season'
+  | 'gameDate'
+  | 'startTime'
+  | 'awayTeamId'
+  | 'homeTeamId'
+  | 'status'
 >;
+
+interface KboGameSource {
+  gameId: string;
+  seriesId: number;
+}
 
 export async function syncGameLineups(games: LineupGame[]): Promise<number> {
   const targets = games.filter(
     game =>
-      game.sourceGameId !== null &&
       (game.status === 'SCHEDULED' ||
         game.status === 'IN_PROGRESS' ||
         game.status === 'FINISHED'),
@@ -65,22 +91,18 @@ export async function syncGameLineups(games: LineupGame[]): Promise<number> {
 
   for (const [gameDate, dateGames] of gamesByDate) {
     try {
-      const seriesIdByGameId = await fetchSeriesIds(gameDate);
+      const gameListResponse = await fetchKboGameList(gameDate);
 
       for (const game of dateGames) {
-        const sourceGameId = game.sourceGameId;
+        const source = resolveKboGameSource(game, gameListResponse);
 
-        if (!sourceGameId) continue;
-
-        const seriesId = seriesIdByGameId.get(sourceGameId);
-
-        if (seriesId === undefined) continue;
+        if (!source) continue;
 
         const response = await postKbo(KBO_LINEUP_URL, {
           leId: '1',
-          srId: String(seriesId),
+          srId: String(source.seriesId),
           seasonId: String(game.season),
-          gameId: sourceGameId,
+          gameId: source.gameId,
         });
         const lineups = parseKboLineupsResponse(response);
 
@@ -89,6 +111,7 @@ export async function syncGameLineups(games: LineupGame[]): Promise<number> {
         const { error } = await supabaseAdmin
           .from('games')
           .update({
+            source_game_id: source.gameId,
             away_lineup: lineups.away,
             home_lineup: lineups.home,
             lineup_collected_at: new Date().toISOString(),
@@ -113,7 +136,9 @@ export async function syncMissingGameLineups(): Promise<number> {
   const { supabaseAdmin } = await import('./supabaseAdmin.ts');
   const { data: games, error: gameError } = await supabaseAdmin
     .from('games')
-    .select('game_key, source_game_id, season, game_date, status')
+    .select(
+      'game_key, source_game_id, season, game_date, start_time, away_team_id, home_team_id, status',
+    )
     .in('status', ['IN_PROGRESS', 'FINISHED'])
     .is('lineup_collected_at', null)
     .order('game_date', { ascending: false })
@@ -128,35 +153,64 @@ export async function syncMissingGameLineups(): Promise<number> {
     sourceGameId: game.source_game_id,
     season: game.season,
     gameDate: game.game_date,
+    startTime: game.start_time?.slice(0, 5) ?? '',
+    awayTeamId: game.away_team_id as KboTeamId,
+    homeTeamId: game.home_team_id as KboTeamId,
     status: game.status as KboGame['status'],
   }));
 
   return syncGameLineups(targets);
 }
 
-async function fetchSeriesIds(gameDate: string) {
-  const response = await postKbo(KBO_GAME_LIST_URL, {
+async function fetchKboGameList(gameDate: string) {
+  return postKbo(KBO_GAME_LIST_URL, {
     leId: '1',
     srId: '0,1,3,4,5,6,7,8,9',
     date: gameDate.replaceAll('-', ''),
   });
-  const seriesIdByGameId = new Map<string, number>();
+}
 
+export function resolveKboGameSource(
+  game: LineupGame,
+  response: unknown,
+): KboGameSource | null {
   if (!isRecord(response) || !Array.isArray(response.game)) {
-    return seriesIdByGameId;
+    return null;
   }
 
-  response.game.forEach(game => {
-    if (
-      isRecord(game) &&
-      typeof game.G_ID === 'string' &&
-      typeof game.SR_ID === 'number'
-    ) {
-      seriesIdByGameId.set(game.G_ID, game.SR_ID);
-    }
-  });
+  const sources = response.game.filter(
+    source =>
+      isRecord(source) &&
+      typeof source.G_ID === 'string' &&
+      typeof source.SR_ID === 'number' &&
+      typeof source.G_DT === 'string' &&
+      typeof source.G_TM === 'string' &&
+      typeof source.AWAY_NM === 'string' &&
+      typeof source.HOME_NM === 'string',
+  );
 
-  return seriesIdByGameId;
+  if (game.sourceGameId) {
+    const source = sources.find(item => item.G_ID === game.sourceGameId);
+
+    return source
+      ? { gameId: source.G_ID as string, seriesId: source.SR_ID as number }
+      : null;
+  }
+
+  const candidates = sources.filter(
+    source =>
+      source.G_DT === game.gameDate.replaceAll('-', '') &&
+      source.AWAY_NM.trim() === kboTeamNameById[game.awayTeamId] &&
+      source.HOME_NM.trim() === kboTeamNameById[game.homeTeamId],
+  );
+  const source =
+    candidates.length === 1
+      ? candidates[0]
+      : candidates.find(item => item.G_TM.trim() === game.startTime);
+
+  return source
+    ? { gameId: source.G_ID as string, seriesId: source.SR_ID as number }
+    : null;
 }
 
 async function postKbo(url: string, values: Record<string, string>) {
