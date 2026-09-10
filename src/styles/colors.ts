@@ -18,6 +18,8 @@ export const colors = {
   surface: '#FFFFFF',
   border: '#eaeaea',
   disabled: '#eaeaea',
+  skeletonBase: '#E3E4E8',
+  skeletonShimmer: '#D4D5DA',
 
   onPrimary: '#FFFFFF',
   shadow: '#000000',

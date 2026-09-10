@@ -32,15 +32,12 @@ function AppSkeleton({
     }
 
     const animation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(progress, {
-          toValue: 1,
-          duration: 1100,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        }),
-        Animated.delay(250),
-      ]),
+      Animated.timing(progress, {
+        toValue: 1,
+        duration: 1400,
+        easing: Easing.inOut(Easing.quad),
+        useNativeDriver: true,
+      }),
     );
 
     progress.setValue(0);
@@ -80,9 +77,9 @@ function AppSkeleton({
       >
         <LinearGradient
           colors={[
-            'rgba(255, 255, 255, 0)',
-            'rgba(255, 255, 255, 0.7)',
-            'rgba(255, 255, 255, 0)',
+            colors.skeletonBase,
+            colors.skeletonShimmer,
+            colors.skeletonBase,
           ]}
           start={{ x: 0, y: 0.5 }}
           end={{ x: 1, y: 0.5 }}
@@ -98,13 +95,13 @@ export default AppSkeleton;
 const styles = StyleSheet.create({
   skeleton: {
     overflow: 'hidden',
-    backgroundColor: colors.primarySoft,
+    backgroundColor: colors.skeletonBase,
   },
   shimmer: {
     position: 'absolute',
     top: 0,
     bottom: 0,
-    width: '55%',
+    width: '85%',
   },
   gradient: {
     flex: 1,
