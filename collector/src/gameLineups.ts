@@ -65,6 +65,7 @@ interface KboGameSource {
   seriesId: number;
   awayScore: number | null;
   homeScore: number | null;
+  isFinished: boolean;
 }
 
 const gameListResponseByDate = new Map<string, Promise<unknown>>();
@@ -106,6 +107,7 @@ export async function enrichGamesWithKboScores(
       sourceGameId: source.gameId,
       awayScore: source.awayScore,
       homeScore: source.homeScore,
+      status: source.isFinished ? 'FINISHED' : game.status,
     };
   });
 }
@@ -267,6 +269,7 @@ function toKboGameSource(source: Record<string, unknown>): KboGameSource {
     seriesId: source.SR_ID as number,
     awayScore: parseKboScore(source.T_SCORE_CN),
     homeScore: parseKboScore(source.B_SCORE_CN),
+    isFinished: source.GAME_STATE_SC === '3',
   };
 }
 

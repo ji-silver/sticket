@@ -77,6 +77,7 @@ test('일정에 경기 ID가 없어도 KBO 경기 목록에서 같은 경기를 
             G_TM: '18:30',
             AWAY_NM: 'SSG',
             HOME_NM: '두산',
+            GAME_STATE_SC: '1',
             T_SCORE_CN: '2',
             B_SCORE_CN: '3',
           },
@@ -88,11 +89,12 @@ test('일정에 경기 ID가 없어도 KBO 경기 목록에서 같은 경기를 
       seriesId: 0,
       awayScore: 2,
       homeScore: 3,
+      isFinished: false,
     },
   );
 });
 
-test('진행 중 경기 점수는 KBO 경기 목록 값으로 갱신한다', async t => {
+test('KBO 경기 목록의 점수와 종료 상태를 갱신한다', async t => {
   const originalFetch = globalThis.fetch;
 
   globalThis.fetch = async () =>
@@ -106,6 +108,8 @@ test('진행 중 경기 점수는 KBO 경기 목록 값으로 갱신한다', asy
             G_TM: '18:30',
             AWAY_NM: 'SSG',
             HOME_NM: '두산',
+            GAME_STATE_SC: '3',
+            GAME_RESULT_CK: 1,
             T_SCORE_CN: '4',
             B_SCORE_CN: '1',
           },
@@ -137,4 +141,5 @@ test('진행 중 경기 점수는 KBO 경기 목록 값으로 갱신한다', asy
   assert.equal(game.sourceGameId, '20260910SKOB0');
   assert.equal(game.awayScore, 4);
   assert.equal(game.homeScore, 1);
+  assert.equal(game.status, 'FINISHED');
 });
