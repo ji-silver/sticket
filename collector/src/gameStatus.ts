@@ -21,7 +21,7 @@ export function parseGameStatus(
 
   if (statusText.includes('연기')) return 'POSTPONED';
   if (statusText.includes('취소')) return 'CANCELLED';
-  if (relay.includes('리뷰')) return 'FINISHED';
+  if (relay.trim() === '리뷰') return 'FINISHED';
   if (gameDate === today && /^\d{2}:\d{2}$/.test(time) && currentTime < time) {
     return 'SCHEDULED';
   }
