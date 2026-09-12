@@ -8,11 +8,10 @@ export function useDeleteTicket() {
 
   return useMutation({
     mutationFn: deleteTicket,
-    onSuccess: () =>
-      Promise.all([
-        queryClient.invalidateQueries({ queryKey: TICKETS_QUERY_KEY }),
-        queryClient.invalidateQueries({ queryKey: TICKET_BOOKS_QUERY_KEY }),
-        queryClient.invalidateQueries({ queryKey: ['attendanceSummary'] }),
-      ]),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: TICKETS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: TICKET_BOOKS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ['attendanceSummary'] });
+    },
   });
 }

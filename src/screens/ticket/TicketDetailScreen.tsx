@@ -341,6 +341,7 @@ function TicketDetailScreen() {
         description="꾸민 페이지도 함께 삭제되며 되돌릴 수 없어요."
         confirmLabel="삭제"
         confirmTone="destructive"
+        isLoading={isDeleting}
         onConfirm={handleDeleteTicket}
         onCancel={() => setIsDeleteDialogVisible(false)}
       />

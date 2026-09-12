@@ -9,6 +9,8 @@ import TicketDetailScreen from './TicketDetailScreen';
 const mockGoBack = jest.fn();
 const mockSetOptions = jest.fn();
 const mockRefetch = jest.fn();
+const mockRemoveTicket = jest.fn();
+const mockUseDeleteTicket = jest.fn();
 
 jest.mock('@react-navigation/core', () => ({
   useNavigation: () => ({
@@ -28,7 +30,7 @@ jest.mock('../../features/ticket/api/useGetTickets', () => ({
 }));
 
 jest.mock('../../features/ticket/api/useDeleteTicket', () => ({
-  useDeleteTicket: () => ({ mutateAsync: jest.fn(), isPending: false }),
+  useDeleteTicket: () => mockUseDeleteTicket(),
 }));
 
 jest.mock('../../features/ticket/api/useSetTicketPageOrientation.ts', () => ({
@@ -58,8 +60,25 @@ jest.mock('./components/TicketPageOrientationSheet.tsx', () => {
   };
 });
 
-jest.mock('../../components/common/AppPopoverMenu.tsx', () => () => null);
-jest.mock('../../components/common/ConfirmDialog.tsx', () => () => null);
+jest.mock('../../components/common/AppPopoverMenu.tsx', () => {
+  const { Pressable, Text } = require('react-native');
+
+  return function MockAppPopoverMenu({ visible, actions }: any) {
+    if (!visible) return null;
+
+    return actions.map((action: any) => (
+      <Pressable
+        key={action.label}
+        onPress={action.onPress}
+        accessibilityRole="button"
+        accessibilityLabel={action.label}
+      >
+        <Text>{action.label}</Text>
+      </Pressable>
+    ));
+    서;
+  };
+});
 
 const ticket = {
   id: 'ticket-1',
@@ -93,6 +112,10 @@ describe('TicketDetailScreen', () => {
     });
     (useGetTicketGameSnapshot as jest.Mock).mockReturnValue({
       data: undefined,
+    });
+    mockUseDeleteTicket.mockReturnValue({
+      mutateAsync: mockRemoveTicket,
+      isPending: false,
     });
   });
 
@@ -145,5 +168,20 @@ describe('TicketDetailScreen', () => {
     await render(<TicketDetailScreen />);
 
     expect(screen.getByText('티켓을 찾을 수 없어요')).toBeVisible();
+  });
+
+  it('티켓을 삭제하는 동안 확인창을 닫거나 다시 삭제할 수 없다', async () => {
+    const user = userEvent.setup();
+    mockUseDeleteTicket.mockReturnValue({
+      mutateAsync: mockRemoveTicket,
+      isPending: true,
+    });
+
+    await render(<TicketDetailScreen />);
+    await user.press(screen.getByRole('button', { name: '직관 기록 메뉴' }));
+    await user.press(screen.getByRole('button', { name: '티켓 삭제' }));
+
+    expect(screen.getByRole('button', { busy: true })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '취소' })).toBeDisabled();
   });
 });
