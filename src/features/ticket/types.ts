@@ -54,6 +54,13 @@ export const TICKET_DIARY_VERSION = 1 as const;
 
 export type TicketDiaryPaperType = 'plain' | 'grid' | 'lined';
 
+export type TicketDiaryPaperColor =
+  | 'white'
+  | 'cream'
+  | 'pink'
+  | 'mint'
+  | 'blue';
+
 export type TicketDiaryOrientation = 'portrait' | 'landscape';
 
 export type TicketDiaryMatrix = [
@@ -132,6 +139,7 @@ export interface TicketDiaryData {
   version: typeof TICKET_DIARY_VERSION;
   orientation: TicketDiaryOrientation;
   paperType: TicketDiaryPaperType;
+  paperColor: TicketDiaryPaperColor;
   items: SavedDiaryItem[];
   drawingIndex: number;
   drawingPath: string | null;

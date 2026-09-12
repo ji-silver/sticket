@@ -17,7 +17,7 @@ import DiaryDrawingCanvas, {
 import DiaryLayerPanel, {
   type DiaryLayerPanelItem,
 } from './DiaryLayerPanel.tsx';
-import { colors } from '../../../../styles/colors.ts';
+import { colors, diaryPaperColors } from '../../../../styles/colors.ts';
 import type { EditorSize } from './photoTransform.ts';
 import type { DiaryItem } from './TicketDiaryPage.tsx';
 import { useDiaryStore } from './store/useDiaryStore.ts';
@@ -72,6 +72,7 @@ export default function DiaryCanvasArea({
   children,
 }: DiaryCanvasAreaProps) {
   const paperType = useDiaryStore(state => state.paperType);
+  const paperColor = useDiaryStore(state => state.paperColor);
   const orientation = useDiaryStore(state => state.orientation);
   const items = useDiaryStore(state => state.items);
   const drawingIndex = useDiaryStore(state => state.drawingIndex);
@@ -119,14 +120,23 @@ export default function DiaryCanvasArea({
             >
               <Pressable
                 accessible={false}
-                style={styles.editorBackground}
+                style={[
+                  styles.editorBackground,
+                  { backgroundColor: diaryPaperColors[paperColor] },
+                ]}
                 onPress={onDeselectDiaryItem}
               >
                 {paperType === 'grid' ? (
-                  <GridPaper pageSize={pageSize} />
+                  <GridPaper
+                    pageSize={pageSize}
+                    backgroundColor={diaryPaperColors[paperColor]}
+                  />
                 ) : null}
                 {paperType === 'lined' ? (
-                  <LinedPaper pageSize={pageSize} />
+                  <LinedPaper
+                    pageSize={pageSize}
+                    backgroundColor={diaryPaperColors[paperColor]}
+                  />
                 ) : null}
               </Pressable>
 

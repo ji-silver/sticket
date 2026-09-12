@@ -39,3 +39,11 @@ export const colors = {
   accentMint: '#61B892',
   accentLilac: '#A58AD9',
 } as const;
+
+export const diaryPaperColors = {
+  white: colors.surface,
+  cream: '#FFF8ED',
+  pink: '#FFF4F6',
+  mint: '#F1F8F4',
+  blue: '#F2F6FC',
+} as const;

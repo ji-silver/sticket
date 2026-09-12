@@ -1,7 +1,12 @@
 import { decode } from 'base64-arraybuffer';
 import { Json } from '../../lib/database.types.ts';
 import { supabase } from '../../lib/supabase.ts';
-import { SavedDiaryItem, TICKET_DIARY_VERSION, TicketDiaryData } from './types';
+import {
+  SavedDiaryItem,
+  TICKET_DIARY_VERSION,
+  TicketDiaryData,
+  type TicketDiaryPaperColor,
+} from './types';
 
 const TICKET_DIARY_BUCKET = 'ticket-diaries';
 const SIGNED_URL_EXPIRES_IN_SECONDS = 60 * 60;
@@ -56,6 +61,7 @@ export function createEmptyTicketDiaryData(): TicketDiaryData {
     version: TICKET_DIARY_VERSION,
     orientation: 'portrait',
     paperType: 'plain',
+    paperColor: 'white',
     items: [],
     drawingIndex: 0,
     drawingPath: null,
@@ -64,6 +70,18 @@ export function createEmptyTicketDiaryData(): TicketDiaryData {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isTicketDiaryPaperColor(
+  value: unknown,
+): value is TicketDiaryPaperColor {
+  return (
+    value === 'white' ||
+    value === 'cream' ||
+    value === 'pink' ||
+    value === 'mint' ||
+    value === 'blue'
+  );
 }
 
 function parseTicketDiaryData(value: unknown): TicketDiaryData {
@@ -76,6 +94,8 @@ function parseTicketDiaryData(value: unknown): TicketDiaryData {
     (value.paperType !== 'plain' &&
       value.paperType !== 'grid' &&
       value.paperType !== 'lined') ||
+    (value.paperColor !== undefined &&
+      !isTicketDiaryPaperColor(value.paperColor)) ||
     !Array.isArray(value.items) ||
     (value.drawingPath !== null && typeof value.drawingPath !== 'string')
   ) {
@@ -92,6 +112,9 @@ function parseTicketDiaryData(value: unknown): TicketDiaryData {
       ...(value as unknown as TicketDiaryData),
       orientation:
         value.orientation === 'landscape' ? 'landscape' : 'portrait',
+      paperColor: isTicketDiaryPaperColor(value.paperColor)
+        ? value.paperColor
+        : 'white',
       drawingIndex: Math.min(
         savedItems.length,
         Math.max(0, value.drawingIndex),
@@ -107,6 +130,9 @@ function parseTicketDiaryData(value: unknown): TicketDiaryData {
     ...(value as unknown as TicketDiaryData),
     orientation:
       value.orientation === 'landscape' ? 'landscape' : 'portrait',
+    paperColor: isTicketDiaryPaperColor(value.paperColor)
+      ? value.paperColor
+      : 'white',
     items: [...photos, ...foregroundItems],
     drawingIndex: photos.length,
   };

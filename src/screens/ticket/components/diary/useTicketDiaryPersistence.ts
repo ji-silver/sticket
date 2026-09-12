@@ -9,6 +9,7 @@ import {
   type SavedDiaryItem,
   TICKET_DIARY_VERSION,
   type TicketDiaryOrientation,
+  type TicketDiaryPaperColor,
 } from '../../../../features/ticket/types.ts';
 import {
   getTicketDiaryData,
@@ -34,6 +35,7 @@ interface DiarySaveSnapshot {
   version: number;
   orientation: TicketDiaryOrientation;
   paperType: PaperType;
+  paperColor: TicketDiaryPaperColor;
   items: DiaryItem[];
   drawingIndex: number;
   drawingBase64: string | null;
@@ -54,6 +56,7 @@ export function createDiaryResetSnapshot(
     version,
     orientation,
     paperType: 'plain',
+    paperColor: 'white',
     items: [],
     drawingIndex: 0,
     drawingBase64: null,
@@ -274,6 +277,7 @@ export function useTicketDiaryPersistence({
   const items = useDiaryStore(state => state.items);
   const drawingIndex = useDiaryStore(state => state.drawingIndex);
   const paperType = useDiaryStore(state => state.paperType);
+  const paperColor = useDiaryStore(state => state.paperColor);
   const orientation = useDiaryStore(state => state.orientation);
   const setDrawingIndex = useDiaryStore(state => state.setDrawingIndex);
   const setSelectedTool = useDiaryStore(state => state.setSelectedTool);
@@ -363,6 +367,7 @@ export function useTicketDiaryPersistence({
       version: TICKET_DIARY_VERSION,
       orientation: snapshot.orientation,
       paperType: snapshot.paperType,
+      paperColor: snapshot.paperColor,
       items: savedItems,
       drawingIndex: snapshot.items
         .slice(0, snapshot.drawingIndex)
@@ -547,6 +552,7 @@ export function useTicketDiaryPersistence({
         initializeDiary({
           orientation: diaryData.orientation,
           paperType: diaryData.paperType,
+          paperColor: diaryData.paperColor,
           items: restoredItems,
           drawingIndex: diaryData.drawingIndex,
         });
@@ -635,6 +641,7 @@ export function useTicketDiaryPersistence({
       version: nextSnapshotVersionRef.current + 1,
       orientation,
       paperType,
+      paperColor,
       items,
       drawingIndex,
       drawingBase64: drawingBase64Ref.current,
@@ -664,7 +671,15 @@ export function useTicketDiaryPersistence({
     return () => {
       clearTimeout(autosaveTimer);
     };
-  }, [drawingIndex, drawingRevision, isLoading, items, orientation, paperType]);
+  }, [
+    drawingIndex,
+    drawingRevision,
+    isLoading,
+    items,
+    orientation,
+    paperColor,
+    paperType,
+  ]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', nextAppState => {
@@ -799,6 +814,7 @@ export function useTicketDiaryPersistence({
       initializeDiary({
         orientation,
         paperType: 'plain',
+        paperColor: 'white',
         items: [],
         drawingIndex: 0,
       });

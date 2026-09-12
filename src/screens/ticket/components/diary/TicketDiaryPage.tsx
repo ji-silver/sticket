@@ -54,7 +54,10 @@ import {
   getDiaryPageSize,
 } from './diaryLayout.ts';
 import { useTicketDiaryPersistence } from './useTicketDiaryPersistence.ts';
-import type { Ticket } from '../../../../features/ticket/types.ts';
+import type {
+  Ticket,
+  TicketDiaryPaperColor,
+} from '../../../../features/ticket/types.ts';
 import DiaryExportCard from './DiaryExportCard.tsx';
 import { type DiaryExportMode, exportDiaryImage } from './diaryExport.ts';
 
@@ -176,6 +179,8 @@ const TicketDiaryPage = forwardRef<TicketDiaryPageHandle, TicketDiaryPageProps>(
 
     const paperType = useDiaryStore(state => state.paperType);
     const setPaperType = useDiaryStore(state => state.setPaperType);
+    const paperColor = useDiaryStore(state => state.paperColor);
+    const setPaperColor = useDiaryStore(state => state.setPaperColor);
     const orientation = useDiaryStore(state => state.orientation);
     const items = useDiaryStore(state => state.items);
     const setItems = useDiaryStore(state => state.setItems);
@@ -199,7 +204,10 @@ const TicketDiaryPage = forwardRef<TicketDiaryPageHandle, TicketDiaryPageProps>(
       () => ({
         hasDecorations: () =>
           !isLoading &&
-          (items.length > 0 || hasDrawing || paperType !== 'plain'),
+          (items.length > 0 ||
+            hasDrawing ||
+            paperType !== 'plain' ||
+            paperColor !== 'white'),
         openExportOptions: () => {
           if (!isLoading && !hasLoadError && !isExporting) {
             setIsExportSheetVisible(true);
@@ -213,6 +221,7 @@ const TicketDiaryPage = forwardRef<TicketDiaryPageHandle, TicketDiaryPageProps>(
         isExporting,
         isLoading,
         items.length,
+        paperColor,
         paperType,
         resetDiaryDecorations,
       ],
@@ -297,6 +306,11 @@ const TicketDiaryPage = forwardRef<TicketDiaryPageHandle, TicketDiaryPageProps>(
 
     const handlePaperSelect = (next: PaperType) => {
       setPaperType(next);
+      setSelectedTool(null);
+    };
+
+    const handlePaperColorSelect = (next: TicketDiaryPaperColor) => {
+      setPaperColor(next);
       setSelectedTool(null);
     };
 
@@ -929,6 +943,7 @@ const TicketDiaryPage = forwardRef<TicketDiaryPageHandle, TicketDiaryPageProps>(
               onAddSticker={handleAddSticker}
               onCloseStickerPicker={() => setSelectedTool(null)}
               onSelectPaper={handlePaperSelect}
+              onSelectPaperColor={handlePaperColorSelect}
             />
           </DiaryCanvasArea>
 

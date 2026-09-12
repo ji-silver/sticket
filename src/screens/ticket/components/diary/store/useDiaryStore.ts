@@ -2,7 +2,10 @@ import { create } from 'zustand';
 import type { DiaryItem, SelectedDiaryItem } from '../TicketDiaryPage.tsx';
 import type { PaperType } from '../DiaryPaperSelector.tsx';
 import type { DiaryToolId } from '../DiaryBottomToolbar.tsx';
-import type { TicketDiaryOrientation } from '../../../../../features/ticket/types.ts';
+import type {
+  TicketDiaryOrientation,
+  TicketDiaryPaperColor,
+} from '../../../../../features/ticket/types.ts';
 
 import { DIARY_STICKER_PACKS } from '../diaryStickerPacks.ts';
 
@@ -12,6 +15,7 @@ interface InitializeDiaryPayload {
   items: DiaryItem[];
   drawingIndex: number;
   paperType: PaperType;
+  paperColor: TicketDiaryPaperColor;
   orientation: TicketDiaryOrientation;
 }
 
@@ -20,6 +24,7 @@ interface DiaryState {
   selectedItem: SelectedDiaryItem;
   drawingIndex: number;
   paperType: PaperType;
+  paperColor: TicketDiaryPaperColor;
   orientation: TicketDiaryOrientation;
   selectedTool: DiaryToolId | null;
   isLayerPanelVisible: boolean;
@@ -29,6 +34,7 @@ interface DiaryState {
   setSelectedItem: (arg: SetterArg<SelectedDiaryItem>) => void;
   setDrawingIndex: (arg: SetterArg<number>) => void;
   setPaperType: (type: PaperType) => void;
+  setPaperColor: (color: TicketDiaryPaperColor) => void;
   setSelectedTool: (tool: DiaryToolId | null) => void;
   setIsLayerPanelVisible: (arg: SetterArg<boolean>) => void;
   setSelectedStickerPackId: (id: string) => void;
@@ -46,6 +52,7 @@ const createInitialState = () => ({
   selectedItem: null as SelectedDiaryItem,
   drawingIndex: 0,
   paperType: 'plain' as PaperType,
+  paperColor: 'white' as TicketDiaryPaperColor,
   orientation: 'portrait' as TicketDiaryOrientation,
   selectedTool: null as DiaryToolId | null,
   isLayerPanelVisible: false,
@@ -76,6 +83,11 @@ export const useDiaryStore = create<DiaryState>(set => ({
       paperType,
     }),
 
+  setPaperColor: paperColor =>
+    set({
+      paperColor,
+    }),
+
   setSelectedTool: selectedTool =>
     set({
       selectedTool,
@@ -96,11 +108,18 @@ export const useDiaryStore = create<DiaryState>(set => ({
       editingTextId: resolve(arg, state.editingTextId),
     })),
 
-  initializeDiary: ({ items, drawingIndex, paperType, orientation }) =>
+  initializeDiary: ({
+    items,
+    drawingIndex,
+    paperType,
+    paperColor,
+    orientation,
+  }) =>
     set({
       items,
       drawingIndex,
       paperType,
+      paperColor,
       orientation,
       selectedItem: null,
       editingTextId: null,

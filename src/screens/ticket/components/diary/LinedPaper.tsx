@@ -13,11 +13,13 @@ const LINE_INDEXES = Array.from({ length: 40 }, (_, index) => index + 1);
 interface LinedPaperProps {
   isPreview?: boolean;
   pageSize?: EditorSize;
+  backgroundColor?: string;
 }
 
 function LinedPaper({
   isPreview = false,
   pageSize = getDiaryPageSize('portrait'),
+  backgroundColor = colors.surface,
 }: LinedPaperProps) {
   const lineSpacing = getDiaryPaperSpacing(pageSize, isPreview).line;
 
@@ -33,7 +35,7 @@ function LinedPaper({
         }
         preserveAspectRatio="none"
       >
-        <Rect width="100%" height="100%" fill={colors.surface} />
+        <Rect width="100%" height="100%" fill={backgroundColor} />
 
         {LINE_INDEXES.map(index => (
           <Line

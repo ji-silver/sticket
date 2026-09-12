@@ -14,11 +14,13 @@ const PREVIEW_GRID_LINE_COLOR = '#E2E6EA';
 interface GridPaperProps {
   isPreview?: boolean;
   pageSize?: EditorSize;
+  backgroundColor?: string;
 }
 
 function GridPaper({
   isPreview = false,
   pageSize = getDiaryPageSize('portrait'),
+  backgroundColor = colors.surface,
 }: GridPaperProps) {
   const gridSize = getDiaryPaperSpacing(pageSize, isPreview).grid;
 
@@ -50,7 +52,7 @@ function GridPaper({
           </Pattern>
         </Defs>
 
-        <Rect width="100%" height="100%" fill={colors.surface} />
+        <Rect width="100%" height="100%" fill={backgroundColor} />
         <Rect width="100%" height="100%" fill="url(#diaryGrid)" />
       </Svg>
     </View>

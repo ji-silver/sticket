@@ -10,18 +10,21 @@ import DiaryBottomToolbar from './DiaryBottomToolbar.tsx';
 import type { DiaryStickerDefinition } from './diaryStickerPacks.ts';
 import type { DiaryTextStyle } from './diaryText.ts';
 import type { DiaryItem } from './TicketDiaryPage.tsx';
+import type { TicketDiaryPaperColor } from '../../../../features/ticket/types.ts';
 import { useDiaryStore } from './store/useDiaryStore.ts';
 
 interface DiaryEditorOverlayUIProps {
   onAddSticker: (sticker: DiaryStickerDefinition) => void;
   onCloseStickerPicker: () => void;
   onSelectPaper: (type: PaperType) => void;
+  onSelectPaperColor: (color: TicketDiaryPaperColor) => void;
 }
 
 export function DiaryEditorOverlayUI({
   onAddSticker,
   onCloseStickerPicker,
   onSelectPaper,
+  onSelectPaperColor,
 }: DiaryEditorOverlayUIProps) {
   const selectedTool = useDiaryStore(state => state.selectedTool);
 
@@ -34,6 +37,7 @@ export function DiaryEditorOverlayUI({
   );
 
   const paperType = useDiaryStore(state => state.paperType);
+  const paperColor = useDiaryStore(state => state.paperColor);
   const orientation = useDiaryStore(state => state.orientation);
 
   return (
@@ -50,8 +54,10 @@ export function DiaryEditorOverlayUI({
       {selectedTool === 'paper' ? (
         <DiaryPaperSelector
           paperType={paperType}
+          paperColor={paperColor}
           orientation={orientation}
           onSelect={onSelectPaper}
+          onSelectColor={onSelectPaperColor}
         />
       ) : null}
     </>
