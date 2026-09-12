@@ -152,12 +152,33 @@ function TicketDetailScreen() {
     }
   };
 
-  if (isLoadingTicket || isTicketError || !currentTicket) {
-    const statusTitle = isLoadingTicket
-      ? '티켓 정보를 불러오고 있어요'
-      : isTicketError
-        ? '티켓을 불러오지 못했어요'
-        : '티켓을 찾을 수 없어요';
+  if (isLoadingTicket) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <ScreenHeader
+          title="직관 기록"
+          onPressBack={() => navigation.goBack()}
+        />
+
+        <View
+          accessible
+          accessibilityRole="progressbar"
+          accessibilityLabel="티켓 정보를 불러오는 중"
+          style={styles.statusContainer}
+        >
+          <ActivityIndicator
+            testID="ticket-detail-loading-indicator"
+            color={colors.primary}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (isTicketError || !currentTicket) {
+    const statusTitle = isTicketError
+      ? '티켓을 불러오지 못했어요'
+      : '티켓을 찾을 수 없어요';
 
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
@@ -167,9 +188,6 @@ function TicketDetailScreen() {
         />
 
         <View style={styles.statusContainer}>
-          {isLoadingTicket ? (
-            <ActivityIndicator color={colors.primary} />
-          ) : null}
           <AppText style={styles.statusTitle}>{statusTitle}</AppText>
           {isTicketError ? (
             <>

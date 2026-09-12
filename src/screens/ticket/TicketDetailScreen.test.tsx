@@ -76,7 +76,6 @@ jest.mock('../../components/common/AppPopoverMenu.tsx', () => {
         <Text>{action.label}</Text>
       </Pressable>
     ));
-    서;
   };
 });
 
@@ -129,7 +128,7 @@ describe('TicketDetailScreen', () => {
     expect(screen.getByText('페이지 방향 선택')).toBeVisible();
   });
 
-  it('티켓을 조회하는 동안 로딩 상태를 보여준다', async () => {
+  it('티켓을 조회하는 동안 문구 없이 로딩 표시만 보여준다', async () => {
     (useGetTicket as jest.Mock).mockReturnValue({
       data: undefined,
       isLoading: true,
@@ -139,7 +138,13 @@ describe('TicketDetailScreen', () => {
 
     await render(<TicketDetailScreen />);
 
-    expect(screen.getByText('티켓 정보를 불러오고 있어요')).toBeVisible();
+    expect(
+      screen.getByRole('progressbar', {
+        name: '티켓 정보를 불러오는 중',
+      }),
+    ).toBeVisible();
+    expect(screen.getByTestId('ticket-detail-loading-indicator')).toBeVisible();
+    expect(screen.queryByText('티켓 정보를 불러오고 있어요')).toBeNull();
   });
 
   it('티켓 조회에 실패하면 사용자가 다시 시도할 수 있다', async () => {
