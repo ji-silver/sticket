@@ -1,13 +1,7 @@
 import { Share } from 'react-native';
-import {
-  captureRef,
-  releaseCapture,
-} from 'react-native-view-shot';
+import { captureRef, releaseCapture } from 'react-native-view-shot';
 import type { Ticket } from '../../../../features/ticket/types.ts';
-import {
-  exportDiaryImage,
-  getDiaryExportGameInfo,
-} from './diaryExport.ts';
+import { exportDiaryImage, getDiaryExportGameInfo } from './diaryExport.ts';
 
 jest.mock('react-native-view-shot', () => ({
   captureRef: jest.fn(),
@@ -18,6 +12,7 @@ const shareSpy = jest.spyOn(Share, 'share');
 
 const createTicket = (patch: Partial<Ticket> = {}): Ticket => ({
   id: 'ticket-1',
+  createdAt: '2026-08-30T09:00:00Z',
   pageOrientation: 'portrait',
   matchDate: '2026-08-30',
   matchTime: '18:30',
@@ -65,9 +60,8 @@ describe('다이어리 경기 정보', () => {
 
   it('진행 중인 경기는 변경될 수 있는 점수 대신 상태를 표시한다', () => {
     expect(
-      getDiaryExportGameInfo(
-        createTicket({ gameStatus: 'IN_PROGRESS' }),
-      ).matchup,
+      getDiaryExportGameInfo(createTicket({ gameStatus: 'IN_PROGRESS' }))
+        .matchup,
     ).toBe('LG · 경기 진행 중 · 두산');
   });
 
@@ -125,17 +119,13 @@ describe('다이어리 이미지 내보내기', () => {
       prepareComposition,
     });
 
-    expect(prepareComposition).toHaveBeenCalledWith(
-      'file:///tmp/diary.png',
-    );
+    expect(prepareComposition).toHaveBeenCalledWith('file:///tmp/diary.png');
     expect(captureRef).toHaveBeenCalledTimes(2);
     expect(Share.share).toHaveBeenCalledWith({
       url: 'file:///tmp/diary-with-game.png',
     });
     expect(releaseCapture).toHaveBeenCalledWith('/tmp/diary.png');
-    expect(releaseCapture).toHaveBeenCalledWith(
-      '/tmp/diary-with-game.png',
-    );
+    expect(releaseCapture).toHaveBeenCalledWith('/tmp/diary-with-game.png');
   });
 
   it('공유 시트를 열지 못해도 임시 이미지를 정리한다', async () => {

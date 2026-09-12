@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import { type RefObject, useLayoutEffect, useRef, useState } from 'react';
 import {
   Modal,
   Pressable,
@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Check } from 'lucide-react-native';
 import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
 import AppText from './AppText.tsx';
@@ -16,6 +17,7 @@ export interface AppPopoverMenuAction {
   accessibilityLabel?: string;
   tone?: 'default' | 'destructive';
   disabled?: boolean;
+  selected?: boolean;
   onPress: () => void;
 }
 
@@ -165,10 +167,11 @@ function AppPopoverMenu({
                   onClose();
                 }}
                 accessibilityRole="button"
-                accessibilityLabel={
-                  action.accessibilityLabel ?? action.label
-                }
-                accessibilityState={{ disabled: action.disabled }}
+                accessibilityLabel={action.accessibilityLabel ?? action.label}
+                accessibilityState={{
+                  disabled: action.disabled,
+                  selected: action.selected,
+                }}
               >
                 <AppText
                   style={[
@@ -179,6 +182,9 @@ function AppPopoverMenu({
                 >
                   {action.label}
                 </AppText>
+                {action.selected ? (
+                  <Check size={16} color={colors.primary} strokeWidth={2.5} />
+                ) : null}
               </Pressable>
             ))}
           </View>
@@ -204,7 +210,9 @@ const styles = StyleSheet.create({
   row: {
     height: ROW_HEIGHT,
     paddingHorizontal: 16,
-    justifyContent: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   rowDivider: {
     borderTopWidth: StyleSheet.hairlineWidth,

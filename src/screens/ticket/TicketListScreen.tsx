@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Animated,
@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import type { CellRendererProps } from '@react-native/virtualized-lists';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Plus } from 'lucide-react-native';
+import { ArrowUpDown, Plus } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/core';
 import { fonts } from '../../styles/fonts.ts';
 import AppButton from '../../components/common/AppButton.tsx';
@@ -25,6 +25,7 @@ import InlineActionButton from '../../components/common/InlineActionButton.tsx';
 import ScreenHeader from '../../components/common/ScreenHeader.tsx';
 import ResponsiveContent from '../../components/common/ResponsiveContent.tsx';
 import AppSkeleton from '../../components/common/AppSkeleton.tsx';
+import AppPopoverMenu from '../../components/common/AppPopoverMenu.tsx';
 import {
   useGetTicketsBySeason,
   useGetTicketSeasonSummaries,
@@ -33,6 +34,21 @@ import { Ticket } from '../../features/ticket/types.ts';
 import TicketCard from './components/TicketCard.tsx';
 
 const MONTH_OVERLAY_HIDE_DELAY = 700;
+
+type TicketSortOrder = 'recentGame' | 'oldestGame' | 'recentlyAdded';
+
+const TICKET_SORT_LABELS: Record<TicketSortOrder, string> = {
+  recentGame: '최신 경기순',
+  oldestGame: '오래된 경기순',
+  recentlyAdded: '최근 추가순',
+};
+
+function compareGames(first: Ticket, second: Ticket) {
+  return (
+    first.matchDate.localeCompare(second.matchDate) ||
+    first.matchTime.localeCompare(second.matchTime)
+  );
+}
 
 function getMonthLabel(ticket: Ticket | undefined) {
   if (!ticket) {
@@ -53,6 +69,10 @@ function TicketListScreen() {
     error: seasonError,
   } = useGetTicketSeasonSummaries();
   const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
+  const [sortOrder, setSortOrder] =
+    useState<TicketSortOrder>('recentGame');
+  const [isSortMenuVisible, setIsSortMenuVisible] = useState(false);
+  const sortButtonRef = useRef<View>(null);
   const seasons = seasonSummaries.map(summary => summary.season);
   const activeSeason =
     selectedSeason !== null && seasons.includes(selectedSeason)
@@ -63,6 +83,20 @@ function TicketListScreen() {
     isLoading: isLoadingTickets,
     error: ticketsError,
   } = useGetTicketsBySeason(activeSeason);
+  const sortedTickets = useMemo(() => {
+    const nextTickets = [...tickets];
+
+    if (sortOrder === 'recentlyAdded') {
+      return nextTickets.sort((first, second) =>
+        second.createdAt.localeCompare(first.createdAt),
+      );
+    }
+
+    return nextTickets.sort((first, second) => {
+      const comparison = compareGames(first, second);
+      return sortOrder === 'recentGame' ? -comparison : comparison;
+    });
+  }, [sortOrder, tickets]);
   const [visibleMonth, setVisibleMonth] = useState<string | null>(null);
   const visibleMonthRef = useRef<string | null>(null);
   const monthOverlayOpacity = useRef(new Animated.Value(0)).current;
@@ -200,15 +234,15 @@ function TicketListScreen() {
 
   useEffect(() => {
     ticketOffsets.current.clear();
-    monthBoundaryTickets.current = tickets.filter(
+    monthBoundaryTickets.current = sortedTickets.filter(
       (ticket, index) =>
         index === 0 ||
-        getMonthLabel(ticket) !== getMonthLabel(tickets[index - 1]),
+        getMonthLabel(ticket) !== getMonthLabel(sortedTickets[index - 1]),
     );
-    const firstMonth = getMonthLabel(tickets[0]);
+    const firstMonth = getMonthLabel(sortedTickets[0]);
     visibleMonthRef.current = firstMonth;
     setVisibleMonth(firstMonth);
-  }, [tickets]);
+  }, [sortedTickets]);
 
   useEffect(
     () => () => {
@@ -241,7 +275,7 @@ function TicketListScreen() {
 
       <SectionList
         style={styles.content}
-        sections={hasTickets ? [{ data: tickets }] : []}
+        sections={hasTickets ? [{ data: sortedTickets }] : []}
         CellRendererComponent={renderCell}
         keyExtractor={ticket => ticket.id}
         stickySectionHeadersEnabled={hasTickets}
@@ -276,14 +310,17 @@ function TicketListScreen() {
         }
         renderSectionHeader={() => (
           <View style={styles.seasonBar}>
-            <ResponsiveContent>
+            <ResponsiveContent
+              style={[
+                styles.seasonControls,
+                { paddingHorizontal: horizontalPadding },
+              ]}
+            >
               <ScrollView
                 horizontal
+                style={styles.seasonScroll}
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={[
-                  styles.seasonList,
-                  { paddingHorizontal: horizontalPadding },
-                ]}
+                contentContainerStyle={styles.seasonList}
               >
                 {seasons.map(season => (
                   <FilterChip
@@ -294,6 +331,25 @@ function TicketListScreen() {
                   />
                 ))}
               </ScrollView>
+
+              <View
+                ref={sortButtonRef}
+                collapsable={false}
+                style={styles.sortButtonAnchor}
+              >
+                <InlineActionButton
+                  label={TICKET_SORT_LABELS[sortOrder]}
+                  onPress={() => setIsSortMenuVisible(true)}
+                  accessibilityLabel={`티켓 정렬, 현재 ${TICKET_SORT_LABELS[sortOrder]}`}
+                  icon={
+                    <ArrowUpDown
+                      size={16}
+                      color={colors.textSecondary}
+                      strokeWidth={2.2}
+                    />
+                  }
+                />
+              </View>
             </ResponsiveContent>
           </View>
         )}
@@ -350,7 +406,7 @@ function TicketListScreen() {
         ListFooterComponent={<View style={styles.listFooter} />}
       />
 
-      {hasTickets && visibleMonth ? (
+      {hasTickets && visibleMonth && sortOrder !== 'recentlyAdded' ? (
         <Animated.View
           pointerEvents="none"
           onLayout={handleMonthOverlayLayout}
@@ -361,6 +417,19 @@ function TicketListScreen() {
           <AppText style={styles.monthOverlayText}>{visibleMonth}</AppText>
         </Animated.View>
       ) : null}
+
+      <AppPopoverMenu
+        visible={isSortMenuVisible}
+        anchorRef={sortButtonRef}
+        actions={(
+          Object.entries(TICKET_SORT_LABELS) as [TicketSortOrder, string][]
+        ).map(([value, label]) => ({
+          label,
+          selected: sortOrder === value,
+          onPress: () => setSortOrder(value),
+        }))}
+        onClose={() => setIsSortMenuVisible(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -434,8 +503,17 @@ const styles = StyleSheet.create({
     lineHeight: 28,
   },
   seasonList: {
-    paddingHorizontal: 12,
     gap: 10,
+  },
+  seasonControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  seasonScroll: {
+    flex: 1,
+  },
+  sortButtonAnchor: {
+    marginLeft: 8,
   },
   seasonBar: {
     paddingTop: 4,

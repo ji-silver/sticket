@@ -1,5 +1,12 @@
 import React from 'react';
-import { act, fireEvent, render, screen, waitFor } from '../../test-utils';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  userEvent,
+  waitFor,
+} from '../../test-utils';
 import { Alert, Button } from 'react-native';
 import { useNavigation } from '@react-navigation/core';
 import TicketListScreen from './TicketListScreen';
@@ -50,6 +57,32 @@ jest.mock('./components/TicketCard.tsx', () => {
           {ticket.homeTeamName} vs {ticket.awayTeamName}
         </Text>
       </Pressable>
+    );
+  };
+});
+
+jest.mock('../../components/common/AppPopoverMenu.tsx', () => {
+  const { Pressable, Text, View } = require('react-native');
+
+  return function MockAppPopoverMenu({ visible, actions }: any) {
+    if (!visible) {
+      return null;
+    }
+
+    return (
+      <View>
+        {actions.map((action: any) => (
+          <Pressable
+            key={action.label}
+            onPress={action.onPress}
+            accessibilityRole="button"
+            accessibilityLabel={action.label}
+            accessibilityState={{ selected: action.selected }}
+          >
+            <Text>{action.label}</Text>
+          </Pressable>
+        ))}
+      </View>
     );
   };
 });
@@ -196,6 +229,92 @@ describe('TicketListScreen', () => {
       expect(ticket2023).toBeVisible();
       expect(screen.queryByText('LG vs 두산')).toBeNull();
       expect(getTicketsBySeason).toHaveBeenLastCalledWith(2023);
+    });
+  });
+
+  describe('티켓 정렬', () => {
+    const mockTickets = [
+      {
+        id: 'recent-game',
+        matchDate: '2024-08-15',
+        createdAt: '2024-08-16T09:00:00Z',
+        homeTeamName: '키움',
+        awayTeamName: 'SSG',
+      },
+      {
+        id: 'recently-added',
+        matchDate: '2024-05-10',
+        createdAt: '2026-09-12T09:00:00Z',
+        homeTeamName: 'LG',
+        awayTeamName: '두산',
+      },
+    ];
+
+    beforeEach(() => {
+      (getTicketSeasonSummaries as jest.Mock).mockResolvedValue([
+        { season: 2024, ticketCount: 2 },
+      ]);
+      (getTicketsBySeason as jest.Mock).mockResolvedValue(mockTickets);
+    });
+
+    it('기본값에서는 가장 최근 경기를 먼저 보여준다', async () => {
+      await setup();
+
+      const cards = await screen.findAllByTestId(/^ticket-card-/);
+
+      expect(cards.map(card => card.props.testID)).toEqual([
+        'ticket-card-recent-game',
+        'ticket-card-recently-added',
+      ]);
+      expect(
+        screen.getByRole('button', {
+          name: '티켓 정렬, 현재 최신 경기순',
+        }),
+      ).toBeVisible();
+    });
+
+    it('최근 추가순을 선택하면 나중에 등록한 티켓을 먼저 보여준다', async () => {
+      const user = userEvent.setup();
+      await setup();
+
+      await user.press(
+        await screen.findByRole('button', {
+          name: '티켓 정렬, 현재 최신 경기순',
+        }),
+      );
+      await user.press(screen.getByRole('button', { name: '최근 추가순' }));
+
+      const cards = screen.getAllByTestId(/^ticket-card-/);
+      expect(cards.map(card => card.props.testID)).toEqual([
+        'ticket-card-recently-added',
+        'ticket-card-recent-game',
+      ]);
+      expect(
+        screen.getByRole('button', {
+          name: '티켓 정렬, 현재 최근 추가순',
+        }),
+      ).toBeVisible();
+      expect(
+        screen.queryByText('5월', { includeHiddenElements: true }),
+      ).toBeNull();
+    });
+
+    it('오래된 경기순을 선택하면 경기일이 빠른 티켓을 먼저 보여준다', async () => {
+      const user = userEvent.setup();
+      await setup();
+
+      await user.press(
+        await screen.findByRole('button', {
+          name: '티켓 정렬, 현재 최신 경기순',
+        }),
+      );
+      await user.press(screen.getByRole('button', { name: '오래된 경기순' }));
+
+      const cards = screen.getAllByTestId(/^ticket-card-/);
+      expect(cards.map(card => card.props.testID)).toEqual([
+        'ticket-card-recently-added',
+        'ticket-card-recent-game',
+      ]);
     });
   });
 

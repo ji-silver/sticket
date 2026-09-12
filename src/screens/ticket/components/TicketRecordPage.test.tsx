@@ -13,6 +13,7 @@ jest.mock('./TicketLineupSection.tsx', () => () => null);
 
 const ticket: Ticket = {
   id: 'ticket-1',
+  createdAt: '2026-09-09T09:00:00Z',
   pageOrientation: 'portrait',
   matchDate: '2026-09-09',
   matchTime: '18:30',

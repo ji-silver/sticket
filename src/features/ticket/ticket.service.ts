@@ -327,6 +327,7 @@ async function fetchTickets({
       }
       return {
         id: ticket.id,
+        createdAt: ticket.created_at,
         pageOrientation:
           ticket.page_orientation === 'portrait' ||
           ticket.page_orientation === 'landscape'

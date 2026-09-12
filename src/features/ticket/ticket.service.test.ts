@@ -119,6 +119,7 @@ describe('getTickets', () => {
 
     expect(tickets[0].isCancelled).toBe(true);
     expect(tickets[0].gameStatus).toBe('CANCELLED');
+    expect(tickets[0].createdAt).toBe('2026-08-05T00:00:00Z');
     expect(tickets[0].pageOrientation).toBe('landscape');
     expect(tickets[0].seatDetail).toBe('3블록 J열 12번');
     expect(tickets[0].awayLineup).toEqual([
