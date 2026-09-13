@@ -301,10 +301,6 @@ export const MEME_STICKER_PACK: DiaryStickerPack = {
       id: 'meme-20',
       source: require('../../../../assets/diary/stickers/meme/meme_20.png'),
     },
-    {
-      id: 'meme-21',
-      source: require('../../../../assets/diary/stickers/meme/meme_21.png'),
-    },
   ],
 };
 
