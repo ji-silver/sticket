@@ -1,4 +1,4 @@
-가import React from 'react';
+import React from 'react';
 import { render, screen, userEvent, waitFor } from '@testing-library/react-native';
 import { Alert, Linking } from 'react-native';
 import AccountSettingsSection from './AccountSettingsSection';
