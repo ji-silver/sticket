@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Linking, Pressable, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ChevronRight, LogOut } from 'lucide-react-native';
@@ -18,6 +18,9 @@ const TERMS_OF_SERVICE_URL =
   'https://amenable-colby-ae6.notion.site/3b6f2bd020d08050b594d22630e4a866';
 const PRIVACY_POLICY_URL =
   'https://amenable-colby-ae6.notion.site/3b5f2bd020d0803da252e68a09189ae5';
+const SUPPORT_EMAIL_URL = `mailto:hello.appworks@gmail.com?subject=${encodeURIComponent(
+  '[스티켓 문의]',
+)}`;
 
 function AccountSettingsSection({
   onPressLogout,
@@ -25,6 +28,17 @@ function AccountSettingsSection({
 }: AccountSettingsSectionProps) {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  const handlePressSupport = async () => {
+    try {
+      await Linking.openURL(SUPPORT_EMAIL_URL);
+    } catch {
+      Alert.alert(
+        '메일 앱을 열 수 없습니다',
+        'hello.appworks@gmail.com으로 문의해 주세요.',
+      );
+    }
+  };
 
   return (
     <>
@@ -70,6 +84,26 @@ function AccountSettingsSection({
             accessibilityRole="button"
           >
             <AppText style={styles.serviceRowText}>개인정보 처리방침</AppText>
+
+            <ChevronRight
+              size={18}
+              color={colors.textSecondary}
+              strokeWidth={2}
+            />
+          </Pressable>
+
+          <View style={styles.serviceDivider} />
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.serviceRow,
+              pressed && styles.serviceRowPressed,
+            ]}
+            onPress={handlePressSupport}
+            accessibilityRole="button"
+            accessibilityLabel="문의 및 피드백"
+          >
+            <AppText style={styles.serviceRowText}>문의 및 피드백</AppText>
 
             <ChevronRight
               size={18}
