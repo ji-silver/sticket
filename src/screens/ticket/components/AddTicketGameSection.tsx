@@ -23,6 +23,12 @@ export default function AddTicketGameSection({
   selectedGameId,
   onPressGame,
 }: AddTicketGameSectionProps) {
+  const matchupCounts = games.reduce<Record<string, number>>((counts, game) => {
+    const matchup = `${game.awayTeamName}-${game.homeTeamName}`;
+    counts[matchup] = (counts[matchup] ?? 0) + 1;
+    return counts;
+  }, {});
+
   return (
     <View style={styles.gameSection}>
       <View style={styles.gameSectionHeader}>
@@ -55,6 +61,14 @@ export default function AddTicketGameSection({
         <View style={styles.gameList}>
           {games.map(game => {
             const isSelected = selectedGameId === game.id;
+            const matchup = `${game.awayTeamName}-${game.homeTeamName}`;
+            const gameNumber =
+              matchupCounts[matchup] > 1
+                ? game.id.match(/-(\d+)$/)?.[1]
+                : undefined;
+            const timeText = gameNumber
+              ? `${gameNumber}차전 ${game.time}`
+              : game.time;
 
             return (
               <Pressable
@@ -66,7 +80,7 @@ export default function AddTicketGameSection({
                 ]}
                 onPress={() => onPressGame(game.id)}
                 accessibilityRole="button"
-                accessibilityLabel={`${game.awayTeamName} 원정 대 ${game.homeTeamName} 홈, ${game.time}, ${game.stadiumName}`}
+                accessibilityLabel={`${game.awayTeamName} 원정 대 ${game.homeTeamName} 홈, ${timeText}, ${game.stadiumName}`}
                 accessibilityState={{ selected: isSelected }}
               >
                 <View style={styles.matchupRow}>
@@ -89,9 +103,7 @@ export default function AddTicketGameSection({
 
                 <View style={styles.gameMetaRow}>
                   <View style={styles.gameMetaContent}>
-                    <AppText style={styles.gameTime}>{game.time}</AppText>
-
-                    <View style={styles.metaDot} />
+                    <AppText style={styles.gameTime}>{timeText}</AppText>
 
                     <AppText style={styles.stadiumName} numberOfLines={1}>
                       {game.stadiumName}
@@ -167,12 +179,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: fonts.bold,
     color: colors.text,
-  },
-  metaDot: {
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: colors.disabled,
   },
   stadiumName: {
     flexShrink: 1,

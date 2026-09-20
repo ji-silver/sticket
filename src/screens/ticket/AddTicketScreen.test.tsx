@@ -110,6 +110,31 @@ describe('AddTicketScreen', () => {
   });
 
   describe('달력 및 경기 연동', () => {
+    it('더블헤더 경기에는 차전과 시간을 함께 표시한다', async () => {
+      (getGamesByDate as jest.Mock).mockResolvedValueOnce([
+        {
+          id: '20250511-kia-ssg-1',
+          awayTeamName: 'KIA',
+          homeTeamName: 'SSG',
+          time: '14:00',
+          stadiumName: '인천 SSG랜더스필드',
+        },
+        {
+          id: '20250511-kia-ssg-2',
+          awayTeamName: 'KIA',
+          homeTeamName: 'SSG',
+          time: '18:30',
+          stadiumName: '인천 SSG랜더스필드',
+        },
+      ]);
+
+      await setup();
+      await fireEvent.press(screen.getByText('Mock Date 1'));
+
+      expect(await screen.findByText('1차전 14:00')).toBeVisible();
+      expect(screen.getByText('2차전 18:30')).toBeVisible();
+    });
+
     it('응원 구단 경기를 목록의 가장 위에 표시한다', async () => {
       mockUseAuth.mockReturnValue({
         profile: { favorite_team: { short_name: 'LG' } },

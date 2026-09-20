@@ -20,6 +20,7 @@ export interface LineupPlayer {
 
 export interface Ticket {
   id: string;
+  gameKey: string;
   createdAt: string;
   pageOrientation: TicketDiaryOrientation | null;
   matchDate: string;

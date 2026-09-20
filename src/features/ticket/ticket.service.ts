@@ -244,6 +244,7 @@ async function fetchTickets({
     .select(
       `
          id,
+        game_key,
         seat_name,
         seat_detail,
         rating,
@@ -327,6 +328,7 @@ async function fetchTickets({
       }
       return {
         id: ticket.id,
+        gameKey: ticket.game_key,
         createdAt: ticket.created_at,
         pageOrientation:
           ticket.page_orientation === 'portrait' ||

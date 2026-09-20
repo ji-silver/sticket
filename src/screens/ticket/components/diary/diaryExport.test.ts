@@ -12,6 +12,7 @@ const shareSpy = jest.spyOn(Share, 'share');
 
 const createTicket = (patch: Partial<Ticket> = {}): Ticket => ({
   id: 'ticket-1',
+  gameKey: 'game-1',
   createdAt: '2026-08-30T09:00:00Z',
   pageOrientation: 'portrait',
   matchDate: '2026-08-30',

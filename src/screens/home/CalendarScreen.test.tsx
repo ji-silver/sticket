@@ -100,6 +100,8 @@ describe('CalendarScreen', () => {
     const user = userEvent.setup();
     await render(<CalendarScreen />);
 
+    expect(screen.queryByText(/더블헤더/)).toBeNull();
+
     await user.press(
       screen.getByRole('button', {
         name: '선택한 경기에 직관 기록 추가',
@@ -220,6 +222,92 @@ describe('CalendarScreen', () => {
     resolveTicketBooks([{ id: 'ticket-book' }]);
     await waitFor(() => {
       expect(mockMutateAsync).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('더블헤더 1차전을 등록했으면 2차전의 티켓만 추가할 수 있다', async () => {
+    const user = userEvent.setup();
+    (useGetTickets as jest.Mock).mockReturnValue({
+      data: [
+        {
+          id: 'ticket-1',
+          gameKey: 'home-game-1',
+          createdAt: '2026-08-03T05:00:00Z',
+          pageOrientation: 'portrait',
+          matchDate: '2026-08-03',
+          matchTime: '14:00',
+          stadiumName: '잠실',
+          seatName: null,
+          seatDetail: null,
+          rating: null,
+          memo: null,
+          foods: [],
+          homeTeamName: 'LG',
+          awayTeamName: '두산',
+          homeScore: 3,
+          awayScore: 2,
+          gameStatus: 'FINISHED',
+          isCancelled: false,
+          awayLineup: [],
+          homeLineup: [],
+        },
+      ],
+      isLoading: false,
+    });
+    (useGetTeamGamesByMonth as jest.Mock).mockReturnValue({
+      data: [
+        {
+          id: 'home-game-1',
+          date: '2026-08-03',
+          time: '14:00',
+          season: 2026,
+          seriesType: 'REGULAR',
+          stadiumName: '잠실',
+          homeTeamId: 'lg',
+          homeAway: 'H',
+          opponentName: '두산',
+          status: 'FINISHED',
+          awayScore: 2,
+          homeScore: 3,
+        },
+        {
+          id: 'home-game-2',
+          date: '2026-08-03',
+          time: '18:30',
+          season: 2026,
+          seriesType: 'REGULAR',
+          stadiumName: '잠실',
+          homeTeamId: 'lg',
+          homeAway: 'H',
+          opponentName: '두산',
+          status: 'FINISHED',
+          awayScore: 1,
+          homeScore: 4,
+        },
+      ],
+      isLoading: false,
+    });
+
+    await render(<CalendarScreen />);
+
+    expect(
+      screen.getByRole('button', {
+        name: '08월 03일 두산 대 LG, 직관 기록 보기',
+      }),
+    ).toBeVisible();
+    expect(screen.getByText('더블헤더 2차전')).toBeVisible();
+
+    const addButtons = screen.getAllByRole('button', {
+      name: '선택한 경기에 직관 기록 추가',
+    });
+    expect(addButtons).toHaveLength(1);
+
+    await user.press(addButtons[0]);
+
+    await waitFor(() => {
+      expect(mockMutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({ gameKey: 'home-game-2' }),
+      );
     });
   });
 });

@@ -138,7 +138,13 @@ function CalendarScreen() {
     ticket => ticket.matchDate === selectedDate,
   );
 
-  const selectedGames = gamesByDate[selectedDate] ?? [];
+  const selectedDateGames = gamesByDate[selectedDate] ?? [];
+  const recordedGameKeys = new Set(
+    selectedRecords.map(ticket => ticket.gameKey),
+  );
+  const selectedGames = selectedDateGames.filter(
+    game => !recordedGameKeys.has(game.id),
+  );
 
   const favoriteTeamName = profile?.favorite_team?.short_name ?? '응원 구단';
 
@@ -191,6 +197,7 @@ function CalendarScreen() {
             today={today}
             selectedRecords={selectedRecords}
             selectedGames={selectedGames}
+            isDoubleheader={selectedDateGames.length > 1}
             favoriteTeamName={favoriteTeamName}
             isLoading={isLoadingTickets || isLoadingTeamGames}
             onPressTicket={ticketId =>
