@@ -39,6 +39,18 @@ export async function signInWithGoogle() {
     throw error;
   }
 
+  const googleName = response.data.user.name?.trim();
+
+  if (googleName) {
+    const { error: updateError } = await supabase.auth.updateUser({
+      data: { full_name: googleName },
+    });
+
+    if (updateError) {
+      throw updateError;
+    }
+  }
+
   return data;
 }
 

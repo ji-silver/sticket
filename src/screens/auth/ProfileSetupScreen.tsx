@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -19,8 +19,25 @@ import { saveProfile } from '../../features/profile/profile.service.ts';
 import { useAuth } from '../../features/auth/AuthProvider.tsx';
 
 function ProfileSetupScreen() {
-  const { profile, completeProfile } = useAuth();
-  const [nickname, setNickname] = useState(profile?.nickname ?? '');
+  const { session, profile, completeProfile } = useAuth();
+  const googleName =
+    session?.user.app_metadata.provider === 'google'
+      ? session.user.user_metadata.full_name ??
+        session.user.user_metadata.name
+      : null;
+  const [nickname, setNickname] = useState(
+    profile?.nickname ??
+      (typeof googleName === 'string' ? googleName.trim() : ''),
+  );
+
+  useEffect(() => {
+    if (typeof googleName !== 'string') {
+      return;
+    }
+
+    setNickname(currentNickname => currentNickname || googleName.trim());
+  }, [googleName]);
+
   const [hasBlurredNickname, setHasBlurredNickname] = useState(false);
   const [favoriteTeam, setFavoriteTeam] = useState(
     profile?.favorite_team?.name ?? '',

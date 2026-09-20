@@ -46,6 +46,7 @@ describe('ProfileSetupScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (useAuth as jest.Mock).mockReturnValue({
+      session: null,
       profile: null,
       completeProfile: mockCompleteProfile,
     });
@@ -65,6 +66,7 @@ describe('ProfileSetupScreen', () => {
 
     it('기존 프로필 데이터가 있으면, 해당 데이터로 폼이 미리 채워진다', async () => {
       (useAuth as jest.Mock).mockReturnValue({
+        session: null,
         profile: { nickname: '기존유저', favorite_team: { name: 'LG 트윈스' } },
         completeProfile: mockCompleteProfile,
       });
@@ -74,6 +76,53 @@ describe('ProfileSetupScreen', () => {
       const nicknameInput = screen.getByLabelText('닉네임');
       expect(nicknameInput.props.value).toBe('기존유저');
       expect(screen.getByText('LG 트윈스')).toBeVisible();
+    });
+
+    it('신규 Google 사용자에게 Google 표시 이름을 닉네임 초기값으로 보여준다', async () => {
+      (useAuth as jest.Mock).mockReturnValue({
+        session: {
+          user: {
+            app_metadata: { provider: 'google' },
+            user_metadata: { name: '구글유저' },
+          },
+        },
+        profile: null,
+        completeProfile: mockCompleteProfile,
+      });
+
+      await setup();
+
+      expect(screen.getByLabelText('닉네임').props.value).toBe('구글유저');
+    });
+
+    it('프로필 화면이 열린 뒤 Google 표시 이름이 도착해도 닉네임을 채운다', async () => {
+      (useAuth as jest.Mock).mockReturnValue({
+        session: {
+          user: {
+            app_metadata: { provider: 'google' },
+            user_metadata: {},
+          },
+        },
+        profile: null,
+        completeProfile: mockCompleteProfile,
+      });
+      const view = await setup();
+
+      expect(screen.getByLabelText('닉네임').props.value).toBe('');
+
+      (useAuth as jest.Mock).mockReturnValue({
+        session: {
+          user: {
+            app_metadata: { provider: 'google' },
+            user_metadata: { name: '늦게도착한이름' },
+          },
+        },
+        profile: null,
+        completeProfile: mockCompleteProfile,
+      });
+      await view.rerender(<ProfileSetupScreen />);
+
+      expect(screen.getByLabelText('닉네임').props.value).toBe('늦게도착한이름');
     });
   });
 
