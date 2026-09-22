@@ -34,7 +34,16 @@
 				<string>com.googleusercontent.apps.473008559992-59jfscp1bm2vismkj15p7o31o46fcu0r</string>
 			</array>
 		</dict>
-		<dict/>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>SticketAuth</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.jieun.sticket</string>
+			</array>
+		</dict>
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>

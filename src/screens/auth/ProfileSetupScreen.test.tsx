@@ -95,6 +95,23 @@ describe('ProfileSetupScreen', () => {
       expect(screen.getByLabelText('닉네임').props.value).toBe('구글유저');
     });
 
+    it('신규 카카오 사용자에게 카카오 닉네임을 초기값으로 보여준다', async () => {
+      (useAuth as jest.Mock).mockReturnValue({
+        session: {
+          user: {
+            app_metadata: { provider: 'kakao' },
+            user_metadata: { full_name: '카카오유저' },
+          },
+        },
+        profile: null,
+        completeProfile: mockCompleteProfile,
+      });
+
+      await setup();
+
+      expect(screen.getByLabelText('닉네임').props.value).toBe('카카오유저');
+    });
+
     it('프로필 화면이 열린 뒤 Google 표시 이름이 도착해도 닉네임을 채운다', async () => {
       (useAuth as jest.Mock).mockReturnValue({
         session: {

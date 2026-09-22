@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { AppState } from 'react-native';
+import { AppState, Linking } from 'react-native';
 import type { Session } from '@supabase/supabase-js';
 import { focusManager, useQueryClient } from '@tanstack/react-query';
 
@@ -16,6 +16,7 @@ import { supabase } from '../../lib/supabase';
 import { getProfile } from '../profile/profile.service';
 import type { AuthContextValue, AuthStatus, UserProfile } from './auth.types';
 import { deleteCurrentAccount } from './account.service';
+import { handleAuthCallback } from './auth.service';
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
@@ -34,6 +35,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [profileRequestVersion, setProfileRequestVersion] = useState(0);
   const sessionUserIdRef = useRef<string | undefined>(undefined);
+  const handledAuthUrlRef = useRef<string | null>(null);
 
   const loadSession = useCallback(async () => {
     setErrorMessage(null);
@@ -95,6 +97,51 @@ export function AuthProvider({ children }: PropsWithChildren) {
       supabase.auth.stopAutoRefresh();
     };
   }, [loadSession]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const handleUrl = async (url: string) => {
+      if (handledAuthUrlRef.current === url) {
+        return;
+      }
+
+      handledAuthUrlRef.current = url;
+
+      try {
+        const didHandle = await handleAuthCallback(url);
+
+        if (!didHandle) {
+          handledAuthUrlRef.current = null;
+        }
+      } catch (error) {
+        if (isActive) {
+          setErrorMessage(getErrorMessage(error));
+        }
+      }
+    };
+
+    Linking.getInitialURL()
+      .then(url => {
+        if (url) {
+          handleUrl(url);
+        }
+      })
+      .catch(error => {
+        if (isActive) {
+          setErrorMessage(getErrorMessage(error));
+        }
+      });
+
+    const subscription = Linking.addEventListener('url', ({ url }) => {
+      handleUrl(url);
+    });
+
+    return () => {
+      isActive = false;
+      subscription.remove();
+    };
+  }, []);
 
   const userId = session?.user.id;
 

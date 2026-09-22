@@ -20,23 +20,24 @@ import { useAuth } from '../../features/auth/AuthProvider.tsx';
 
 function ProfileSetupScreen() {
   const { session, profile, completeProfile } = useAuth();
-  const googleName =
-    session?.user.app_metadata.provider === 'google'
-      ? session.user.user_metadata.full_name ??
-        session.user.user_metadata.name
+  const provider = session?.user.app_metadata.provider;
+  const userMetadata = session?.user.user_metadata;
+  const socialName =
+    provider === 'google' || provider === 'kakao'
+      ? userMetadata?.full_name ?? userMetadata?.name ?? userMetadata?.nickname
       : null;
   const [nickname, setNickname] = useState(
     profile?.nickname ??
-      (typeof googleName === 'string' ? googleName.trim() : ''),
+      (typeof socialName === 'string' ? socialName.trim() : ''),
   );
 
   useEffect(() => {
-    if (typeof googleName !== 'string') {
+    if (typeof socialName !== 'string') {
       return;
     }
 
-    setNickname(currentNickname => currentNickname || googleName.trim());
-  }, [googleName]);
+    setNickname(currentNickname => currentNickname || socialName.trim());
+  }, [socialName]);
 
   const [hasBlurredNickname, setHasBlurredNickname] = useState(false);
   const [favoriteTeam, setFavoriteTeam] = useState(

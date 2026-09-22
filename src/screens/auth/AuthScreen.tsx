@@ -8,14 +8,31 @@ import { fonts } from '../../styles/fonts.ts';
 import {
   signInWithApple,
   signInWithGoogle,
+  signInWithKakao,
 } from '../../features/auth/auth.service.ts';
 
 function AuthScreen() {
   const [loadingProvider, setLoadingProvider] = useState<
-    'apple' | 'google' | null
+    'apple' | 'google' | 'kakao' | null
   >(null);
 
   const isLoading = loadingProvider !== null;
+
+  const handlePressKakao = async () => {
+    if (isLoading) return;
+
+    setLoadingProvider('kakao');
+
+    try {
+      await signInWithKakao();
+    } catch (error) {
+      console.error('카카오 로그인에 실패했습니다.', error);
+
+      Alert.alert('카카오 로그인에 실패했어요', '잠시 후 다시 시도해 주세요.');
+    } finally {
+      setLoadingProvider(null);
+    }
+  };
 
   const handlePressApple = async () => {
     if (isLoading) return;
@@ -64,6 +81,29 @@ function AuthScreen() {
         <AppButton
           style={({ pressed }) => [
             styles.loginButton,
+            styles.kakaoButton,
+            pressed && !isLoading && styles.buttonPressed,
+            isLoading && styles.buttonDisabled,
+          ]}
+          onPress={handlePressKakao}
+          disabled={isLoading}
+          isLoading={loadingProvider === 'kakao'}
+          loadingColor="rgba(0, 0, 0, 0.85)"
+          accessibilityRole="button"
+          accessibilityLabel="카카오로 계속하기"
+          accessibilityState={{ disabled: isLoading }}
+        >
+          <Image
+            source={require('../../assets/auth/kakao-symbol.png')}
+            style={styles.kakaoLogo}
+            resizeMode="contain"
+          />
+          <AppText style={styles.kakaoButtonText}>카카오로 계속하기</AppText>
+        </AppButton>
+
+        <AppButton
+          style={({ pressed }) => [
+            styles.loginButton,
             styles.appleButton,
             pressed && !isLoading && styles.buttonPressed,
             isLoading && styles.buttonDisabled,
@@ -76,6 +116,7 @@ function AuthScreen() {
           accessibilityState={{ disabled: isLoading }}
         >
           <Image
+            testID="apple-login-logo"
             source={require('../../assets/auth/apple-logo.png')}
             style={styles.appleLogo}
             resizeMode="contain"
@@ -141,11 +182,11 @@ const styles = StyleSheet.create({
   loginArea: {
     paddingHorizontal: 24,
     paddingTop: 28,
-    paddingBottom: 64,
+    paddingBottom: 76,
     gap: 10,
   },
   loginButton: {
-    height: 54,
+    height: 50,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -153,6 +194,20 @@ const styles = StyleSheet.create({
   },
   appleButton: {
     backgroundColor: '#000000',
+  },
+  kakaoButton: {
+    borderRadius: 12,
+    backgroundColor: '#FEE500',
+    overflow: 'hidden',
+  },
+  kakaoLogo: {
+    width: 24,
+    height: 24,
+  },
+  kakaoButtonText: {
+    fontSize: 15,
+    fontFamily: fonts.medium,
+    color: 'rgba(0, 0, 0, 0.85)',
   },
   googleButton: {
     borderWidth: 1,
@@ -170,7 +225,7 @@ const styles = StyleSheet.create({
     height: 50,
     marginLeft: -14,
     marginRight: -14,
-    marginTop: 4,
+    marginTop: 0,
   },
   appleButtonText: {
     fontSize: 15,
