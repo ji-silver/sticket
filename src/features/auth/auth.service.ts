@@ -3,12 +3,36 @@ import {
   isSuccessResponse,
 } from '@react-native-google-signin/google-signin';
 import { appleAuth } from '@invertase/react-native-apple-authentication';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Linking } from 'react-native';
 
 import { publicConfig } from '../../config/publicConfig';
 import { supabase } from '../../lib/supabase';
 
 const AUTH_CALLBACK_URL = 'com.jieun.sticket://auth/callback';
+const LAST_AUTH_PROVIDER_KEY = '@sticket/last-auth-provider';
+
+export type LastAuthProvider = 'apple' | 'google' | 'kakao';
+
+async function rememberAuthProvider(provider: LastAuthProvider) {
+  try {
+    await AsyncStorage.setItem(LAST_AUTH_PROVIDER_KEY, provider);
+  } catch {
+    // 로그인 기록 저장 실패는 인증을 막지 않습니다.
+  }
+}
+
+export async function getLastAuthProvider(): Promise<LastAuthProvider | null> {
+  try {
+    const provider = await AsyncStorage.getItem(LAST_AUTH_PROVIDER_KEY);
+
+    return provider === 'apple' || provider === 'google' || provider === 'kakao'
+      ? provider
+      : null;
+  } catch {
+    return null;
+  }
+}
 
 export async function signInWithKakao() {
   const { data, error } = await supabase.auth.signInWithOAuth({
@@ -71,6 +95,7 @@ export async function handleAuthCallback(url: string) {
     throw error;
   }
 
+  await rememberAuthProvider('kakao');
   return true;
 }
 
@@ -118,6 +143,7 @@ export async function signInWithGoogle() {
     }
   }
 
+  await rememberAuthProvider('google');
   return data;
 }
 
@@ -151,6 +177,7 @@ export async function signInWithApple() {
       throw error;
     }
 
+    await rememberAuthProvider('apple');
     return data;
   } catch (error) {
     if (isAppleSignInCanceled(error)) {

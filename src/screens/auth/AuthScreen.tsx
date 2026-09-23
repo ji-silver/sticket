@@ -1,22 +1,60 @@
 import { Alert, Image, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import AppButton from '../../components/common/AppButton.tsx';
 import AppText from '../../components/common/AppText.tsx';
 import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
 import {
+  getLastAuthProvider,
   signInWithApple,
   signInWithGoogle,
   signInWithKakao,
 } from '../../features/auth/auth.service.ts';
+import type { LastAuthProvider } from '../../features/auth/auth.service.ts';
+
+const AUTH_PROVIDER_LABELS: Record<LastAuthProvider, string> = {
+  apple: 'Apple',
+  google: 'Google',
+  kakao: '카카오',
+};
+
+function RecentLoginBubble({ provider }: { provider: LastAuthProvider }) {
+  return (
+    <View
+      accessible
+      accessibilityLabel={`${AUTH_PROVIDER_LABELS[provider]} 최근 로그인`}
+      pointerEvents="none"
+      style={styles.recentLoginBubble}
+    >
+      <AppText style={styles.recentLoginText}>최근 로그인</AppText>
+      <View style={styles.recentLoginTail} />
+    </View>
+  );
+}
 
 function AuthScreen() {
+  const [lastAuthProvider, setLastAuthProvider] =
+    useState<LastAuthProvider | null>(null);
   const [loadingProvider, setLoadingProvider] = useState<
     'apple' | 'google' | 'kakao' | null
   >(null);
 
   const isLoading = loadingProvider !== null;
+
+  useEffect(() => {
+    let isActive = true;
+
+    getLastAuthProvider().then(provider => {
+      if (isActive) {
+        setLastAuthProvider(provider);
+      }
+    });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   const handlePressKakao = async () => {
     if (isLoading) return;
@@ -78,75 +116,105 @@ function AuthScreen() {
       </View>
 
       <View style={styles.loginArea}>
-        <AppButton
-          style={({ pressed }) => [
-            styles.loginButton,
-            styles.kakaoButton,
-            pressed && !isLoading && styles.buttonPressed,
-            isLoading && styles.buttonDisabled,
+        <View
+          style={[
+            styles.loginButtonWrapper,
+            lastAuthProvider === 'kakao' && styles.recentLoginButtonWrapper,
           ]}
-          onPress={handlePressKakao}
-          disabled={isLoading}
-          isLoading={loadingProvider === 'kakao'}
-          loadingColor="rgba(0, 0, 0, 0.85)"
-          accessibilityRole="button"
-          accessibilityLabel="카카오로 계속하기"
-          accessibilityState={{ disabled: isLoading }}
         >
-          <Image
-            source={require('../../assets/auth/kakao-symbol.png')}
-            style={styles.kakaoLogo}
-            resizeMode="contain"
-          />
-          <AppText style={styles.kakaoButtonText}>카카오로 계속하기</AppText>
-        </AppButton>
+          {lastAuthProvider === 'kakao' ? (
+            <RecentLoginBubble provider="kakao" />
+          ) : null}
+          <AppButton
+            style={({ pressed }) => [
+              styles.loginButton,
+              styles.kakaoButton,
+              pressed && !isLoading && styles.buttonPressed,
+              isLoading && styles.buttonDisabled,
+            ]}
+            onPress={handlePressKakao}
+            disabled={isLoading}
+            isLoading={loadingProvider === 'kakao'}
+            loadingColor="rgba(0, 0, 0, 0.85)"
+            accessibilityRole="button"
+            accessibilityLabel="카카오로 계속하기"
+            accessibilityState={{ disabled: isLoading }}
+          >
+            <Image
+              source={require('../../assets/auth/kakao-symbol.png')}
+              style={styles.kakaoLogo}
+              resizeMode="contain"
+            />
+            <AppText style={styles.kakaoButtonText}>카카오로 계속하기</AppText>
+          </AppButton>
+        </View>
 
-        <AppButton
-          style={({ pressed }) => [
-            styles.loginButton,
-            styles.appleButton,
-            pressed && !isLoading && styles.buttonPressed,
-            isLoading && styles.buttonDisabled,
+        <View
+          style={[
+            styles.loginButtonWrapper,
+            lastAuthProvider === 'apple' && styles.recentLoginButtonWrapper,
           ]}
-          onPress={handlePressApple}
-          disabled={isLoading}
-          isLoading={loadingProvider === 'apple'}
-          accessibilityRole="button"
-          accessibilityLabel="Apple로 계속하기"
-          accessibilityState={{ disabled: isLoading }}
         >
-          <Image
-            testID="apple-login-logo"
-            source={require('../../assets/auth/apple-logo.png')}
-            style={styles.appleLogo}
-            resizeMode="contain"
-          />
-          <AppText style={styles.appleButtonText}>Apple로 계속하기</AppText>
-        </AppButton>
+          {lastAuthProvider === 'apple' ? (
+            <RecentLoginBubble provider="apple" />
+          ) : null}
+          <AppButton
+            style={({ pressed }) => [
+              styles.loginButton,
+              styles.appleButton,
+              pressed && !isLoading && styles.buttonPressed,
+              isLoading && styles.buttonDisabled,
+            ]}
+            onPress={handlePressApple}
+            disabled={isLoading}
+            isLoading={loadingProvider === 'apple'}
+            accessibilityRole="button"
+            accessibilityLabel="Apple로 계속하기"
+            accessibilityState={{ disabled: isLoading }}
+          >
+            <Image
+              testID="apple-login-logo"
+              source={require('../../assets/auth/apple-logo.png')}
+              style={styles.appleLogo}
+              resizeMode="contain"
+            />
+            <AppText style={styles.appleButtonText}>Apple로 계속하기</AppText>
+          </AppButton>
+        </View>
 
-        <AppButton
-          style={({ pressed }) => [
-            styles.loginButton,
-            styles.googleButton,
-            pressed && !isLoading && styles.buttonPressed,
-            isLoading && styles.buttonDisabled,
+        <View
+          style={[
+            styles.loginButtonWrapper,
+            lastAuthProvider === 'google' && styles.recentLoginButtonWrapper,
           ]}
-          onPress={handlePressGoogle}
-          disabled={isLoading}
-          isLoading={loadingProvider === 'google'}
-          loadingColor={colors.text}
-          accessibilityRole="button"
-          accessibilityLabel="Google로 계속하기"
-          accessibilityState={{ disabled: isLoading }}
         >
-          <Image
-            source={require('../../assets/auth/google-g.png')}
-            style={styles.googleLogo}
-            resizeMode="contain"
-          />
+          {lastAuthProvider === 'google' ? (
+            <RecentLoginBubble provider="google" />
+          ) : null}
+          <AppButton
+            style={({ pressed }) => [
+              styles.loginButton,
+              styles.googleButton,
+              pressed && !isLoading && styles.buttonPressed,
+              isLoading && styles.buttonDisabled,
+            ]}
+            onPress={handlePressGoogle}
+            disabled={isLoading}
+            isLoading={loadingProvider === 'google'}
+            loadingColor={colors.text}
+            accessibilityRole="button"
+            accessibilityLabel="Google로 계속하기"
+            accessibilityState={{ disabled: isLoading }}
+          >
+            <Image
+              source={require('../../assets/auth/google-g.png')}
+              style={styles.googleLogo}
+              resizeMode="contain"
+            />
 
-          <AppText style={styles.googleButtonText}>Google로 계속하기</AppText>
-        </AppButton>
+            <AppText style={styles.googleButtonText}>Google로 계속하기</AppText>
+          </AppButton>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -191,6 +259,41 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 9,
+  },
+  loginButtonWrapper: {
+    position: 'relative',
+  },
+  recentLoginButtonWrapper: {
+    marginTop: 20,
+  },
+  recentLoginBubble: {
+    position: 'absolute',
+    top: -22,
+    right: 14,
+    zIndex: 1,
+    minHeight: 20,
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    backgroundColor: colors.primary,
+  },
+  recentLoginText: {
+    fontSize: 11,
+    fontFamily: fonts.semiBold,
+    color: colors.onPrimary,
+  },
+  recentLoginTail: {
+    position: 'absolute',
+    right: 14,
+    bottom: -5,
+    width: 0,
+    height: 0,
+    borderLeftWidth: 4,
+    borderRightWidth: 4,
+    borderTopWidth: 5,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: colors.primary,
   },
   appleButton: {
     backgroundColor: '#000000',

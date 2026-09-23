@@ -2,14 +2,25 @@ import {
   GoogleSignin,
   isSuccessResponse,
 } from '@react-native-google-signin/google-signin';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { appleAuth } from '@invertase/react-native-apple-authentication';
 import { Linking } from 'react-native';
 
 import { supabase } from '../../lib/supabase';
 import {
+  getLastAuthProvider,
   handleAuthCallback,
+  signInWithApple,
   signInWithGoogle,
   signInWithKakao,
 } from './auth.service';
+
+const setItemSpy = jest
+  .spyOn(AsyncStorage, 'setItem')
+  .mockResolvedValue(undefined);
+const getItemSpy = jest
+  .spyOn(AsyncStorage, 'getItem')
+  .mockResolvedValue(null);
 
 jest.mock('@react-native-google-signin/google-signin', () => ({
   GoogleSignin: {
@@ -24,6 +35,7 @@ jest.mock('@invertase/react-native-apple-authentication', () => ({
     Error: { CANCELED: 'CANCELED' },
     Operation: { LOGIN: 'LOGIN' },
     Scope: { EMAIL: 'EMAIL' },
+    performRequest: jest.fn(),
   },
 }));
 
@@ -42,10 +54,6 @@ describe('카카오 로그인', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
   });
 
   it('카카오 OAuth 화면을 열고 로그인 후 스티켓으로 복귀하도록 요청한다', async () => {
@@ -84,6 +92,10 @@ describe('카카오 로그인', () => {
     expect(handled).toBe(true);
     expect(supabase.auth.exchangeCodeForSession).toHaveBeenCalledWith(
       'kakao-auth-code',
+    );
+    expect(setItemSpy).toHaveBeenCalledWith(
+      expect.any(String),
+      'kakao',
     );
   });
 
@@ -141,5 +153,64 @@ describe('Google 로그인 프로필', () => {
     expect(supabase.auth.updateUser).toHaveBeenCalledWith({
       data: { full_name: '구글 유저' },
     });
+    expect(setItemSpy).toHaveBeenCalledWith(
+      expect.any(String),
+      'google',
+    );
+  });
+
+  it('Google 인증을 취소하면 최근 로그인 수단을 변경하지 않는다', async () => {
+    (GoogleSignin.signIn as jest.Mock).mockResolvedValue({
+      type: 'cancelled',
+      data: null,
+    });
+    (isSuccessResponse as unknown as jest.Mock).mockReturnValue(false);
+
+    await signInWithGoogle();
+
+    expect(setItemSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('Apple 로그인', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('Apple 인증이 완료되면 최근 로그인 수단으로 저장한다', async () => {
+    (appleAuth.performRequest as jest.Mock).mockResolvedValue({
+      identityToken: 'apple-identity-token',
+      nonce: 'apple-nonce',
+    });
+    (supabase.auth.signInWithIdToken as jest.Mock).mockResolvedValue({
+      data: { user: { id: 'supabase-user-id' }, session: {} },
+      error: null,
+    });
+
+    await signInWithApple();
+
+    expect(setItemSpy).toHaveBeenCalledWith(
+      expect.any(String),
+      'apple',
+    );
+  });
+});
+
+describe('최근 로그인 수단', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    getItemSpy.mockResolvedValue(null);
+  });
+
+  it('기기에 저장된 로그인 수단을 반환한다', async () => {
+    getItemSpy.mockResolvedValue('google');
+
+    await expect(getLastAuthProvider()).resolves.toBe('google');
+  });
+
+  it('알 수 없는 값이 저장되어 있으면 최근 로그인으로 사용하지 않는다', async () => {
+    getItemSpy.mockResolvedValue('unknown');
+
+    await expect(getLastAuthProvider()).resolves.toBeNull();
   });
 });
