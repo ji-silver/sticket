@@ -32,11 +32,29 @@ import { useCreateTicket } from '../../features/ticket/api/useCreateTicket';
 import AddTicketDateSection from './components/AddTicketDateSection.tsx';
 import AddTicketGameSection from './components/AddTicketGameSection.tsx';
 import AppBottomSheet from '../../components/common/AppBottomSheet.tsx';
-import { getSeatNamesForGame } from '../../features/ticket/seatCatalog.ts';
+import AppSnackbar from '../../components/common/AppSnackbar.tsx';
+import {
+  ALL_SEAT_NAMES,
+  getSeatNamesForGame,
+} from '../../features/ticket/seatCatalog.ts';
 import StadiumSeatNameList from './components/StadiumSeatNameList.tsx';
 import { getSeasonTicketSeatName } from '../../features/ticket/seasonTicketSeat.ts';
+import { recognizeTicketText } from '../../features/ticket/ticketOcr.service.ts';
+import {
+  findUniqueGameByTicketText,
+  matchTicketSeat,
+  parseTicketSeatDetail,
+  parseTicketOcrText,
+  type ParsedTicketOcr,
+} from '../../features/ticket/ticketOcr.ts';
 
 type AddTicketRouteProp = RouteProp<RootStackParamList, 'AddTicket'>;
+type OcrStatus = 'idle' | 'reading' | 'partial' | 'failed';
+
+const OCR_MESSAGES: Partial<Record<OcrStatus, string>> = {
+  partial: '일부 항목은 직접 입력해 주세요',
+  failed: '티켓 정보를 인식하지 못했어요',
+};
 
 function AddTicketScreen() {
   const horizontalPadding = 20;
@@ -58,8 +76,17 @@ function AddTicketScreen() {
   const [seatName, setSeatName] = useState('');
   const [seatDetail, setSeatDetail] = useState('');
   const [isSeatNameSheetVisible, setIsSeatNameSheetVisible] = useState(false);
+  const [originalTicketImage, setOriginalTicketImage] =
+    useState<SelectedOriginalTicketImage | null>(null);
+  const [ocrStatus, setOcrStatus] = useState<OcrStatus>('idle');
+  const [parsedOcr, setParsedOcr] = useState<ParsedTicketOcr | null>(null);
   const seatDetailInputRef = useRef<TextInput>(null);
   const shouldFocusSeatDetail = useRef(false);
+  const selectedDateRef = useRef(initialDate);
+  const gameSelectedManually = useRef(false);
+  const seatNameSource = useRef<'user' | 'ocr' | null>(null);
+  const seatDetailSource = useRef<'user' | 'ocr' | null>(null);
+  const ocrRequestId = useRef(0);
   const queryDate = !isCalendarOpen && selectedDate ? selectedDate : '';
 
   const {
@@ -70,7 +97,45 @@ function AddTicketScreen() {
   const gameLoadError = isError ? '날짜를 다시 선택해 재시도해 주세요.' : null;
 
   useEffect(() => {
-    if (games.length > 0 && favoriteTeamName && !selectedGameId) {
+    if (parsedOcr) {
+      if (isLoadingGames) {
+        return;
+      }
+
+      const ocrGame = findUniqueGameByTicketText(
+        games,
+        parsedOcr.text,
+        parsedOcr.stadiumId,
+      );
+      if (!ocrGame) {
+        setOcrStatus('partial');
+        return;
+      }
+
+      const matchedSeat = matchTicketSeat(
+        parsedOcr.text,
+        getSeatNamesForGame(ocrGame.stadiumName, ocrGame.homeTeamName),
+      );
+
+      setSelectedGameId(ocrGame.id);
+      setSeatName(
+        currentSeatName =>
+          currentSeatName ||
+          matchedSeat?.seatName ||
+          getSeasonTicketSeatName(profile, ocrGame, currentSeason),
+      );
+      setSeatDetail(
+        currentSeatDetail => currentSeatDetail || matchedSeat?.seatDetail || '',
+      );
+      setOcrStatus('idle');
+      return;
+    }
+
+    if (selectedGameId) {
+      return;
+    }
+
+    if (games.length > 0 && favoriteTeamName) {
       const favoriteTeamGames = games.filter(
         game =>
           game.awayTeamName === favoriteTeamName ||
@@ -85,7 +150,24 @@ function AddTicketScreen() {
         setSeatDetail('');
       }
     }
-  }, [currentSeason, games, favoriteTeamName, profile, selectedGameId]);
+  }, [
+    currentSeason,
+    games,
+    favoriteTeamName,
+    isLoadingGames,
+    parsedOcr,
+    profile,
+    selectedGameId,
+  ]);
+
+  useEffect(() => {
+    if (!OCR_MESSAGES[ocrStatus]) {
+      return;
+    }
+
+    const timeout = setTimeout(() => setOcrStatus('idle'), 4000);
+    return () => clearTimeout(timeout);
+  }, [ocrStatus]);
 
   const displayedGames = [...games].sort((firstGame, secondGame) => {
     const isFirstFavoriteTeamGame =
@@ -104,9 +186,6 @@ function AddTicketScreen() {
   );
   const canSelectSeatName = stadiumSeatNames.length > 0;
 
-  const [originalTicketImage, setOriginalTicketImage] =
-    useState<SelectedOriginalTicketImage | null>(null);
-
   const createTicketMutation = useCreateTicket();
 
   const canSaveTicket = selectedDate.length > 0 && selectedGameId !== null;
@@ -117,12 +196,21 @@ function AddTicketScreen() {
       return;
     }
 
+    ocrRequestId.current += 1;
+    selectedDateRef.current = day.dateString;
     setSelectedDate(day.dateString);
     setIsCalendarOpen(false);
+    setParsedOcr(null);
+    setOcrStatus('idle');
 
+    gameSelectedManually.current = false;
     setSelectedGameId(null);
-    setSeatName('');
-    setSeatDetail('');
+    if (!originalTicketImage) {
+      seatNameSource.current = null;
+      seatDetailSource.current = null;
+      setSeatName('');
+      setSeatDetail('');
+    }
   };
 
   const handlePressDateSummary = () => {
@@ -130,7 +218,14 @@ function AddTicketScreen() {
   };
 
   const handlePressGame = (gameId: string) => {
+    ocrRequestId.current += 1;
+    setParsedOcr(null);
+    setOcrStatus('idle');
+    gameSelectedManually.current = true;
+
     if (selectedGameId !== gameId) {
+      seatNameSource.current = null;
+      seatDetailSource.current = null;
       setSeatName(
         getSeasonTicketSeatName(
           profile,
@@ -142,6 +237,84 @@ function AddTicketScreen() {
     }
 
     setSelectedGameId(gameId);
+  };
+
+  const handleOriginalTicketImageChange = (
+    image: SelectedOriginalTicketImage | null,
+  ) => {
+    setOriginalTicketImage(image);
+    setParsedOcr(null);
+
+    if (seatNameSource.current === 'ocr') {
+      seatNameSource.current = null;
+      setSeatName('');
+    }
+    if (seatDetailSource.current === 'ocr') {
+      seatDetailSource.current = null;
+      setSeatDetail('');
+    }
+
+    const requestId = ++ocrRequestId.current;
+    if (!image) {
+      setOcrStatus('idle');
+      return;
+    }
+
+    setOcrStatus('reading');
+
+    (async () => {
+      try {
+        const text = await recognizeTicketText(image.uri);
+        if (requestId !== ocrRequestId.current) {
+          return;
+        }
+
+        if (!text.trim()) {
+          setOcrStatus('failed');
+          return;
+        }
+
+        const result = parseTicketOcrText(text, today);
+        const matchedSeat = matchTicketSeat(result.text, ALL_SEAT_NAMES);
+        const parsedSeatDetail = parseTicketSeatDetail(result.text);
+        if (seatNameSource.current !== 'user') {
+          seatNameSource.current = matchedSeat?.seatName ? 'ocr' : null;
+          setSeatName(matchedSeat?.seatName || '');
+        }
+        if (seatDetailSource.current !== 'user') {
+          const nextSeatDetail = matchedSeat?.seatDetail || parsedSeatDetail;
+          seatDetailSource.current = nextSeatDetail ? 'ocr' : null;
+          setSeatDetail(nextSeatDetail || '');
+        }
+
+        const currentDate = selectedDateRef.current;
+        if (!result.date || (currentDate && currentDate !== result.date)) {
+          setOcrStatus('partial');
+          return;
+        }
+
+        if (!currentDate) {
+          selectedDateRef.current = result.date;
+          setSelectedDate(result.date);
+          setIsCalendarOpen(false);
+        }
+
+        if (gameSelectedManually.current) {
+          setOcrStatus('partial');
+          return;
+        }
+
+        setParsedOcr(result);
+        setOcrStatus('reading');
+      } catch (error) {
+        if (requestId !== ocrRequestId.current) {
+          return;
+        }
+
+        console.error('티켓 정보를 읽지 못했습니다.', error);
+        setOcrStatus('failed');
+      }
+    })();
   };
 
   const handleAddTicket = async () => {
@@ -189,6 +362,8 @@ function AddTicketScreen() {
     }
   };
 
+  const ocrMessage = OCR_MESSAGES[ocrStatus];
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <ScreenHeader title="티켓 추가" onPressBack={() => navigation.goBack()} />
@@ -209,7 +384,8 @@ function AddTicketScreen() {
           >
             <OriginalTicketImageField
               value={originalTicketImage}
-              onChange={setOriginalTicketImage}
+              onChange={handleOriginalTicketImageChange}
+              isReading={ocrStatus === 'reading'}
             />
 
             <AddTicketDateSection
@@ -243,7 +419,10 @@ function AddTicketScreen() {
                       allowFontScaling={false}
                       maxLength={100}
                       value={seatName}
-                      onChangeText={setSeatName}
+                      onChangeText={value => {
+                        seatNameSource.current = 'user';
+                        setSeatName(value);
+                      }}
                       style={styles.seatInput}
                       placeholder="좌석명 직접 입력"
                       placeholderTextColor={colors.textSecondary}
@@ -280,7 +459,10 @@ function AddTicketScreen() {
                       allowFontScaling={false}
                       maxLength={100}
                       value={seatDetail}
-                      onChangeText={setSeatDetail}
+                      onChangeText={value => {
+                        seatDetailSource.current = 'user';
+                        setSeatDetail(value);
+                      }}
                       style={styles.seatInput}
                       placeholder="블록 열 좌석 번호 입력"
                       placeholderTextColor={colors.textSecondary}
@@ -345,11 +527,20 @@ function AddTicketScreen() {
           seatNames={stadiumSeatNames}
           seatName={seatName}
           onSelect={selectedSeatName => {
+            seatNameSource.current = 'user';
             setSeatName(selectedSeatName);
             closeSeatNameSheetAndFocusDetail();
           }}
         />
       </AppBottomSheet>
+
+      {ocrMessage ? (
+        <AppSnackbar
+          message={ocrMessage}
+          horizontalInset={20}
+          bottomOffset={82}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }

@@ -18,6 +18,16 @@
     "verify:db": "npm run db:reset && npm run test:db",
     "verify:ios": "xcodebuild -workspace ios/Sticket.xcworkspace -scheme Sticket -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build"
   },
+  "codegenConfig": {
+    "name": "SticketSpecs",
+    "type": "modules",
+    "jsSrcsDir": "specs",
+    "ios": {
+      "modulesProvider": {
+        "NativeTicketTextRecognizer": "RCTTicketTextRecognizer"
+      }
+    }
+  },
   "dependencies": {
     "@invertase/react-native-apple-authentication": "^2.5.1",
     "@react-native-async-storage/async-storage": "^3.1.1",

@@ -23,6 +23,8 @@
 		C286E919302DAB1500647387 /* logo.icon in Resources */ = {isa = PBXBuildFile; fileRef = C286E918302DAB1500647387 /* logo.icon */; };
 		C8AFED52FAB80A476E8B9CFB /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 		D20000000000000000000002 /* PencilKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D20000000000000000000001 /* PencilKit.framework */; };
+		E10000000000000000000001 /* TicketTextRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000001 /* TicketTextRecognizer.swift */; };
+		E10000000000000000000002 /* RCTTicketTextRecognizer.mm in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000003 /* RCTTicketTextRecognizer.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -48,6 +50,9 @@
 		C289C00330190985006AC1BA /* Sticket.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = Sticket.entitlements; path = Sticket/Sticket.entitlements; sourceTree = "<group>"; };
 		D20000000000000000000001 /* PencilKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = PencilKit.framework; path = System/Library/Frameworks/PencilKit.framework; sourceTree = SDKROOT; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		F10000000000000000000001 /* TicketTextRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TicketTextRecognizer.swift; path = Sticket/TicketTextRecognizer.swift; sourceTree = "<group>"; };
+		F10000000000000000000002 /* RCTTicketTextRecognizer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = RCTTicketTextRecognizer.h; path = Sticket/RCTTicketTextRecognizer.h; sourceTree = "<group>"; };
+		F10000000000000000000003 /* RCTTicketTextRecognizer.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = RCTTicketTextRecognizer.mm; path = Sticket/RCTTicketTextRecognizer.mm; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -69,6 +74,9 @@
 				C289C00330190985006AC1BA /* Sticket.entitlements */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				761780EC2CA45674006654EE /* AppDelegate.swift */,
+				F10000000000000000000001 /* TicketTextRecognizer.swift */,
+				F10000000000000000000002 /* RCTTicketTextRecognizer.h */,
+				F10000000000000000000003 /* RCTTicketTextRecognizer.mm */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
@@ -309,6 +317,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				761780ED2CA45674006654EE /* AppDelegate.swift in Sources */,
+				E10000000000000000000001 /* TicketTextRecognizer.swift in Sources */,
+				E10000000000000000000002 /* RCTTicketTextRecognizer.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -1,5 +1,6 @@
 import {
   DOOSAN_SEAT_NAMES,
+  findStadiumIdsInText,
   formatTicketSeat,
   GOCHEOK_SEAT_NAMES,
   getSeatNamesForGame,
@@ -14,6 +15,15 @@ import {
 } from './seatCatalog.ts';
 
 describe('getSeatNamesForGame', () => {
+  it('티켓 문장에서 구장 식별자를 중복 없이 찾는다', () => {
+    expect(findStadiumIdsInText('장소 잠실야구장 1루 출입구')).toEqual([
+      'jamsil',
+    ]);
+    expect(
+      findStadiumIdsInText('잠실야구장 안내와 고척스카이돔 안내'),
+    ).toEqual(['gocheok', 'jamsil']);
+  });
+
   it.each([
     '문학',
     '인천',

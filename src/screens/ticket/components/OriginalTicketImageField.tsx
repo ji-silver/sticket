@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Image,
   Linking,
@@ -24,6 +25,7 @@ export interface SelectedOriginalTicketImage {
 interface OriginalTicketImageFieldProps {
   value: SelectedOriginalTicketImage | null;
   onChange: (image: SelectedOriginalTicketImage | null) => void;
+  isReading?: boolean;
 }
 
 export type OriginalTicketImageSource = 'camera' | 'library';
@@ -119,6 +121,7 @@ export async function pickOriginalTicketImage(
 function OriginalTicketImageField({
   value,
   onChange,
+  isReading = false,
 }: OriginalTicketImageFieldProps) {
   const [isSourceSheetVisible, setIsSourceSheetVisible] = useState(false);
   const [previewAspectRatio, setPreviewAspectRatio] = useState(2 / 3);
@@ -175,6 +178,17 @@ function OriginalTicketImageField({
             <AppText style={styles.optionalLabel}>선택</AppText>
           )}
         </View>
+
+        {isReading ? (
+          <View
+            style={styles.readingStatus}
+            accessibilityRole="progressbar"
+            accessibilityLabel="티켓 정보 확인 중"
+          >
+            <ActivityIndicator size="small" color={colors.primary} />
+            <AppText style={styles.readingStatusText}>정보 확인 중</AppText>
+          </View>
+        ) : null}
       </View>
 
       {value ? (
@@ -291,6 +305,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   sectionTitleGroup: {
     flexDirection: 'row',
@@ -303,6 +318,16 @@ const styles = StyleSheet.create({
   },
   optionalLabel: {
     marginLeft: 8,
+    fontSize: 13,
+    fontFamily: fonts.regular,
+    color: colors.textSecondary,
+  },
+  readingStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  readingStatusText: {
     fontSize: 13,
     fontFamily: fonts.regular,
     color: colors.textSecondary,

@@ -181,6 +181,21 @@ export const LG_SEAT_NAMES = [
   '그린석',
 ] as const;
 
+export const ALL_SEAT_NAMES = Array.from(
+  new Set([
+    ...INCHEON_SEAT_NAMES,
+    ...KT_WIZ_SEAT_NAMES,
+    ...GOCHEOK_SEAT_NAMES,
+    ...HANWHA_SEAT_NAMES,
+    ...KIA_SEAT_NAMES,
+    ...NC_SEAT_NAMES,
+    ...SAMSUNG_SEAT_NAMES,
+    ...LOTTE_SEAT_NAMES,
+    ...DOOSAN_SEAT_NAMES,
+    ...LG_SEAT_NAMES,
+  ]),
+);
+
 const INCHEON_STADIUM_NAMES = new Set([
   '문학',
   '인천',
@@ -223,55 +238,94 @@ const DOOSAN_TEAM_NAMES = new Set(['두산', '두산베어스']);
 
 const LG_TEAM_NAMES = new Set(['lg', 'lg트윈스']);
 
+export type StadiumId =
+  | 'incheon'
+  | 'suwon'
+  | 'gocheok'
+  | 'daejeon'
+  | 'gwangju'
+  | 'changwon'
+  | 'daegu'
+  | 'sajik'
+  | 'jamsil';
+
+const normalize = (value: string) =>
+  value.toLowerCase().replace(/[\s\p{P}\p{S}]+/gu, '');
+
+const STADIUM_ALIASES: ReadonlyArray<{
+  id: StadiumId;
+  aliases: ReadonlySet<string>;
+}> = [
+  { id: 'incheon', aliases: INCHEON_STADIUM_NAMES },
+  { id: 'suwon', aliases: KT_WIZ_STADIUM_NAMES },
+  { id: 'gocheok', aliases: GOCHEOK_STADIUM_NAMES },
+  { id: 'daejeon', aliases: HANWHA_STADIUM_NAMES },
+  { id: 'gwangju', aliases: KIA_STADIUM_NAMES },
+  { id: 'changwon', aliases: NC_STADIUM_NAMES },
+  { id: 'daegu', aliases: SAMSUNG_STADIUM_NAMES },
+  { id: 'sajik', aliases: LOTTE_STADIUM_NAMES },
+  { id: 'jamsil', aliases: JAMSIL_STADIUM_NAMES },
+];
+
+export function findStadiumIdsInText(text: string): StadiumId[] {
+  const normalizedText = normalize(text);
+
+  return STADIUM_ALIASES.filter(({ aliases }) =>
+    Array.from(aliases).some(alias => normalizedText.includes(normalize(alias))),
+  ).map(({ id }) => id);
+}
+
 export function getSeatNamesForGame(
   stadiumName?: string,
   homeTeamName?: string,
 ) {
-  const normalizedName = stadiumName?.replaceAll(' ', '').toLowerCase() ?? '';
+  const stadiumId = stadiumName
+    ? findStadiumIdsInText(stadiumName)[0]
+    : undefined;
   const normalizedHomeTeamName =
     homeTeamName?.replaceAll(' ', '').toLowerCase() ?? '';
 
-  if (INCHEON_STADIUM_NAMES.has(normalizedName)) {
+  if (stadiumId === 'incheon') {
     return INCHEON_SEAT_NAMES;
   }
 
-  if (KT_WIZ_STADIUM_NAMES.has(normalizedName)) {
+  if (stadiumId === 'suwon') {
     return KT_WIZ_SEAT_NAMES;
   }
 
-  if (GOCHEOK_STADIUM_NAMES.has(normalizedName)) {
+  if (stadiumId === 'gocheok') {
     return GOCHEOK_SEAT_NAMES;
   }
 
-  if (HANWHA_STADIUM_NAMES.has(normalizedName)) {
+  if (stadiumId === 'daejeon') {
     return HANWHA_SEAT_NAMES;
   }
 
-  if (KIA_STADIUM_NAMES.has(normalizedName)) {
+  if (stadiumId === 'gwangju') {
     return KIA_SEAT_NAMES;
   }
 
-  if (NC_STADIUM_NAMES.has(normalizedName)) {
+  if (stadiumId === 'changwon') {
     return NC_SEAT_NAMES;
   }
 
-  if (SAMSUNG_STADIUM_NAMES.has(normalizedName)) {
+  if (stadiumId === 'daegu') {
     return SAMSUNG_SEAT_NAMES;
   }
 
-  if (LOTTE_STADIUM_NAMES.has(normalizedName)) {
+  if (stadiumId === 'sajik') {
     return LOTTE_SEAT_NAMES;
   }
 
   if (
-    JAMSIL_STADIUM_NAMES.has(normalizedName) &&
+    stadiumId === 'jamsil' &&
     DOOSAN_TEAM_NAMES.has(normalizedHomeTeamName)
   ) {
     return DOOSAN_SEAT_NAMES;
   }
 
   if (
-    JAMSIL_STADIUM_NAMES.has(normalizedName) &&
+    stadiumId === 'jamsil' &&
     LG_TEAM_NAMES.has(normalizedHomeTeamName)
   ) {
     return LG_SEAT_NAMES;
