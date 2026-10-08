@@ -1,5 +1,6 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import AppText from '../../../components/common/AppText.tsx';
+import SecondaryButton from '../../../components/common/SecondaryButton.tsx';
 import { colors } from '../../../styles/colors.ts';
 import { fonts } from '../../../styles/fonts.ts';
 
@@ -15,14 +16,11 @@ function ProfileSummarySection({
   return (
     <View style={styles.identity}>
       <AppText style={styles.nickname}>{nickname}</AppText>
-      <Pressable
+      <SecondaryButton
+        label="프로필 수정"
         onPress={onPressEdit}
-        accessibilityRole="button"
         accessibilityLabel="프로필 수정"
-        style={({ pressed }) => [styles.editButton, pressed && styles.pressed]}
-      >
-        <AppText style={styles.editLabel}>프로필 수정</AppText>
-      </Pressable>
+      />
     </View>
   );
 }
@@ -44,15 +42,4 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bold,
     color: colors.text,
   },
-  editButton: {
-    minHeight: 44,
-    paddingHorizontal: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  editLabel: { fontSize: 13, fontFamily: fonts.bold, color: colors.text },
-  pressed: { opacity: 0.55 },
 });
