@@ -1,4 +1,4 @@
-import { Alert, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Settings } from 'lucide-react-native';
 import DiarySection from './components/DiarySection.tsx';
@@ -10,7 +10,9 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
 import AppSnackbar from '../../components/common/AppSnackbar.tsx';
 import AppPopoverMenu from '../../components/common/AppPopoverMenu.tsx';
+import AppText from '../../components/common/AppText.tsx';
 import { colors } from '../../styles/colors.ts';
+import { fonts } from '../../styles/fonts.ts';
 import { useGetTicketBooks } from '../../features/ticket-book/api/useGetTicketBooks';
 import { useGetBucketList } from '../../features/bucket-list/api/useGetBucketList';
 import { useDeleteTicketBook } from '../../features/ticket-book/api/useDeleteTicketBook.ts';
@@ -219,18 +221,7 @@ function HomeScreen() {
       >
         <View style={styles.header}>
           <View style={styles.headerRow}>
-            <View>
-              <View style={styles.logoFrame}>
-                <Image
-                  source={require('../../assets/auth/ticket_logo.png')}
-                  style={styles.logo}
-                  resizeMode="contain"
-                  accessible
-                  accessibilityRole="image"
-                  accessibilityLabel="STICKET 로고"
-                />
-              </View>
-            </View>
+            <AppText style={styles.brandText}>스티켓</AppText>
             <Pressable
               style={({ pressed }) => [
                 styles.settingsButton,
@@ -353,13 +344,9 @@ const styles = StyleSheet.create({
   },
   buttonPressed: { opacity: 0.55 },
 
-  logoFrame: {
-    width: 40,
-    height: 40,
-    overflow: 'hidden',
-  },
-  logo: {
-    width: '100%',
-    height: '100%',
+  brandText: {
+    fontSize: 26,
+    fontFamily: fonts.logo,
+    color: colors.primary,
   },
 });
