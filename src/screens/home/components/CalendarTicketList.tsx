@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
 import { Plus } from 'lucide-react-native';
 import AppButton from '../../../components/common/AppButton.tsx';
 import AppSkeleton from '../../../components/common/AppSkeleton.tsx';
@@ -170,6 +170,14 @@ function CalendarTicketList({
         </View>
       ) : (
         <EmptyCard
+          icon={
+            <Image
+              source={require('../../../assets/auth/ticket_logo.png')}
+              style={styles.emptyLogo}
+              resizeMode="contain"
+              accessible={false}
+            />
+          }
           title={
             selectedDate <= today
               ? '우리 팀 경기가 없는 날이에요'
@@ -289,6 +297,11 @@ const styles = StyleSheet.create({
 
   emptyCard: {
     minHeight: 166,
+  },
+
+  emptyLogo: {
+    width: 72,
+    height: 72,
   },
 
   addTicketButton: {

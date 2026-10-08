@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Animated,
+  Image,
   LayoutChangeEvent,
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -447,6 +448,12 @@ function EmptyTicketState({
       <View style={styles.emptyRightCutout} />
 
       <View style={styles.emptyTicketContent}>
+        <Image
+          source={require('../../assets/auth/ticket_logo.png')}
+          style={styles.emptyLogo}
+          resizeMode="contain"
+          accessible={false}
+        />
         <AppText style={styles.emptyTicketTitle}>
           아직 남긴 티켓이 없어요
         </AppText>
@@ -611,6 +618,11 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bold,
     fontWeight: '700',
     color: colors.text,
+  },
+  emptyLogo: {
+    width: 72,
+    height: 72,
+    marginBottom: 16,
   },
   emptyTicketDescription: {
     marginTop: 8,

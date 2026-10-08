@@ -1,9 +1,4 @@
-import {
-  Image,
-  StatusBar,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { Image, StatusBar, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppButton from '../../components/common/AppButton.tsx';
 import AppText from '../../components/common/AppText.tsx';
@@ -17,7 +12,7 @@ function LoadingScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
 
       <View style={styles.content}>
         <View style={styles.logoFrame}>
@@ -59,7 +54,7 @@ export default LoadingScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.primary,
   },
   content: {
     flex: 1,
@@ -86,22 +81,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     fontSize: 13,
     fontFamily: fonts.regular,
-    color: colors.textSecondary,
+    color: colors.onPrimary,
     textAlign: 'center',
   },
   retryButton: {
     minHeight: 40,
     paddingHorizontal: 18,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.onPrimary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   retryButtonPressed: {
-    backgroundColor: colors.primaryPressed,
+    backgroundColor: colors.primary50,
   },
   retryButtonText: {
     fontSize: 13,
     fontFamily: fonts.bold,
-    color: colors.onPrimary,
+    color: colors.primary,
   },
 });

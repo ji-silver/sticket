@@ -234,7 +234,7 @@ function HomeScreen() {
               {({ pressed }) => (
                 <View
                   style={[
-                    styles.iconBackground,
+                    styles.iconContainer,
                     pressed && styles.buttonPressed,
                   ]}
                 >
@@ -348,16 +348,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  iconBackground: {
+  iconContainer: {
     width: 40,
     height: 40,
-    borderRadius: 12,
-    borderCurve: 'continuous',
-    backgroundColor: colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  buttonPressed: { backgroundColor: colors.border },
+  buttonPressed: { opacity: 0.5 },
 
   brandText: {
     fontSize: 26,

@@ -7,16 +7,19 @@ import { fonts } from '../../styles/fonts.ts';
 interface EmptyCardProps {
   title: string;
   description: string;
+  icon?: ReactNode;
   children?: ReactNode;
   style?: StyleProp<ViewStyle>;
 }
 
-function EmptyCard({ title, description, children, style }: EmptyCardProps) {
+function EmptyCard({ title, description, icon, children, style }: EmptyCardProps) {
   return (
     <View style={[styles.card, style]}>
-      <View style={styles.icon}>
-        <CalendarX size={22} color="#777777" strokeWidth={2} />
-      </View>
+      {icon ?? (
+        <View style={styles.icon}>
+          <CalendarX size={22} color="#777777" strokeWidth={2} />
+        </View>
+      )}
 
       <View style={styles.textGroup}>
         <AppText style={styles.title}>{title}</AppText>
