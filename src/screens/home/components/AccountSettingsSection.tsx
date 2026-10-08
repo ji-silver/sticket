@@ -28,6 +28,8 @@ const DOCUMENTS = [
 const SUPPORT_EMAIL_URL = `mailto:hello.appworks@gmail.com?subject=${encodeURIComponent(
   '[스티켓 문의]',
 )}`;
+const APP_REVIEW_URL =
+  'https://apps.apple.com/app/id6800050133?action=write-review';
 
 function AccountSettingsSection({
   onPressLogout,
@@ -36,6 +38,14 @@ function AccountSettingsSection({
 }: AccountSettingsSectionProps) {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  const handlePressReview = async () => {
+    try {
+      await Linking.openURL(APP_REVIEW_URL);
+    } catch {
+      Alert.alert('App Store를 열지 못했어요', '잠시 후 다시 시도해 주세요.');
+    }
+  };
 
   const handlePressSupport = async () => {
     try {
@@ -55,6 +65,24 @@ function AccountSettingsSection({
           서비스 정보
         </AppText>
         <View style={styles.list}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.row,
+              styles.divider,
+              pressed && styles.pressed,
+            ]}
+            onPress={handlePressReview}
+            accessibilityRole="button"
+            accessibilityLabel="앱 평가하기"
+            accessibilityHint="App Store의 리뷰 작성 화면을 엽니다"
+          >
+            <AppText style={styles.rowText}>앱 평가하기</AppText>
+            <ChevronRight
+              size={18}
+              color={colors.textSecondary}
+              strokeWidth={1.8}
+            />
+          </Pressable>
           <Pressable
             style={({ pressed }) => [
               styles.row,
