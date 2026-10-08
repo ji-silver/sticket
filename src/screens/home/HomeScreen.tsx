@@ -1,5 +1,6 @@
-import { Alert, Image, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Settings } from 'lucide-react-native';
 import DiarySection from './components/DiarySection.tsx';
 import { Bucket, Diary } from './types.ts';
 import BucketListSection from './components/BucketListSection.tsx';
@@ -230,7 +231,17 @@ function HomeScreen() {
                 />
               </View>
             </View>
-
+            <Pressable
+              style={({ pressed }) => [
+                styles.settingsButton,
+                pressed && styles.buttonPressed,
+              ]}
+              onPress={() => navigation.navigate('Settings')}
+              accessibilityRole="button"
+              accessibilityLabel="설정"
+            >
+              <Settings size={22} color={colors.text} strokeWidth={1.8} />
+            </Pressable>
           </View>
 
           <View style={styles.headerDivider} />
@@ -334,6 +345,13 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#F1F1F1',
   },
+  settingsButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonPressed: { opacity: 0.55 },
 
   logoFrame: {
     width: 40,

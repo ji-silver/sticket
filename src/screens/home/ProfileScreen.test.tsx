@@ -58,12 +58,10 @@ describe('프로필과 직관 성적', () => {
     });
   });
 
-  it('설정 버튼으로 이동하고 프로필에는 계정 관리 메뉴를 표시하지 않는다', async () => {
-    const user = userEvent.setup();
+  it('프로필에는 설정 진입점과 계정 관리 메뉴를 표시하지 않는다', async () => {
     await render(<ProfileScreen />);
-    await user.press(screen.getByRole('button', { name: '설정' }));
 
-    expect(mockNavigate).toHaveBeenCalledWith('Settings');
+    expect(screen.queryByRole('button', { name: '설정' })).toBeNull();
     expect(screen.queryByText('로그아웃')).toBeNull();
     expect(screen.queryByText('회원 탈퇴')).toBeNull();
     expect(screen.queryByText('이용약관')).toBeNull();
@@ -77,6 +75,27 @@ describe('프로필과 직관 성적', () => {
     expect(mockNavigate).toHaveBeenCalledWith('ProfileEdit');
     await screen.findByText('75%');
   });
+
+  it.each(['가나다라마바사아자차', 'WWWWWWWWWW'])(
+    '최대 길이 닉네임 %s은 글자를 줄여 한 줄로 표시한다',
+    async nickname => {
+      const { profile } = useAuth();
+      (useAuth as jest.Mock).mockReturnValue({
+        profile: { ...profile, nickname },
+      });
+      await render(<ProfileScreen />);
+      await screen.findByText('75%');
+
+      // Jest는 네이티브 글자 배치를 계산하지 않으므로 한 줄 자동 축소 전달을 확인한다.
+      // 실제 줄바꿈과 버튼 배치는 시뮬레이터에서 별도로 확인한다.
+      const nicknameText = screen.getByText(nickname);
+      expect(nicknameText.props.numberOfLines).toBe(1);
+      expect(nicknameText.props.adjustsFontSizeToFit).toBe(true);
+      expect(
+        screen.getByRole('button', { name: '프로필 수정' }),
+      ).toBeVisible();
+    },
+  );
 
   it('무승부를 제외한 승률과 응원팀 종료 경기 수를 표시한다', async () => {
     await render(<ProfileScreen />);

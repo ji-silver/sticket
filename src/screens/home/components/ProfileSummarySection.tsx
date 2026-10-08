@@ -15,7 +15,14 @@ function ProfileSummarySection({
 }: ProfileSummarySectionProps) {
   return (
     <View style={styles.identity}>
-      <AppText style={styles.nickname}>{nickname}</AppText>
+      <AppText
+        style={styles.nickname}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.6}
+      >
+        {nickname}
+      </AppText>
       <SecondaryButton
         label="프로필 수정"
         onPress={onPressEdit}

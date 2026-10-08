@@ -197,6 +197,15 @@ describe('HomeScreen', () => {
   });
 
   describe('화면 네비게이션 로직', () => {
+    it('홈의 설정 버튼을 누르면 설정 화면으로 이동한다', async () => {
+      const user = userEvent.setup();
+      await render(<HomeScreen />);
+
+      await user.press(screen.getByRole('button', { name: '설정' }));
+
+      expect(mockNavigate).toHaveBeenCalledWith('Settings');
+    });
+
     it('티켓북이 없을 때 만들기 버튼을 누르면 AddDiary 화면으로 이동한다', async () => {
       const user = userEvent.setup();
 

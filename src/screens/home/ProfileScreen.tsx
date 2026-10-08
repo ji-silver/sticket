@@ -1,8 +1,7 @@
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Settings } from 'lucide-react-native';
 import AppText from '../../components/common/AppText.tsx';
 import ResponsiveContent from '../../components/common/ResponsiveContent.tsx';
 import { colors } from '../../styles/colors.ts';
@@ -24,21 +23,9 @@ function ProfileScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <View style={styles.headerSpacer} />
         <AppText style={styles.headerTitle} accessibilityRole="header">
           프로필
         </AppText>
-        <Pressable
-          style={({ pressed }) => [
-            styles.settingsButton,
-            pressed && styles.buttonPressed,
-          ]}
-          onPress={() => navigation.navigate('Settings')}
-          accessibilityRole="button"
-          accessibilityLabel="설정"
-        >
-          <Settings size={22} color={colors.text} strokeWidth={1.8} />
-        </Pressable>
       </View>
 
       <ScrollView
@@ -74,7 +61,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  headerSpacer: { width: 44 },
   headerTitle: {
     flex: 1,
     textAlign: 'center',
@@ -82,13 +68,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontFamily: fonts.bold,
   },
-  settingsButton: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonPressed: { opacity: 0.55 },
   scroll: { flex: 1 },
   contentContainer: {
     paddingHorizontal: 24,
