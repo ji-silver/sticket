@@ -7,6 +7,10 @@ import { getTicketBooks } from '../../features/ticket-book/ticketBook.service';
 import { useCreateTicket } from '../../features/ticket/api/useCreateTicket';
 import { useGetTickets } from '../../features/ticket/api/useGetTickets';
 import CalendarScreen from './CalendarScreen';
+import { supabase } from '../../lib/supabase';
+
+jest.mock('../../lib/supabase', () => ({ supabase: { from: jest.fn() } }));
+jest.mock('react-native-linear-gradient', () => 'LinearGradient');
 
 const mockNavigate = jest.fn();
 const mockUseAuth = jest.fn();
@@ -94,6 +98,25 @@ describe('CalendarScreen', () => {
       mutateAsync: mockMutateAsync,
       isPending: false,
     });
+  });
+
+  it('순위 버튼으로 순위 창을 열고 닫으면 기존 캘린더에 머무른다', async () => {
+    const user = userEvent.setup();
+    (supabase.from as jest.Mock).mockReturnValue({
+      select: jest.fn().mockReturnValue({
+        eq: jest.fn().mockReturnValue({
+          maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+        }),
+      }),
+    });
+    await render(<CalendarScreen />);
+    expect(supabase.from).not.toHaveBeenCalled();
+    await user.press(screen.getByRole('button', { name: '순위 보기' }));
+    expect(await screen.findByText('아직 순위가 집계되지 않았어요')).toBeVisible();
+    await user.press(screen.getByRole('button', { name: 'KBO 순위 닫기' }));
+    expect(screen.queryByText('아직 순위가 집계되지 않았어요')).toBeNull();
+    expect(screen.getByText('8월 3일 월요일')).toBeVisible();
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   it('현재 시즌 정규 홈경기는 시즌권 좌석으로 티켓을 만들고 상세 화면으로 이동한다', async () => {

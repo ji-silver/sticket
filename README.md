@@ -89,6 +89,19 @@ Supabase RLS로 사용자 데이터 접근을 제한합니다.
 `collector`는 Playwright로 KBO 경기 일정, 경기 상태와 라인업을 수집해 Supabase에 동기화합니다. 운영 환경에서는 GitHub Actions가 수집기를 정해진 시간에 실행하며, 관리자 키는
 저장소가 아닌 GitHub Secrets로 관리합니다.
 
+KBO 전체 순위는 공식 일자별 순위표의 기준일과 10개 구단 성적을 검증한 뒤
+`kbo_standings`에 시즌별 최신 스냅샷으로 저장합니다. 당일 경기 수집과 전날 보정 작업에서
+함께 갱신하며, GitHub Actions의 `standings` 모드로 수동 수집할 수 있습니다.
+앱에서는 캘린더 상단의 `순위` 버튼으로 조회합니다.
+
+```bash
+npm --prefix collector run collect:standings -- --dry-run # 공식 페이지 읽기와 검증만 실행
+npm --prefix collector run collect:standings             # 검증 후 저장 (수집기 환경변수 필요)
+```
+
+최초 반영 시 새 migration을 대상 Supabase 환경에 적용한 뒤 순위를 한 번 수집해야 합니다.
+저장된 데이터가 없거나 조회에 실패하면 앱은 각각 집계 전과 재시도 안내를 표시합니다.
+
 ## 품질 확인
 
 ```bash

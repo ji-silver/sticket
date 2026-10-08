@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/core';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { DateData } from 'react-native-calendars';
 import AppText from '../../components/common/AppText.tsx';
+import SecondaryButton from '../../components/common/SecondaryButton.tsx';
 import ResponsiveContent from '../../components/common/ResponsiveContent.tsx';
 import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
@@ -20,6 +21,7 @@ import CalendarMonthView from './components/CalendarMonthView.tsx';
 import CalendarTicketList from './components/CalendarTicketList.tsx';
 import { useCreateTicket } from '../../features/ticket/api/useCreateTicket.ts';
 import { getSeasonTicketSeatName } from '../../features/ticket/seasonTicketSeat.ts';
+import KboStandingsModal from './components/KboStandingsModal';
 
 type CalendarNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -30,6 +32,7 @@ function CalendarScreen() {
   const { profile } = useAuth();
   const createTicketMutation = useCreateTicket();
   const [isAddingTicket, setIsAddingTicket] = useState(false);
+  const [isStandingsVisible, setIsStandingsVisible] = useState(false);
 
   const today = getTodayInKorea();
 
@@ -179,6 +182,12 @@ function CalendarScreen() {
         >
           <View style={styles.header}>
             <AppText style={styles.headerTitle}>캘린더</AppText>
+            <SecondaryButton
+              label="순위"
+              onPress={() => setIsStandingsVisible(true)}
+              style={styles.standingsButton}
+              accessibilityLabel="순위 보기"
+            />
           </View>
 
           <CalendarMonthView
@@ -210,6 +219,11 @@ function CalendarScreen() {
           />
         </ResponsiveContent>
       </ScrollView>
+      <KboStandingsModal
+        visible={isStandingsVisible}
+        favoriteTeamId={profile?.favorite_team_id}
+        onClose={() => setIsStandingsVisible(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -247,5 +261,9 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontFamily: fonts.bold,
     color: colors.text,
+  },
+  standingsButton: {
+    position: 'absolute',
+    right: 0,
   },
 });
