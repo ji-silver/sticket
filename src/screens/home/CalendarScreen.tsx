@@ -13,7 +13,6 @@ import { fonts } from '../../styles/fonts.ts';
 import type { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
 import { getTodayInKorea } from '../../lib/date.ts';
 import { useGetTickets } from '../../features/ticket/api/useGetTickets';
-import { useGetLeagueGameDatesByMonth } from '../../features/game/api/useGetLeagueGameDatesByMonth';
 import { useGetTeamGamesByMonth } from '../../features/game/api/useGetTeamGamesByMonth';
 import { useAuth } from '../../features/auth/AuthProvider.tsx';
 import { getTicketBooks } from '../../features/ticket-book/ticketBook.service.ts';
@@ -45,9 +44,6 @@ function CalendarScreen() {
 
   const { data: teamGames = [], isLoading: isLoadingTeamGames } =
     useGetTeamGamesByMonth(profile?.favorite_team_id, visibleMonth);
-
-  const { data: leagueGameDates = [] } =
-    useGetLeagueGameDatesByMonth(visibleMonth);
 
   const handlePressAddTicket = async (game?: TeamCalendarGame) => {
     if (game && isAddingTicket) {
@@ -137,8 +133,6 @@ function CalendarScreen() {
 
   const attendedDates = new Set(tickets.map(ticket => ticket.matchDate));
 
-  const playableDates = new Set([...leagueGameDates, ...attendedDates]);
-
   const selectedRecords = tickets.filter(
     ticket => ticket.matchDate === selectedDate,
   );
@@ -216,7 +210,6 @@ function CalendarScreen() {
             today={today}
             gamesByDate={gamesByDate}
             attendedDates={attendedDates}
-            playableDates={playableDates}
             isLoadingTeamGames={isLoadingTeamGames}
             onPressDay={handlePressDay}
             onMonthChange={handleMonthChange}

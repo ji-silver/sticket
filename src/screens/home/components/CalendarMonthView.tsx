@@ -16,7 +16,6 @@ interface CalendarMonthViewProps {
   today: string;
   gamesByDate: Record<string, TeamCalendarGame[]>;
   attendedDates: Set<string>;
-  playableDates: Set<string>;
   isLoadingTeamGames: boolean;
   onPressDay: (day: DateData) => void;
   onMonthChange: (month: DateData) => void;
@@ -123,7 +122,6 @@ function CalendarMonthView({
   today,
   gamesByDate,
   attendedDates,
-  playableDates,
   isLoadingTeamGames,
   onPressDay,
   onMonthChange,
@@ -162,10 +160,8 @@ function CalendarMonthView({
 
     const isToday = date.dateString === today;
 
-    const isInactive =
-      state === 'disabled' ||
-      state === 'inactive' ||
-      !playableDates.has(date.dateString);
+    // 경기 유무로 선택을 막지 않고, 현재 표시한 달 밖의 날짜만 비활성화한다.
+    const isInactive = state === 'disabled' || state === 'inactive';
 
     const isSelected = !isInactive && date.dateString === selectedDate;
 

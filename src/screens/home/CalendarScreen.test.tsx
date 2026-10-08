@@ -1,7 +1,6 @@
 import React from 'react';
 import { Alert } from 'react-native';
-import { render, screen, userEvent, waitFor } from '../../test-utils';
-import { useGetLeagueGameDatesByMonth } from '../../features/game/api/useGetLeagueGameDatesByMonth';
+import { fireEvent, render, screen, userEvent, waitFor } from '../../test-utils';
 import { useGetTeamGamesByMonth } from '../../features/game/api/useGetTeamGamesByMonth';
 import { getTicketBooks } from '../../features/ticket-book/ticketBook.service';
 import { useCreateTicket } from '../../features/ticket/api/useCreateTicket';
@@ -27,10 +26,6 @@ jest.mock('../../features/auth/AuthProvider.tsx', () => ({
   useAuth: () => mockUseAuth(),
 }));
 
-jest.mock('../../features/game/api/useGetLeagueGameDatesByMonth', () => ({
-  useGetLeagueGameDatesByMonth: jest.fn(),
-}));
-
 jest.mock('../../features/game/api/useGetTeamGamesByMonth', () => ({
   useGetTeamGamesByMonth: jest.fn(),
 }));
@@ -46,8 +41,6 @@ jest.mock('../../features/ticket/api/useCreateTicket', () => ({
 jest.mock('../../features/ticket-book/ticketBook.service.ts', () => ({
   getTicketBooks: jest.fn(),
 }));
-
-jest.mock('./components/CalendarMonthView.tsx', () => () => null);
 
 jest.mock('../../lib/date.ts', () => ({
   getTodayInKorea: () => '2026-08-03',
@@ -73,9 +66,6 @@ describe('CalendarScreen', () => {
     (useGetTickets as jest.Mock).mockReturnValue({
       data: [],
       isLoading: false,
-    });
-    (useGetLeagueGameDatesByMonth as jest.Mock).mockReturnValue({
-      data: ['2026-08-03'],
     });
     (useGetTeamGamesByMonth as jest.Mock).mockReturnValue({
       data: [
@@ -202,6 +192,85 @@ describe('CalendarScreen', () => {
         initialDate: '2026-08-03',
       });
     });
+  });
+
+  it('오늘 경기가 없어도 자동 선택을 표시하고 다른 날짜에서 오늘로 다시 돌아올 수 있다', async () => {
+    const user = userEvent.setup();
+    (useGetTeamGamesByMonth as jest.Mock).mockReturnValue({
+      data: [],
+      isLoading: false,
+    });
+
+    await render(<CalendarScreen />);
+    const todayButton = screen.getByRole('button', { name: '8월 3일' });
+    expect(todayButton).toBeEnabled();
+    expect(todayButton).toBeSelected();
+
+    await user.press(screen.getByRole('button', { name: '8월 4일' }));
+    expect(screen.getByText('8월 4일 화요일')).toBeVisible();
+
+    await user.press(screen.getByRole('button', { name: '8월 3일' }));
+    expect(screen.getByRole('button', { name: '8월 3일' })).toBeSelected();
+    expect(screen.getByText('8월 3일 월요일')).toBeVisible();
+
+    await user.press(
+      screen.getByRole('button', { name: '선택한 날짜에 티켓 추가' }),
+    );
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('AddTicket', {
+        initialDate: '2026-08-03',
+      });
+    });
+  });
+
+  it('경기와 직관 기록이 없는 미래 날짜도 선택하고 경기 없음 안내를 볼 수 있다', async () => {
+    const user = userEvent.setup();
+    await render(<CalendarScreen />);
+
+    const emptyDay = screen.getByRole('button', { name: '8월 5일' });
+    expect(emptyDay).toBeEnabled();
+    await user.press(emptyDay);
+    expect(screen.getByRole('button', { name: '8월 5일' })).toBeSelected();
+    expect(screen.getByText('8월 5일 수요일')).toBeVisible();
+    expect(screen.getByText('우리 팀 경기가 없는 날이에요')).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: '선택한 날짜에 티켓 추가' }),
+    ).toBeNull();
+  });
+
+  it('경기가 없는 지난달도 1일을 자동 선택하고 다시 선택한 날짜로 티켓을 추가할 수 있다', async () => {
+    const user = userEvent.setup();
+    (useGetTeamGamesByMonth as jest.Mock).mockReturnValue({
+      data: [],
+      isLoading: false,
+    });
+    await render(<CalendarScreen />);
+
+    await fireEvent(screen.getByRole('adjustable'), 'accessibilityAction', {
+      nativeEvent: { actionName: 'decrement' },
+    });
+    expect(screen.getByRole('button', { name: '7월 1일' })).toBeSelected();
+    expect(screen.getByText('7월 1일 수요일')).toBeVisible();
+    expect(screen.getByText('우리 팀 경기가 없는 날이에요')).toBeVisible();
+
+    await user.press(screen.getByRole('button', { name: '7월 2일' }));
+    expect(screen.getByRole('button', { name: '7월 2일' })).toBeSelected();
+    await user.press(screen.getByRole('button', { name: '7월 1일' }));
+    expect(screen.getByRole('button', { name: '7월 1일' })).toBeSelected();
+    await user.press(
+      screen.getByRole('button', { name: '선택한 날짜에 티켓 추가' }),
+    );
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('AddTicket', {
+        initialDate: '2026-07-01',
+      });
+    });
+
+    await fireEvent(screen.getByRole('adjustable'), 'accessibilityAction', {
+      nativeEvent: { actionName: 'increment' },
+    });
+    expect(screen.getByRole('button', { name: /^8월 3일/ })).toBeSelected();
+    expect(screen.getByText('8월 3일 월요일')).toBeVisible();
   });
 
   it('티켓 생성에 실패하면 오류를 안내하고 상세 화면으로 이동하지 않는다', async () => {

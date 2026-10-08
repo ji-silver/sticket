@@ -178,11 +178,7 @@ function CalendarTicketList({
               accessible={false}
             />
           }
-          title={
-            selectedDate <= today
-              ? '우리 팀 경기가 없는 날이에요'
-              : '예정된 우리 팀 경기가 없어요'
-          }
+          title="우리 팀 경기가 없는 날이에요"
           description={
             selectedDate <= today
               ? '다른 경기를 직관했다면 기록을 남겨보세요'

@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
   buttonPressed: { opacity: 0.5 },
 
   brandText: {
-    fontSize: 26,
+    fontSize: 24,
     fontFamily: fonts.logo,
     color: colors.primary,
   },
