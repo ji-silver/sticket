@@ -1,11 +1,12 @@
-import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { ListOrdered } from 'lucide-react-native';
 import { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/core';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { DateData } from 'react-native-calendars';
 import AppText from '../../components/common/AppText.tsx';
-import SecondaryButton from '../../components/common/SecondaryButton.tsx';
 import ResponsiveContent from '../../components/common/ResponsiveContent.tsx';
 import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
@@ -27,6 +28,7 @@ type CalendarNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 function CalendarScreen() {
   const horizontalPadding = 20;
+  const tabBarHeight = useBottomTabBarHeight();
 
   const navigation = useNavigation<CalendarNavigationProp>();
   const { profile } = useAuth();
@@ -169,7 +171,11 @@ function CalendarScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
         style={styles.content}
-        contentContainerStyle={styles.contentContainer}
+        contentContainerStyle={[
+          styles.contentContainer,
+          // 마지막 항목을 바 위로 스크롤할 수 있게 끝 여백만 확보한다.
+          { paddingBottom: tabBarHeight + 32 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         <ResponsiveContent
@@ -182,12 +188,27 @@ function CalendarScreen() {
         >
           <View style={styles.header}>
             <AppText style={styles.headerTitle}>캘린더</AppText>
-            <SecondaryButton
-              label="순위"
+            <Pressable
               onPress={() => setIsStandingsVisible(true)}
               style={styles.standingsButton}
+              accessibilityRole="button"
               accessibilityLabel="순위 보기"
-            />
+            >
+              {({ pressed }) => (
+                <View
+                  style={[
+                    styles.iconBackground,
+                    pressed && styles.buttonPressed,
+                  ]}
+                >
+                  <ListOrdered
+                    size={22}
+                    color={colors.text}
+                    strokeWidth={1.8}
+                  />
+                </View>
+              )}
+            </Pressable>
           </View>
 
           <CalendarMonthView
@@ -243,7 +264,6 @@ const styles = StyleSheet.create({
 
   contentContainer: {
     paddingTop: 18,
-    paddingBottom: 32,
   },
 
   horizontalContent: {
@@ -251,7 +271,9 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    minHeight: 42,
+    minHeight: 44,
+    // 본문 여백 20은 유지하고 헤더만 4를 더해 홈의 좌우 여백 24에 맞춘다.
+    marginHorizontal: 4,
     marginBottom: 12,
     justifyContent: 'center',
     alignItems: 'center',
@@ -265,5 +287,19 @@ const styles = StyleSheet.create({
   standingsButton: {
     position: 'absolute',
     right: 0,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  iconBackground: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    borderCurve: 'continuous',
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonPressed: { backgroundColor: colors.border },
 });

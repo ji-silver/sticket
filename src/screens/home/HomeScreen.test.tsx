@@ -18,6 +18,10 @@ import { useUpdateBucketItemTitle } from '../../features/bucket-list/api/useUpda
 
 const mockNavigate = jest.fn();
 
+jest.mock('@react-navigation/bottom-tabs', () => ({
+  useBottomTabBarHeight: () => 108,
+}));
+
 jest.mock('@react-navigation/core', () => ({
   useNavigation: () => ({ navigate: mockNavigate }),
 }));

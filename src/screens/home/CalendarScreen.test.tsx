@@ -15,6 +15,10 @@ jest.mock('react-native-linear-gradient', () => 'LinearGradient');
 const mockNavigate = jest.fn();
 const mockUseAuth = jest.fn();
 
+jest.mock('@react-navigation/bottom-tabs', () => ({
+  useBottomTabBarHeight: () => 108,
+}));
+
 jest.mock('@react-navigation/core', () => ({
   useNavigation: () => ({ navigate: mockNavigate }),
 }));

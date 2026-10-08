@@ -1,5 +1,6 @@
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AppText from '../../components/common/AppText.tsx';
@@ -12,6 +13,7 @@ import ProfileSummarySection from './components/ProfileSummarySection.tsx';
 import BaseballProfileSection from './components/BaseballProfileSection.tsx';
 
 function ProfileScreen() {
+  const tabBarHeight = useBottomTabBarHeight();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { profile } = useAuth();
@@ -30,7 +32,10 @@ function ProfileScreen() {
 
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={styles.contentContainer}
+        contentContainerStyle={[
+          styles.contentContainer,
+          { paddingBottom: tabBarHeight + 32 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         <ResponsiveContent>
@@ -72,6 +77,5 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingHorizontal: 24,
     paddingTop: 12,
-    paddingBottom: 32,
   },
 });

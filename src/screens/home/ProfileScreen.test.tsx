@@ -12,6 +12,10 @@ import { getAttendanceSummary } from '../../features/profile/profile.service';
 
 const mockNavigate = jest.fn();
 
+jest.mock('@react-navigation/bottom-tabs', () => ({
+  useBottomTabBarHeight: () => 108,
+}));
+
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ navigate: mockNavigate }),
 }));

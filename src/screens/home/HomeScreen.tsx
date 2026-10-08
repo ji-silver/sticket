@@ -1,5 +1,6 @@
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { Settings } from 'lucide-react-native';
 import DiarySection from './components/DiarySection.tsx';
 import { Bucket, Diary } from './types.ts';
@@ -38,6 +39,7 @@ const SPORT_TITLES: Record<Diary['sport'], string> = {
 
 function HomeScreen() {
   const navigation = useNavigation<HomeNavigationProp>();
+  const tabBarHeight = useBottomTabBarHeight();
 
   const [selectedDiaryIndex, setSelectedDiaryIndex] = useState(0);
   const [menuDiary, setMenuDiary] = useState<DiaryMenuTarget | null>(null);
@@ -217,21 +219,28 @@ function HomeScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={styles.scrollContent}
+        // 플로팅 바 뒤로 스크롤하되 마지막 항목은 바 위까지 올릴 수 있게 한다.
+        contentContainerStyle={{ paddingBottom: tabBarHeight + 24 }}
       >
         <View style={styles.header}>
           <View style={styles.headerRow}>
             <AppText style={styles.brandText}>스티켓</AppText>
             <Pressable
-              style={({ pressed }) => [
-                styles.settingsButton,
-                pressed && styles.buttonPressed,
-              ]}
+              style={styles.settingsButton}
               onPress={() => navigation.navigate('Settings')}
               accessibilityRole="button"
               accessibilityLabel="설정"
             >
-              <Settings size={22} color={colors.text} strokeWidth={1.8} />
+              {({ pressed }) => (
+                <View
+                  style={[
+                    styles.iconBackground,
+                    pressed && styles.buttonPressed,
+                  ]}
+                >
+                  <Settings size={22} color={colors.text} strokeWidth={1.8} />
+                </View>
+              )}
             </Pressable>
           </View>
 
@@ -301,7 +310,7 @@ function HomeScreen() {
         <AppSnackbar
           message="버킷리스트를 삭제했어요"
           horizontalInset={24}
-          bottomOffset={12}
+          bottomOffset={tabBarHeight + 12}
           actionLabel="실행 취소"
           actionAccessibilityLabel="버킷리스트 삭제 실행 취소"
           actionLoading={isRestoringBucket}
@@ -318,9 +327,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.surface,
-  },
-  scrollContent: {
-    paddingBottom: 24,
   },
   header: {
     paddingHorizontal: 24,
@@ -342,7 +348,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  buttonPressed: { opacity: 0.55 },
+  iconBackground: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    borderCurve: 'continuous',
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonPressed: { backgroundColor: colors.border },
 
   brandText: {
     fontSize: 26,
