@@ -136,6 +136,27 @@ export type Database = {
           },
         ]
       }
+      kbo_standings: {
+        Row: {
+          season: number
+          as_of_date: string
+          standings: Json
+          collected_at: string
+        }
+        Insert: {
+          season: number
+          as_of_date: string
+          standings: Json
+          collected_at?: string
+        }
+        Update: {
+          season?: number
+          as_of_date?: string
+          standings?: Json
+          collected_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
