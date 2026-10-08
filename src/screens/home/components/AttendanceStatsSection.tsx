@@ -1,206 +1,115 @@
-import { useRef, useState } from 'react';
-import {
-  Modal,
-  Pressable,
-  StyleSheet,
-  useWindowDimensions,
-  View,
-} from 'react-native';
-import { Info } from 'lucide-react-native';
+import { StyleSheet, View } from 'react-native';
 import AppText from '../../../components/common/AppText.tsx';
+import AppButton from '../../../components/common/AppButton.tsx';
 import { colors } from '../../../styles/colors.ts';
 import { fonts } from '../../../styles/fonts.ts';
-import { getTodayInKorea } from '../../../lib/date.ts';
 import type { AttendanceSummary } from '../../../features/profile/types.ts';
 
-interface WinRateInfoAnchor {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
 interface AttendanceStatsSectionProps {
-  favoriteTeamShortName: string;
+  season: number;
   attendanceSummary: AttendanceSummary;
   isLoading: boolean;
+  isError: boolean;
+  isRetrying: boolean;
+  onRetry: () => void;
 }
 
-const CURRENT_SEASON = Number(getTodayInKorea().slice(0, 4));
-
 function AttendanceStatsSection({
-  favoriteTeamShortName,
+  season,
   attendanceSummary,
   isLoading,
+  isError,
+  isRetrying,
+  onRetry,
 }: AttendanceStatsSectionProps) {
-  const { width: screenWidth } = useWindowDimensions();
-
-  const infoButtonRef = useRef<View>(null);
-
-  const [winRateInfoAnchor, setWinRateInfoAnchor] =
-    useState<WinRateInfoAnchor | null>(null);
-
   const decidedGames = attendanceSummary.wins + attendanceSummary.losses;
-
+  // 야구의 무승부는 직관 횟수에는 포함하지만 승률의 분모에서는 제외한다.
+  // 종료 경기가 전부 무승부라면 0%로 오해하지 않도록 '집계 전'으로 표시한다.
   const winRate =
     decidedGames === 0
       ? null
       : Math.round((attendanceSummary.wins / decidedGames) * 1000) / 10;
 
-  const handleOpenWinRateInfo = () => {
-    infoButtonRef.current?.measureInWindow((x, y, width, height) => {
-      setWinRateInfoAnchor({
-        x,
-        y,
-        width,
-        height,
-      });
-    });
-  };
-
-  const popoverWidth = Math.min(280, screenWidth - 32);
-
-  const popoverLeft = winRateInfoAnchor
-    ? Math.min(
-        Math.max(winRateInfoAnchor.x + winRateInfoAnchor.width / 2 - 44, 16),
-        screenWidth - popoverWidth - 16,
-      )
-    : 16;
-
   return (
-    <>
-      <View style={styles.summarySection}>
-        <View style={styles.summarySectionHeader}>
-          <AppText style={[styles.sectionTitle, styles.summarySectionTitle]}>
-            {favoriteTeamShortName} 직관 성적
-          </AppText>
-
-          <AppText style={styles.summaryTotal}>
-            {isLoading ? '-' : `총 ${attendanceSummary.totalGames}경기`}
-          </AppText>
-        </View>
-
-        <View style={styles.summaryCard}>
-          <View style={styles.winRateHeader}>
-            <AppText style={styles.summaryLabel}>직관 승률</AppText>
-
-            <Pressable
-              ref={infoButtonRef}
-              style={({ pressed }) => [
-                styles.infoButton,
-                pressed && styles.infoButtonPressed,
-              ]}
-              onPress={handleOpenWinRateInfo}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel="직관 승률 안내 열기"
-            >
-              <Info size={14} color={colors.primary} strokeWidth={2.2} />
-            </Pressable>
-          </View>
-
-          <AppText
-            style={[
-              styles.winRateText,
-              !isLoading && winRate === null ? styles.winRateEmptyText : null,
-            ]}
-          >
-            {isLoading ? '-' : winRate === null ? '기록 없음' : `${winRate}%`}
-          </AppText>
-
-          <View style={styles.recordRow}>
-            <RecordMetric
-              value={isLoading ? '-' : attendanceSummary.wins}
-              label="승"
-              emphasized
-            />
-
-            <View style={styles.recordDivider} />
-
-            <RecordMetric
-              value={isLoading ? '-' : attendanceSummary.draws}
-              label="무"
-            />
-
-            <View style={styles.recordDivider} />
-
-            <RecordMetric
-              value={isLoading ? '-' : attendanceSummary.losses}
-              label="패"
-            />
-          </View>
-        </View>
+    <View style={styles.section}>
+      <View style={styles.heading}>
+        <AppText style={styles.title} accessibilityRole="header">
+          야구 직관 성적
+        </AppText>
+        <AppText style={styles.season}>{season} 시즌</AppText>
       </View>
 
-      <Modal
-        visible={winRateInfoAnchor !== null}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setWinRateInfoAnchor(null)}
-      >
-        <View style={styles.popoverLayer} accessibilityViewIsModal>
-          <Pressable
-            style={StyleSheet.absoluteFill}
-            onPress={() => setWinRateInfoAnchor(null)}
-            accessibilityRole="button"
-            accessibilityLabel="직관 승률 안내 닫기"
-          />
-
-          {winRateInfoAnchor ? (
-            <View
-              accessible
-              accessibilityLabel={`현재는 ${CURRENT_SEASON}시즌 응원팀의 종료 경기 기준이며, 무승부는 승률에서 제외돼요.`}
-              style={[
-                styles.winRatePopover,
-                {
-                  width: popoverWidth,
-                  left: popoverLeft,
-                  top: winRateInfoAnchor.y + winRateInfoAnchor.height + 8,
-                },
-              ]}
-            >
-              <View
-                style={[
-                  styles.popoverArrow,
-                  {
-                    left:
-                      winRateInfoAnchor.x +
-                      winRateInfoAnchor.width / 2 -
-                      popoverLeft -
-                      6,
-                  },
-                ]}
-              />
-
-              <AppText style={styles.popoverText}>
-                {`현재는 ${CURRENT_SEASON}시즌 응원팀의 종료 경기 기준이며, 무승부는 승률에서 제외돼요.`}
-              </AppText>
-            </View>
-          ) : null}
+      {/* 실패, 조회 중, 실제 빈 기록을 구분해 아직 모르는 성적을 0경기로 표시하지 않는다. */}
+      {isError ? (
+        <View>
+          <AppText style={styles.message}>
+            직관 성적을 불러오지 못했어요.
+          </AppText>
+          <AppButton
+            onPress={onRetry}
+            disabled={isRetrying}
+            accessibilityLabel="직관 성적 다시 불러오기"
+            style={styles.retryButton}
+          >
+            <AppText style={styles.retryText}>
+              {isRetrying ? '불러오는 중…' : '다시 불러오기'}
+            </AppText>
+          </AppButton>
         </View>
-      </Modal>
-    </>
+      ) : isLoading ? (
+        <AppText
+          style={styles.message}
+          accessibilityLabel="직관 성적 불러오는 중"
+          accessibilityState={{ busy: true }}
+        >
+          성적을 불러오고 있어요.
+        </AppText>
+      ) : (
+        <View>
+          <View style={styles.scoreboard}>
+            <View style={styles.metrics}>
+              <View style={styles.winRateMetric}>
+                <AppText style={styles.metricLabel}>직관 승률</AppText>
+                <AppText
+                  style={[
+                    styles.winRate,
+                    winRate === null && styles.pendingRate,
+                  ]}
+                  accessibilityLabel={
+                    winRate === null ? '직관 승률 집계 전' : undefined
+                  }
+                >
+                  {winRate === null ? '집계 전' : `${winRate}%`}
+                </AppText>
+              </View>
+              <RecordMetric value={attendanceSummary.wins} label="승" />
+              <RecordMetric value={attendanceSummary.draws} label="무" />
+              <RecordMetric value={attendanceSummary.losses} label="패" />
+            </View>
+            <AppText style={styles.gameCount}>
+              {`응원팀 종료 경기 ${attendanceSummary.totalGames}경기`}
+            </AppText>
+          </View>
+          <AppText style={styles.caption}>
+            {attendanceSummary.totalGames === 0
+              ? '이번 시즌 응원팀의 종료 경기 기록이 없어요.'
+              : '무승부는 승률에서 제외돼요.'}
+          </AppText>
+        </View>
+      )}
+    </View>
   );
 }
 
-function RecordMetric({
-  value,
-  label,
-  emphasized = false,
-}: {
-  value: number | string;
-  label: string;
-  emphasized?: boolean;
-}) {
+function RecordMetric({ value, label }: { value: number; label: string }) {
   return (
-    <View style={styles.recordMetric}>
-      <AppText
-        style={[styles.recordValue, emphasized && styles.recordValueEmphasized]}
-      >
-        {value}
-      </AppText>
-
-      <AppText style={styles.recordLabel}>{label}</AppText>
+    <View
+      style={styles.metric}
+      accessible
+      accessibilityLabel={`${value}${label}`}
+    >
+      <AppText style={styles.metricLabel}>{label}</AppText>
+      <AppText style={styles.recordValue}>{value}</AppText>
     </View>
   );
 }
@@ -208,166 +117,70 @@ function RecordMetric({
 export default AttendanceStatsSection;
 
 const styles = StyleSheet.create({
-  summarySection: {
-    marginTop: 24,
-  },
-
-  summarySectionHeader: {
-    marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-
-  summarySectionTitle: {
-    marginBottom: 0,
-  },
-
-  summaryTotal: {
-    fontSize: 12,
-    fontFamily: fonts.regular,
-    color: colors.textSecondary,
-    fontVariant: ['tabular-nums'],
-  },
-
-  sectionTitle: {
-    marginBottom: 12,
-    fontSize: 17,
-    fontFamily: fonts.bold,
-    color: colors.text,
-  },
-
-  summaryCard: {
-    paddingHorizontal: 20,
-    paddingTop: 18,
-    paddingBottom: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 18,
-    borderCurve: 'continuous',
-    backgroundColor: colors.surface,
-  },
-
-  winRateHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-
-  infoButton: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  infoButtonPressed: {
-    opacity: 0.55,
-  },
-
-  summaryLabel: {
-    fontSize: 12,
-    fontFamily: fonts.semiBold,
-    color: colors.textSecondary,
-  },
-
-  winRateText: {
-    marginTop: 2,
-    fontSize: 38,
-    lineHeight: 46,
-    fontFamily: fonts.black,
-    color: colors.text,
-    fontVariant: ['tabular-nums'],
-  },
-
-  winRateEmptyText: {
-    fontSize: 20,
-    lineHeight: 46,
-    fontFamily: fonts.bold,
-    color: colors.textSecondary,
-  },
-
-  recordRow: {
-    marginTop: 12,
-    paddingTop: 14,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  recordMetric: {
-    flex: 1,
+  section: { marginTop: 28 },
+  heading: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    justifyContent: 'center',
-    gap: 4,
+    gap: 16,
+    marginBottom: 16,
   },
-
-  recordValue: {
-    fontSize: 17,
+  title: {
+    flex: 1,
+    fontSize: 18,
+    lineHeight: 26,
     fontFamily: fonts.bold,
     color: colors.text,
+  },
+  season: { fontSize: 13, color: colors.textSecondary },
+  scoreboard: {
+    padding: 20,
+    borderRadius: 12,
+    backgroundColor: colors.background,
+  },
+  metrics: { flexDirection: 'row', alignItems: 'stretch' },
+  winRateMetric: {
+    flex: 1.6,
+    paddingRight: 12,
+    marginRight: 12,
+    borderRightWidth: StyleSheet.hairlineWidth,
+    borderRightColor: colors.border,
+    gap: 8,
+  },
+  metric: { flex: 1, alignItems: 'center', gap: 8 },
+  metricLabel: { fontSize: 12, lineHeight: 18, color: colors.textSecondary },
+  winRate: {
+    fontSize: 28,
+    lineHeight: 36,
+    fontFamily: fonts.bold,
     fontVariant: ['tabular-nums'],
+    color: colors.text,
   },
-
-  recordValueEmphasized: {
-    color: colors.primary,
+  pendingRate: { fontSize: 18, fontFamily: fonts.regular },
+  recordValue: {
+    fontSize: 26,
+    lineHeight: 36,
+    fontFamily: fonts.bold,
+    fontVariant: ['tabular-nums'],
+    color: colors.text,
   },
-
-  recordLabel: {
-    fontSize: 11,
-    fontFamily: fonts.regular,
+  gameCount: {
+    marginTop: 20,
+    fontSize: 12,
+    lineHeight: 18,
     color: colors.textSecondary,
   },
-
-  recordDivider: {
-    width: 1,
-    height: 22,
-    backgroundColor: colors.border,
-  },
-
-  popoverLayer: {
-    flex: 1,
-  },
-
-  winRatePopover: {
-    position: 'absolute',
-    paddingHorizontal: 16,
-    paddingVertical: 13,
-    borderRadius: 14,
-    borderCurve: 'continuous',
-    backgroundColor: colors.text,
-    shadowColor: colors.shadow,
-    shadowOffset: {
-      width: 0,
-      height: 6,
-    },
-    shadowOpacity: 0.16,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-
-  popoverArrow: {
-    position: 'absolute',
-    top: -6,
-    width: 0,
-    height: 0,
-    borderLeftWidth: 6,
-    borderRightWidth: 6,
-    borderBottomWidth: 6,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderBottomColor: colors.text,
-  },
-
-  popoverText: {
-    fontSize: 13,
+  caption: {
+    marginTop: 12,
+    fontSize: 12,
     lineHeight: 20,
-    fontFamily: fonts.regular,
-    color: colors.onPrimary,
+    color: colors.textSecondary,
   },
+  message: { fontSize: 14, lineHeight: 22, color: colors.textSecondary },
+  retryButton: {
+    alignSelf: 'flex-start',
+    minHeight: 44,
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  retryText: { fontSize: 14, fontFamily: fonts.bold, color: colors.primary },
 });

@@ -6,6 +6,7 @@ import AddDiaryScreen from '../screens/diary/AddDiaryScreen.tsx';
 import TicketListScreen from '../screens/ticket/TicketListScreen.tsx';
 import AddTicketScreen from '../screens/ticket/AddTicketScreen.tsx';
 import ProfileEditScreen from '../screens/home/ProfileEditScreen.tsx';
+import SettingsScreen from '../screens/home/SettingsScreen.tsx';
 import AuthScreen from '../screens/auth/AuthScreen.tsx';
 import LoadingScreen from '../screens/auth/LoadingScreen.tsx';
 import ProfileSetupScreen from '../screens/auth/ProfileSetupScreen.tsx';
@@ -33,6 +34,7 @@ export type RootStackParamList = {
       }
     | undefined;
   ProfileEdit: undefined;
+  Settings: undefined;
   TicketDetail: {
     ticketId: string;
   };
@@ -110,6 +112,7 @@ function RootStackNavigator() {
           <Stack.Screen name="AddTicket" component={AddTicketScreen} />
           <Stack.Screen name="TicketDetail" component={TicketDetailScreen} />
           <Stack.Screen name="ProfileEdit" component={ProfileEditScreen} />
+          <Stack.Screen name="Settings" component={SettingsScreen} />
           <Stack.Screen name="Document" component={DocumentScreen} />
         </>
       )}

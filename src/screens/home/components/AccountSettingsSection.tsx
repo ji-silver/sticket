@@ -1,7 +1,7 @@
 import { Alert, Linking, Pressable, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ChevronRight, LogOut } from 'lucide-react-native';
+import { ChevronRight } from 'lucide-react-native';
 import DeviceInfo from 'react-native-device-info';
 import AppText from '../../../components/common/AppText.tsx';
 import { colors } from '../../../styles/colors.ts';
@@ -11,13 +11,20 @@ import type { RootStackParamList } from '../../../navigation/RootStackNavigator.
 interface AccountSettingsSectionProps {
   onPressLogout: () => void;
   onPressWithdrawal: () => void;
+  disabled?: boolean;
 }
 
 const appVersion = DeviceInfo.getVersion();
-const TERMS_OF_SERVICE_URL =
-  'https://amenable-colby-ae6.notion.site/3b6f2bd020d08050b594d22630e4a866';
-const PRIVACY_POLICY_URL =
-  'https://amenable-colby-ae6.notion.site/3b5f2bd020d0803da252e68a09189ae5';
+const DOCUMENTS = [
+  {
+    title: '이용약관',
+    uri: 'https://amenable-colby-ae6.notion.site/3b6f2bd020d08050b594d22630e4a866',
+  },
+  {
+    title: '개인정보 처리방침',
+    uri: 'https://amenable-colby-ae6.notion.site/3b5f2bd020d0803da252e68a09189ae5',
+  },
+];
 const SUPPORT_EMAIL_URL = `mailto:hello.appworks@gmail.com?subject=${encodeURIComponent(
   '[스티켓 문의]',
 )}`;
@@ -25,6 +32,7 @@ const SUPPORT_EMAIL_URL = `mailto:hello.appworks@gmail.com?subject=${encodeURICo
 function AccountSettingsSection({
   onPressLogout,
   onPressWithdrawal,
+  disabled = false,
 }: AccountSettingsSectionProps) {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -42,120 +50,88 @@ function AccountSettingsSection({
 
   return (
     <>
-      <View style={styles.serviceSection}>
-        <AppText style={styles.sectionTitle}>서비스 정보</AppText>
-
-        <View style={styles.serviceCard}>
+      <View>
+        <AppText style={styles.sectionTitle} accessibilityRole="header">
+          서비스 정보
+        </AppText>
+        <View style={styles.list}>
           <Pressable
             style={({ pressed }) => [
-              styles.serviceRow,
-              pressed && styles.serviceRowPressed,
-            ]}
-            onPress={() =>
-              navigation.navigate('Document', {
-                title: '이용약관',
-                uri: TERMS_OF_SERVICE_URL,
-              })
-            }
-            accessibilityRole="button"
-          >
-            <AppText style={styles.serviceRowText}>이용약관</AppText>
-
-            <ChevronRight
-              size={18}
-              color={colors.textSecondary}
-              strokeWidth={2}
-            />
-          </Pressable>
-
-          <View style={styles.serviceDivider} />
-
-          <Pressable
-            style={({ pressed }) => [
-              styles.serviceRow,
-              pressed && styles.serviceRowPressed,
-            ]}
-            onPress={() =>
-              navigation.navigate('Document', {
-                title: '개인정보 처리방침',
-                uri: PRIVACY_POLICY_URL,
-              })
-            }
-            accessibilityRole="button"
-          >
-            <AppText style={styles.serviceRowText}>개인정보 처리방침</AppText>
-
-            <ChevronRight
-              size={18}
-              color={colors.textSecondary}
-              strokeWidth={2}
-            />
-          </Pressable>
-
-          <View style={styles.serviceDivider} />
-
-          <Pressable
-            style={({ pressed }) => [
-              styles.serviceRow,
-              pressed && styles.serviceRowPressed,
+              styles.row,
+              styles.divider,
+              pressed && styles.pressed,
             ]}
             onPress={handlePressSupport}
             accessibilityRole="button"
             accessibilityLabel="문의 및 피드백"
           >
-            <AppText style={styles.serviceRowText}>문의 및 피드백</AppText>
-
+            <AppText style={styles.rowText}>문의 및 피드백</AppText>
             <ChevronRight
               size={18}
               color={colors.textSecondary}
-              strokeWidth={2}
+              strokeWidth={1.8}
             />
           </Pressable>
-
-          <View style={styles.serviceDivider} />
-
-          <View style={styles.serviceRow}>
-            <AppText style={styles.serviceRowText}>앱 버전</AppText>
-
-            <AppText style={styles.serviceValue}>{appVersion}</AppText>
-          </View>
+          {DOCUMENTS.map((document, index) => (
+            <Pressable
+              key={document.title}
+              style={({ pressed }) => [
+                styles.row,
+                index < DOCUMENTS.length - 1 && styles.divider,
+                pressed && styles.pressed,
+              ]}
+              onPress={() => navigation.navigate('Document', document)}
+              accessibilityRole="button"
+            >
+              <AppText style={styles.rowText}>{document.title}</AppText>
+              <ChevronRight
+                size={18}
+                color={colors.textSecondary}
+                strokeWidth={1.8}
+              />
+            </Pressable>
+          ))}
         </View>
       </View>
 
       <View style={styles.accountSection}>
-        <AppText style={styles.sectionTitle}>계정 관리</AppText>
-
-        <View style={styles.serviceCard}>
+        <AppText style={styles.sectionTitle} accessibilityRole="header">
+          계정 관리
+        </AppText>
+        <View style={styles.list}>
           <Pressable
             style={({ pressed }) => [
-              styles.serviceRow,
-              pressed && styles.serviceRowPressed,
+              styles.row,
+              styles.divider,
+              pressed && styles.pressed,
+              disabled && styles.disabled,
             ]}
             onPress={onPressLogout}
+            disabled={disabled}
             accessibilityRole="button"
+            accessibilityState={{ disabled }}
           >
-            <AppText style={styles.serviceRowText}>로그아웃</AppText>
-
-            <LogOut size={18} color={colors.textSecondary} strokeWidth={2} />
+            <AppText style={styles.rowText}>로그아웃</AppText>
           </Pressable>
-
-          <View style={styles.serviceDivider} />
-
           <Pressable
             style={({ pressed }) => [
-              styles.serviceRow,
-              pressed && styles.serviceRowPressed,
+              styles.row,
+              pressed && styles.pressed,
+              disabled && styles.disabled,
             ]}
             onPress={onPressWithdrawal}
+            disabled={disabled}
             accessibilityRole="button"
             accessibilityLabel="회원 탈퇴"
+            accessibilityState={{ disabled }}
           >
-            <AppText style={styles.withdrawalText}>회원 탈퇴</AppText>
-
-            <ChevronRight size={18} color="#D92D20" strokeWidth={2} />
+            <AppText style={[styles.rowText, styles.withdrawalText]}>
+              회원 탈퇴
+            </AppText>
           </Pressable>
         </View>
       </View>
+      <AppText style={styles.version}>{`앱 버전 ${appVersion}`}</AppText>
     </>
   );
 }
@@ -165,61 +141,43 @@ export default AccountSettingsSection;
 const styles = StyleSheet.create({
   sectionTitle: {
     marginBottom: 12,
-    fontSize: 17,
+    fontSize: 14,
     fontFamily: fonts.bold,
-    color: colors.text,
+    color: colors.textSecondary,
   },
-
-  serviceSection: {
-    marginTop: 32,
-  },
-
-  serviceCard: {
-    borderWidth: 1,
-    borderColor: colors.border,
+  list: {
     borderRadius: 18,
     borderCurve: 'continuous',
     overflow: 'hidden',
     backgroundColor: colors.surface,
   },
-
-  serviceRow: {
-    minHeight: 54,
+  row: {
+    minHeight: 56,
     paddingHorizontal: 18,
+    paddingVertical: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 16,
   },
-
-  serviceRowPressed: {
-    backgroundColor: colors.background,
-  },
-
-  serviceRowText: {
-    fontSize: 14,
+  rowText: {
+    flex: 1,
+    fontSize: 15,
+    lineHeight: 22,
     fontFamily: fonts.regular,
     color: colors.text,
   },
-
-  serviceValue: {
-    fontSize: 13,
-    fontFamily: fonts.regular,
+  divider: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  pressed: { backgroundColor: colors.background },
+  disabled: { opacity: 0.5 },
+  accountSection: { marginTop: 32 },
+  withdrawalText: { color: colors.error },
+  version: {
+    marginTop: 24,
+    fontSize: 12,
+    lineHeight: 18,
     color: colors.textSecondary,
-  },
-
-  serviceDivider: {
-    height: 1,
-    marginHorizontal: 18,
-    backgroundColor: colors.border,
-  },
-
-  accountSection: {
-    marginTop: 32,
-  },
-
-  withdrawalText: {
-    fontSize: 14,
-    fontFamily: fonts.regular,
-    color: '#D92D20',
   },
 });
