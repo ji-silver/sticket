@@ -8,6 +8,7 @@
     "collect": "tsx src/collectSchedule.ts",
     "collect:today": "tsx src/collectSchedule.ts --date=today",
     "collect:yesterday": "tsx src/collectSchedule.ts --date=yesterday",
+    "collect:standings": "tsx src/collectStandings.ts",
     "collect:schedule": "tsx src/collectSchedule.ts --schedule",
     "collect:schedule:upcoming": "tsx src/collectSchedule.ts --schedule --upcoming",
     "backfill": "tsx src/collectSchedule.ts --backfill",

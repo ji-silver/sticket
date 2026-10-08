@@ -14,6 +14,7 @@ on:
           - upcoming
           - schedule
           - recent
+          - standings
 
 permissions:
   contents: read
@@ -79,6 +80,13 @@ jobs:
       - name: KBO 최근 경기 수동 수집
         if: inputs.mode == 'recent'
         run: npm run collect
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+
+      - name: KBO 공식 순위 수집
+        if: ${{ !cancelled() && (inputs.mode == 'today' || inputs.mode == 'yesterday' || inputs.mode == 'standings') }}
+        run: npm run collect:standings
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
