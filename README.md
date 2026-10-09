@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./src/assets/auth/ticket_logo.png" width="140" alt="Sticket 로고" />
+  <img src="./src/assets/brand/logo-transparent.png" width="140" alt="Sticket 로고" />
 </p>
 
 <h1 align="center">스티켓</h1>

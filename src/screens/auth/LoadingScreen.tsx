@@ -17,7 +17,7 @@ function LoadingScreen() {
       <View style={styles.content}>
         <View style={styles.logoFrame}>
           <Image
-            source={require('../../assets/auth/ticket_logo.png')}
+            source={require('../../assets/brand/logo-transparent.png')}
             style={styles.logo}
             resizeMode="contain"
             accessible

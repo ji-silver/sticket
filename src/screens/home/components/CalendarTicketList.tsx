@@ -172,7 +172,7 @@ function CalendarTicketList({
         <EmptyCard
           icon={
             <Image
-              source={require('../../../assets/auth/ticket_logo.png')}
+              source={require('../../../assets/brand/logo-transparent.png')}
               style={styles.emptyLogo}
               resizeMode="contain"
               accessible={false}
