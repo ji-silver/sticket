@@ -5,6 +5,7 @@ import RootStackNavigator from './src/navigation/RootStackNavigator.tsx';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AuthProvider } from './src/features/auth/AuthProvider.tsx';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import AppUpdateGate from './src/features/app-update/AppUpdateGate';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,11 +22,13 @@ function App() {
       <GestureHandlerRootView style={styles.root}>
         <SafeAreaProvider>
           <StatusBar />
-          <AuthProvider>
-            <NavigationContainer>
-              <RootStackNavigator />
-            </NavigationContainer>
-          </AuthProvider>
+          <AppUpdateGate>
+            <AuthProvider>
+              <NavigationContainer>
+                <RootStackNavigator />
+              </NavigationContainer>
+            </AuthProvider>
+          </AppUpdateGate>
         </SafeAreaProvider>
       </GestureHandlerRootView>
     </QueryClientProvider>

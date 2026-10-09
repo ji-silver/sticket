@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_update_policies: {
+        Row: {
+          platform: string
+          enabled: boolean
+          minimum_version: string
+          message: string
+        }
+        Insert: {
+          platform: string
+          enabled?: boolean
+          minimum_version: string
+          message?: string
+        }
+        Update: {
+          platform?: string
+          enabled?: boolean
+          minimum_version?: string
+          message?: string
+        }
+        Relationships: []
+      }
       bucket_items: {
         Row: {
           created_at: string
