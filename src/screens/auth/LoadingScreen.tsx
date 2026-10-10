@@ -1,5 +1,5 @@
-import { Image, StatusBar, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { StyleSheet, View } from 'react-native';
+import AppLoadingScreen from '../../components/common/AppLoadingScreen';
 import AppButton from '../../components/common/AppButton.tsx';
 import AppText from '../../components/common/AppText.tsx';
 import { colors } from '../../styles/colors.ts';
@@ -11,67 +11,32 @@ function LoadingScreen() {
   const hasError = status === 'error';
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
-
-      <View style={styles.content}>
-        <View style={styles.logoFrame}>
-          <Image
-            source={require('../../assets/brand/logo-transparent.png')}
-            style={styles.logo}
-            resizeMode="contain"
-            accessible
-            accessibilityRole="image"
-            accessibilityLabel="STICKET 로고"
-          />
+    <AppLoadingScreen>
+      {hasError ? (
+        <View style={styles.errorArea}>
+          <AppText style={styles.errorText}>
+            {errorMessage || '로그인 정보를 확인하지 못했어요.'}
+          </AppText>
+          <AppButton
+            style={({ pressed }) => [
+              styles.retryButton,
+              pressed && styles.retryButtonPressed,
+            ]}
+            onPress={retry}
+            accessibilityRole="button"
+            accessibilityLabel="로그인 정보 다시 불러오기"
+          >
+            <AppText style={styles.retryButtonText}>다시 시도</AppText>
+          </AppButton>
         </View>
-
-        {hasError ? (
-          <View style={styles.errorArea}>
-            <AppText style={styles.errorText}>
-              {errorMessage || '로그인 정보를 확인하지 못했어요.'}
-            </AppText>
-            <AppButton
-              style={({ pressed }) => [
-                styles.retryButton,
-                pressed && styles.retryButtonPressed,
-              ]}
-              onPress={retry}
-              accessibilityRole="button"
-              accessibilityLabel="로그인 정보 다시 불러오기"
-            >
-              <AppText style={styles.retryButtonText}>다시 시도</AppText>
-            </AppButton>
-          </View>
-        ) : null}
-      </View>
-    </SafeAreaView>
+      ) : null}
+    </AppLoadingScreen>
   );
 }
 
 export default LoadingScreen;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.primary,
-  },
-  content: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  logoFrame: {
-    width: 120,
-    height: 120,
-    overflow: 'hidden',
-  },
-  logo: {
-    width: '100%',
-    height: '100%',
-  },
-
   errorArea: {
     marginTop: 28,
     alignItems: 'center',

@@ -42,6 +42,29 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 }
 
 class ReactNativeDelegate: RCTDefaultReactNativeFactoryDelegate {
+  private weak var launchingRootView: RCTRootView?
+
+  override func customize(_ rootView: RCTRootView) {
+    super.customize(rootView)
+    // JS 준비 중에는 시작 배경을 유지하고, 첫 화면이 표시되면 기본 배경으로 되돌린다.
+    // 분홍색을 계속 유지하면 뒤로가기 전환의 가장자리에 시작 배경이 비칠 수 있다.
+    launchingRootView = rootView
+    rootView.backgroundColor = UIStoryboard(name: "LaunchScreen", bundle: nil)
+      .instantiateInitialViewController()?.view.backgroundColor
+    NotificationCenter.default.addObserver(
+      self, selector: #selector(restoreRootBackground),
+      name: .RCTContentDidAppear, object: nil
+    )
+  }
+
+  @objc private func restoreRootBackground() {
+    launchingRootView?.backgroundColor = .systemBackground
+    launchingRootView = nil
+    NotificationCenter.default.removeObserver(
+      self, name: .RCTContentDidAppear, object: nil
+    )
+  }
+
   override func sourceURL(for bridge: RCTBridge) -> URL? {
     self.bundleURL()
   }

@@ -4,6 +4,7 @@ import DeviceInfo from 'react-native-device-info';
 import { requiresAppUpdate, type AppUpdatePolicy } from './appUpdate';
 import { useAppUpdatePolicy } from './api/useAppUpdatePolicy';
 import { useRequiredUpdateAlert } from './useRequiredUpdateAlert';
+import AppLoadingScreen from '../../components/common/AppLoadingScreen';
 
 export default function AppUpdateGate({ children }: PropsWithChildren) {
   const query = useAppUpdatePolicy();
@@ -45,7 +46,7 @@ export default function AppUpdateGate({ children }: PropsWithChildren) {
       accessibilityElementsHidden={isBlocked}
       importantForAccessibility={isBlocked ? 'no-hide-descendants' : 'auto'}
     >
-      {canShowApp ? children : null}
+      {canShowApp ? children : <AppLoadingScreen />}
     </View>
   );
 }

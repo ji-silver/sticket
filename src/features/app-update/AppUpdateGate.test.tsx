@@ -131,7 +131,7 @@ describe('앱 시작 시 필수 업데이트', () => {
     jest.useRealTimers();
   });
 
-  it('첫 정책 확인이 끝나기 전에는 앱 본문에 진입하지 않는다', async () => {
+  it('첫 정책 확인 중에는 로고를 보여주고 확인이 끝나면 앱 본문에 진입한다', async () => {
     let finish!: (value: unknown) => void;
     maybeSingle.mockReturnValueOnce(
       new Promise(resolve => {
@@ -139,12 +139,15 @@ describe('앱 시작 시 필수 업데이트', () => {
       }),
     );
     await openApp();
-    expect(screen.queryByText('앱을 준비하고 있어요')).toBeNull();
+    expect(
+      screen.getByRole('image', { name: 'STICKET 로고' }),
+    ).toBeOnTheScreen();
     expect(screen.queryByText('로그인 화면')).toBeNull();
     await act(async () =>
       finish({ data: { ...row, enabled: false }, error: null }),
     );
     expect(await screen.findByText('로그인 화면')).toBeOnTheScreen();
+    expect(screen.queryByRole('image', { name: 'STICKET 로고' })).toBeNull();
   });
 
   it('로그인 전에도 기준보다 오래된 버전은 업데이트해야 진입할 수 있다', async () => {
@@ -206,7 +209,6 @@ describe('앱 시작 시 필수 업데이트', () => {
   it.each(['저장 실패', '읽기 실패', '오래된 캐시'])(
     '저장소 %s와 재조회 오류가 겹쳐도 이미 확인한 차단을 유지한다',
     async failure => {
-      jest.useFakeTimers();
       if (failure === '오래된 캐시') {
         await AsyncStorage.setItem(
           `app-update-policy:${publicConfig.supabaseUrl}:ios`,
@@ -231,7 +233,6 @@ describe('앱 시작 시 필수 업데이트', () => {
       });
       await returnToApp();
       await waitFor(() => expect(client.isFetching()).toBe(0));
-      await act(async () => jest.advanceTimersByTimeAsync(100));
       expect(alert).toHaveBeenCalledTimes(1);
       expect(screen.queryByText('로그인 화면')).toBeNull();
     },
