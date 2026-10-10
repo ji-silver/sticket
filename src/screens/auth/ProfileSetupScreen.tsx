@@ -15,6 +15,7 @@ import AppText from '../../components/common/AppText.tsx';
 import TeamSelectSheet from '../home/components/TeamSelectSheet.tsx';
 import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
+import { NicknameAlreadyUsedError } from '../../features/profile/profile.errors.ts';
 import { saveProfile } from '../../features/profile/profile.service.ts';
 import { useAuth } from '../../features/auth/AuthProvider.tsx';
 
@@ -30,6 +31,10 @@ function ProfileSetupScreen() {
     profile?.nickname ??
       (typeof socialName === 'string' ? socialName.trim() : ''),
   );
+  const [nicknameError, setNicknameError] = useState<{
+    nickname: string;
+    message: string;
+  } | null>(null);
 
   useEffect(() => {
     if (typeof socialName !== 'string') {
@@ -50,6 +55,9 @@ function ProfileSetupScreen() {
   const [isSaving, setIsSaving] = useState(false);
 
   const trimmedNickname = nickname.trim();
+  // 저장 중 입력이 바뀌면 이전 요청의 중복 오류를 새 닉네임에 붙이지 않는다.
+  const duplicateNicknameMessage =
+    nicknameError?.nickname === trimmedNickname ? nicknameError.message : null;
   const isNicknameValid =
     trimmedNickname.length >= 2 && trimmedNickname.length <= 10;
   const isFormValid =
@@ -57,7 +65,9 @@ function ProfileSetupScreen() {
     favoriteTeam.length > 0 &&
     isTermsAgreed &&
     isPrivacyAgreed;
-  const showNicknameError = hasBlurredNickname && !isNicknameValid;
+  const showNicknameError =
+    Boolean(duplicateNicknameMessage) ||
+    (hasBlurredNickname && !isNicknameValid);
 
   const handleSelectTeam = (team: string) => {
     setFavoriteTeam(team);
@@ -80,6 +90,10 @@ function ProfileSetupScreen() {
 
       completeProfile(savedProfile);
     } catch (error) {
+      if (error instanceof NicknameAlreadyUsedError) {
+        setNicknameError({ nickname: trimmedNickname, message: error.message });
+        return;
+      }
       console.error('프로필 저장에 실패했습니다.', error);
 
       Alert.alert('프로필을 저장하지 못했어요', '잠시 후 다시 시도해 주세요.');
@@ -120,7 +134,10 @@ function ProfileSetupScreen() {
                 <TextInput
                   allowFontScaling={false}
                   value={nickname}
-                  onChangeText={setNickname}
+                  onChangeText={value => {
+                    setNickname(value);
+                    setNicknameError(null);
+                  }}
                   onBlur={() => setHasBlurredNickname(true)}
                   style={styles.nicknameInput}
                   placeholder="닉네임을 입력해 주세요"
@@ -138,14 +155,16 @@ function ProfileSetupScreen() {
               </View>
 
               <AppText
+                accessibilityLiveRegion="polite"
                 style={[
                   styles.helperText,
                   showNicknameError && styles.errorText,
                 ]}
               >
-                {showNicknameError
-                  ? '닉네임을 2자 이상 입력해 주세요'
-                  : '2~10자로 입력해 주세요'}
+                {duplicateNicknameMessage ??
+                  (showNicknameError
+                    ? '닉네임을 2자 이상 입력해 주세요'
+                    : '2~10자로 입력해 주세요')}
               </AppText>
             </View>
 
@@ -336,7 +355,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   inputContainerError: {
-    borderColor: '#D64545',
+    borderColor: colors.error,
   },
   nicknameInput: {
     padding: 0,
@@ -351,7 +370,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   errorText: {
-    color: '#D64545',
+    color: colors.error,
   },
   teamButton: {
     height: 56,

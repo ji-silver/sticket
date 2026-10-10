@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabase';
+import { NicknameAlreadyUsedError } from './profile.errors';
 import { AttendanceSummary } from './types';
 
 interface SaveProfileParams {
@@ -236,6 +237,14 @@ export async function saveProfile({
     .single();
 
   if (profileError) {
+    // 본인 ID는 upsert로 갱신된다. 닉네임 고유 제약 위반만 사용자에게 안내한다.
+    // DB 검사는 다른 사용자의 프로필을 공개하지 않으며 동시 저장도 거절한다.
+    if (
+      profileError.code === '23505' &&
+      profileError.message.includes('"profiles_nickname_unique"')
+    ) {
+      throw new NicknameAlreadyUsedError();
+    }
     throw profileError;
   }
 

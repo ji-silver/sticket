@@ -17,6 +17,7 @@ import AppText from '../../components/common/AppText.tsx';
 import ScreenHeader from '../../components/common/ScreenHeader.tsx';
 import { useAuth } from '../../features/auth/AuthProvider.tsx';
 import { useUpdateProfile } from '../../features/profile/api/useUpdateProfile.ts';
+import { NicknameAlreadyUsedError } from '../../features/profile/profile.errors.ts';
 import { getTodayInKorea } from '../../lib/date.ts';
 import { colors } from '../../styles/colors.ts';
 import { fonts } from '../../styles/fonts.ts';
@@ -26,6 +27,10 @@ function ProfileEditScreen() {
   const navigation = useNavigation();
   const { profile, completeProfile } = useAuth();
   const [nickname, setNickname] = useState(profile?.nickname ?? '');
+  const [nicknameError, setNicknameError] = useState<{
+    nickname: string;
+    message: string;
+  } | null>(null);
   const [favoriteTeam, setFavoriteTeam] = useState(
     profile?.favorite_team?.name ?? '',
   );
@@ -39,6 +44,8 @@ function ProfileEditScreen() {
   const [isTeamSheetOpen, setIsTeamSheetOpen] = useState(false);
 
   const trimmedNickname = nickname.trim();
+  const duplicateNicknameMessage =
+    nicknameError?.nickname === trimmedNickname ? nicknameError.message : null;
   const isNicknameValid =
     trimmedNickname.length >= 2 && trimmedNickname.length <= 10;
   const isFormValid = isNicknameValid && favoriteTeam.length > 0;
@@ -76,6 +83,13 @@ function ProfileEditScreen() {
           navigation.goBack();
         },
         onError: error => {
+          if (error instanceof NicknameAlreadyUsedError) {
+            setNicknameError({
+              nickname: trimmedNickname,
+              message: error.message,
+            });
+            return;
+          }
           console.error('프로필 수정에 실패했습니다.', error);
           Alert.alert(
             '프로필을 수정하지 못했어요',
@@ -103,11 +117,19 @@ function ProfileEditScreen() {
           <View style={styles.section}>
             <AppText style={styles.sectionTitle}>닉네임</AppText>
 
-            <View style={styles.inputCard}>
+            <View
+              style={[
+                styles.inputCard,
+                duplicateNicknameMessage !== null && styles.inputCardError,
+              ]}
+            >
               <TextInput
                 allowFontScaling={false}
                 value={nickname}
-                onChangeText={setNickname}
+                onChangeText={value => {
+                  setNickname(value);
+                  setNicknameError(null);
+                }}
                 style={styles.textInput}
                 maxLength={10}
                 selectionColor={colors.primary}
@@ -120,6 +142,14 @@ function ProfileEditScreen() {
                 accessibilityLabel="닉네임"
               />
             </View>
+            {duplicateNicknameMessage !== null ? (
+              <AppText
+                style={[styles.helperText, styles.errorText]}
+                accessibilityLiveRegion="polite"
+              >
+                {duplicateNicknameMessage}
+              </AppText>
+            ) : null}
           </View>
 
           <View style={styles.section}>
@@ -272,6 +302,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: fonts.regular,
     color: colors.text,
+  },
+  inputCardError: {
+    borderColor: colors.error,
+  },
+  errorText: {
+    color: colors.error,
   },
   optionalLabel: {
     fontSize: 13,
