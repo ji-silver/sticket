@@ -9,7 +9,7 @@ export function useUpdateTicketBook() {
       ticketBookId: string;
       coverPattern: TicketBookCoverPattern;
       coverColor: string;
-      coverImageBase64?: string;
+      coverImageBase64?: string | null;
     }) => updateTicketBook(params),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ticketBooks'] });

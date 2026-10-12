@@ -39,11 +39,51 @@ describe('AddDiaryScreen (티켓북 폼 비즈니스 로직 검증)', () => {
 
       await render(<AddDiaryScreen />);
 
-      const photoButton = screen.getByText('이미지 추가');
+      const photoButton = screen.getByRole('button', { name: '사진 추가' });
       await user.press(photoButton);
 
       await waitFor(() => {
-        expect(screen.getByText('이미지 변경')).toBeVisible();
+        expect(screen.getByRole('button', { name: '사진 변경' })).toBeVisible();
+      });
+    });
+
+    it('미리보기의 포토카드 영역에서도 사진을 선택할 수 있다', async () => {
+      const user = userEvent.setup();
+      (ImagePicker.openPicker as jest.Mock).mockResolvedValueOnce({
+        path: 'test-uri',
+        data: 'base64-string',
+      });
+
+      await render(<AddDiaryScreen />);
+      await user.press(
+        screen.getByRole('button', { name: '포토카드 사진 추가' }),
+      );
+
+      expect(
+        await screen.findByRole('button', { name: '사진 제거' }),
+      ).toBeVisible();
+    });
+
+    it('선택한 사진을 제거하면 사진 없이 새 티켓북을 만든다', async () => {
+      const user = userEvent.setup();
+      (ImagePicker.openPicker as jest.Mock).mockResolvedValueOnce({
+        path: 'test-uri',
+        data: 'base64-string',
+      });
+      (createTicketBook as jest.Mock).mockResolvedValueOnce({});
+
+      await render(<AddDiaryScreen />);
+      await user.press(screen.getByRole('button', { name: '사진 추가' }));
+      await user.press(
+        await screen.findByRole('button', { name: '사진 제거' }),
+      );
+      await user.press(screen.getByRole('button', { name: '티켓북 만들기' }));
+
+      expect(createTicketBook).toHaveBeenCalledWith({
+        sport: 'baseball',
+        coverColor: '#DF9EAF',
+        coverPattern: 'solid',
+        coverImageBase64: undefined,
       });
     });
 
@@ -55,26 +95,47 @@ describe('AddDiaryScreen (티켓북 폼 비즈니스 로직 검증)', () => {
 
       await render(<AddDiaryScreen />);
 
-      const photoButton = screen.getByText('이미지 추가');
+      const photoButton = screen.getByRole('button', { name: '사진 추가' });
       await user.press(photoButton);
 
       expect(Alert.alert).not.toHaveBeenCalled();
     });
 
-    it('축구를 선택하면 준비중 안내를 표시하고 티켓북 생성을 막는다', async () => {
+    it('야구 생성 화면에는 지원 전 종목을 선택하는 버튼이 없다', async () => {
       const user = userEvent.setup();
       await render(<AddDiaryScreen />);
 
-      expect(screen.getByRole('button', { name: '야구' })).toBeEnabled();
-      expect(screen.getByRole('button', { name: '축구' })).toBeEnabled();
-      await user.press(screen.getByRole('button', { name: '축구' }));
-
-      expect(screen.getByText('축구 티켓북은 준비중이에요')).toBeVisible();
-      expect(screen.queryByText('농구')).toBeNull();
-      expect(screen.queryByText('배구')).toBeNull();
+      expect(screen.queryByRole('button', { name: /축구/ })).toBeNull();
+      expect(screen.queryByRole('button', { name: /농구/ })).toBeNull();
+      expect(screen.queryByRole('button', { name: /배구/ })).toBeNull();
+      expect(screen.getByRole('header', { name: '새 티켓북' })).toBeVisible();
+      expect(screen.getByText('종목')).toBeVisible();
+      const baseballButton = screen.getByRole('button', { name: '야구' });
+      await user.press(baseballButton);
+      expect(baseballButton).toBeSelected();
       expect(
         screen.getByRole('button', { name: '티켓북 만들기' }),
-      ).toBeDisabled();
+      ).toBeEnabled();
+    });
+
+    it('표지 색상과 패턴을 선택하면 선택한 값으로 티켓북을 만든다', async () => {
+      const user = userEvent.setup();
+      (createTicketBook as jest.Mock).mockResolvedValueOnce({});
+      await render(<AddDiaryScreen />);
+
+      const stripeButton = screen.getByRole('button', {
+        name: '흰색 스트라이프 표지',
+      });
+      await user.press(stripeButton);
+      expect(stripeButton).toBeSelected();
+      await user.press(screen.getByRole('button', { name: '티켓북 만들기' }));
+
+      expect(createTicketBook).toHaveBeenCalledWith({
+        sport: 'baseball',
+        coverColor: '#F8F8F8',
+        coverPattern: 'stripe',
+        coverImageBase64: undefined,
+      });
     });
   });
 
@@ -162,6 +223,23 @@ describe('AddDiaryScreen (티켓북 폼 비즈니스 로직 검증)', () => {
           coverImageBase64: undefined,
         });
         expect(mockGoBack).toHaveBeenCalled();
+      });
+
+      it('기존 포토카드를 제거하고 저장하면 사진 삭제 의도를 전달한다', async () => {
+        const user = userEvent.setup();
+        (updateTicketBook as jest.Mock).mockResolvedValueOnce({});
+        await render(<AddDiaryScreen />);
+
+        await user.press(screen.getByRole('button', { name: '사진 제거' }));
+        expect(screen.getByRole('button', { name: '사진 추가' })).toBeVisible();
+        await user.press(screen.getByRole('button', { name: '수정하기' }));
+
+        expect(updateTicketBook).toHaveBeenCalledWith({
+          ticketBookId: 99,
+          coverColor: '#DF9EAF',
+          coverPattern: 'solid',
+          coverImageBase64: null,
+        });
       });
     });
   });

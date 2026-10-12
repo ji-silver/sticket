@@ -7,7 +7,92 @@ jest.mock('../../lib/supabase.ts', () => ({
 }));
 
 import { supabase } from '../../lib/supabase.ts';
-import { deleteTicketBook } from './ticketBook.service.ts';
+import { deleteTicketBook, updateTicketBook } from './ticketBook.service.ts';
+
+describe('updateTicketBook 포토카드 제거', () => {
+  const update = jest.fn();
+  const readSingle = jest.fn();
+  const updateSingle = jest.fn();
+  const remove = jest.fn();
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (supabase.auth.getUser as jest.Mock).mockResolvedValue({
+      data: { user: { id: 'user-1' } },
+      error: null,
+    });
+    readSingle.mockResolvedValue({
+      data: { cover_photo_path: 'user-1/book-1/cover.jpg' },
+      error: null,
+    });
+    updateSingle.mockResolvedValue({
+      data: { id: 'book-1', cover_photo_path: null },
+      error: null,
+    });
+    remove.mockResolvedValue({ error: null });
+    const readQuery = { eq: jest.fn(), single: readSingle };
+    readQuery.eq.mockReturnValue(readQuery);
+    const updateQuery = { eq: jest.fn(), select: jest.fn() };
+    updateQuery.eq.mockReturnValue(updateQuery);
+    updateQuery.select.mockReturnValue({ single: updateSingle });
+    update.mockReturnValue(updateQuery);
+    (supabase.from as jest.Mock).mockReturnValue({
+      select: jest.fn().mockReturnValue(readQuery),
+      update,
+    });
+    (supabase.storage.from as jest.Mock).mockReturnValue({ remove });
+  });
+
+  it('사진 제거를 명시하면 표지 연결을 비우고 저장 후 파일을 정리한다', async () => {
+    await updateTicketBook({
+      ticketBookId: 'book-1',
+      coverColor: '#DF9EAF',
+      coverPattern: 'solid',
+      coverImageBase64: null,
+    });
+
+    expect(update).toHaveBeenCalledWith({
+      cover_color: '#DF9EAF',
+      cover_pattern: 'solid',
+      cover_photo_path: null,
+    });
+    expect(remove).toHaveBeenCalledWith(['user-1/book-1/cover.jpg']);
+    expect(updateSingle.mock.invocationCallOrder[0]).toBeLessThan(
+      remove.mock.invocationCallOrder[0],
+    );
+  });
+
+  it('표지만 바꾸면 기존 사진의 연결과 파일을 유지한다', async () => {
+    await updateTicketBook({
+      ticketBookId: 'book-1',
+      coverColor: '#8DB7E4',
+      coverPattern: 'solid',
+    });
+
+    expect(update).toHaveBeenCalledWith({
+      cover_color: '#8DB7E4',
+      cover_pattern: 'solid',
+    });
+    expect(readSingle).not.toHaveBeenCalled();
+    expect(remove).not.toHaveBeenCalled();
+  });
+
+  it('사진 제거를 저장하지 못하면 기존 파일은 삭제하지 않는다', async () => {
+    const error = new Error('update failed');
+    updateSingle.mockResolvedValueOnce({ data: null, error });
+
+    await expect(
+      updateTicketBook({
+        ticketBookId: 'book-1',
+        coverColor: '#DF9EAF',
+        coverPattern: 'solid',
+        coverImageBase64: null,
+      }),
+    ).rejects.toBe(error);
+
+    expect(remove).not.toHaveBeenCalled();
+  });
+});
 
 describe('deleteTicketBook', () => {
   beforeEach(() => {

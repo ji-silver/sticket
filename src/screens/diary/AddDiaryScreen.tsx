@@ -3,6 +3,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/core';
 import DiaryCover from '../../components/DiaryCover.tsx';
 import { useState } from 'react';
+import { ChevronRight, ImagePlus, Plus } from 'lucide-react-native';
 import ImagePicker from 'react-native-image-crop-picker';
 import { fonts } from '../../styles/fonts.ts';
 import AppButton from '../../components/common/AppButton.tsx';
@@ -15,19 +16,18 @@ import type { RouteProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../../navigation/RootStackNavigator.tsx';
 import { useCreateTicketBook } from '../../features/ticket-book/api/useCreateTicketBook.ts';
 import { useUpdateTicketBook } from '../../features/ticket-book/api/useUpdateTicketBook.ts';
+import type { TicketBookSport } from '../../features/ticket-book/types.ts';
 
-type SportId = 'baseball' | 'soccer';
-
-interface SportOption {
-  id: SportId;
-  label: string;
-  isReady: boolean;
-}
+// 서버에서 생성이 지원되는 종목만 선택지로 제공한다.
+const SPORT_OPTIONS: { id: TicketBookSport; label: string }[] = [
+  { id: 'baseball', label: '야구' },
+];
 
 type CoverColorType = 'solid' | 'stripe';
 
 interface CoverColorOption {
   id: string;
+  label: string;
   color: string;
   type: CoverColorType;
 }
@@ -37,71 +37,70 @@ interface SelectedCoverPhoto {
   base64?: string;
 }
 
-const SPORTS: SportOption[] = [
-  {
-    id: 'baseball',
-    label: '야구',
-    isReady: true,
-  },
-  {
-    id: 'soccer',
-    label: '축구',
-    isReady: false,
-  },
-];
-
 const COVER_COLORS: CoverColorOption[] = [
   {
     id: 'kiwoom-wine',
+    label: '로즈',
     type: 'solid',
     color: '#DF9EAF',
   },
   {
     id: 'white-black-stripe',
+    label: '흰색 스트라이프',
     type: 'stripe',
     color: '#F8F8F8',
   },
   {
     id: 'giants-orange',
+    label: '오렌지',
     type: 'solid',
     color: '#F4A06E',
   },
   {
     id: 'lions-blue',
+    label: '하늘색',
     type: 'solid',
     color: '#8DB7E4',
   },
   {
     id: 'dinos-blue',
+    label: '블루그레이',
     type: 'solid',
     color: '#9EB2D0',
   },
   {
     id: 'soft-black',
+    label: '그레이',
     type: 'solid',
     color: '#9B9B9B',
   },
   {
     id: 'navy',
+    label: '슬레이트 블루',
     type: 'solid',
     color: '#96A8C2',
   },
   {
     id: 'tigers-red',
+    label: '핑크',
     type: 'solid',
     color: '#EC8F9F',
   },
   {
     id: 'eagles-navy',
+    label: '라벤더',
     type: 'solid',
     color: '#9D9AC4',
   },
   {
     id: 'twins-burgundy',
+    label: '버건디',
     type: 'solid',
     color: '#BE8D9D',
   },
 ];
+
+const PREVIEW_SIZE = 178;
 
 function AddDiaryScreen() {
   const navigation =
@@ -110,9 +109,9 @@ function AddDiaryScreen() {
   const ticketBook = route.params?.ticketBook;
   const isEditing = ticketBook !== undefined;
 
-  const [selectedSportId, setSelectedSportId] = useState<SportId>(
-    ticketBook?.sport === 'soccer' ? 'soccer' : 'baseball',
-  );
+  const [selectedSport, setSelectedSport] =
+    useState<TicketBookSport>('baseball');
+
   const [selectedCoverColorId, setSelectedCoverColorId] = useState(
     COVER_COLORS.find(
       option =>
@@ -124,8 +123,8 @@ function AddDiaryScreen() {
     ticketBook?.photoUri ? { uri: ticketBook.photoUri } : null,
   );
 
-  const selectedSport = SPORTS.find(sport => sport.id === selectedSportId);
-  const isSelectedSportReady = selectedSport?.isReady ?? false;
+  // 생성은 야구만 지원하며 다른 종목의 기존 데이터를 야구 규칙으로 수정하지 않는다.
+  const isSupportedSport = !ticketBook || ticketBook.sport === 'baseball';
   const selectedCoverColor =
     COVER_COLORS.find(color => color.id === selectedCoverColorId) ??
     COVER_COLORS[0];
@@ -173,7 +172,7 @@ function AddDiaryScreen() {
     createTicketBookMutation.isPending || updateTicketBookMutation.isPending;
 
   const handleSaveTicketBook = async () => {
-    if (!isSelectedSportReady || isSavingTicketBook) {
+    if (!isSupportedSport || isSavingTicketBook) {
       return;
     }
 
@@ -183,11 +182,14 @@ function AddDiaryScreen() {
           ticketBookId: ticketBook.id,
           coverColor: selectedCoverColor.color,
           coverPattern: selectedCoverColor.type,
-          coverImageBase64: coverPhoto?.base64,
+          // 기존 사진을 건드리지 않으면 유지하고, 제거한 경우에만 null을 보낸다.
+          coverImageBase64:
+            coverPhoto?.base64 ??
+            (ticketBook.photoUri && !coverPhoto ? null : undefined),
         });
       } else {
         await createTicketBookMutation.mutateAsync({
-          sport: 'baseball',
+          sport: selectedSport,
           coverColor: selectedCoverColor.color,
           coverPattern: selectedCoverColor.type,
           coverImageBase64: coverPhoto?.base64,
@@ -228,91 +230,137 @@ function AddDiaryScreen() {
       />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.previewSection}>
-          <DiaryCover
-            size={178}
-            coverColor={selectedCoverColor.color}
-            coverPattern={selectedCoverColor.type}
-            photoUri={coverPhoto?.uri}
-          />
-        </View>
-
-        <View style={styles.formSection}>
-          <AppText style={styles.sectionTitle}>스포츠</AppText>
-          <View style={styles.sportList}>
-            {SPORTS.map(sport => (
-              <FilterChip
-                key={sport.id}
-                label={sport.label}
-                selected={selectedSportId === sport.id}
-                onPress={() => setSelectedSportId(sport.id)}
-              />
-            ))}
+        {isSupportedSport && (
+          <View style={styles.sportSection}>
+            <AppText style={styles.sectionTitle}>종목</AppText>
+            <View style={styles.sportOptions}>
+              {SPORT_OPTIONS.map(sport => (
+                <FilterChip
+                  key={sport.id}
+                  label={sport.label}
+                  selected={selectedSport === sport.id}
+                  onPress={() => setSelectedSport(sport.id)}
+                />
+              ))}
+            </View>
           </View>
-        </View>
-
-        {isSelectedSportReady ? (
+        )}
+        {isSupportedSport ? (
           <>
             <View style={styles.formSection}>
-              <AppText style={styles.sectionTitle}>표지 색상</AppText>
+              <View style={styles.sectionHeader}>
+                <AppText style={styles.sectionTitle}>표지</AppText>
+              </View>
+
+              <View style={styles.previewSection}>
+                <View>
+                  <DiaryCover
+                    size={PREVIEW_SIZE}
+                    coverColor={selectedCoverColor.color}
+                    coverPattern={selectedCoverColor.type}
+                    photoUri={coverPhoto?.uri}
+                  />
+                  <Pressable
+                    style={styles.previewPhotoButton}
+                    onPress={handlePressSelectPhoto}
+                    disabled={isSavingTicketBook}
+                    accessibilityRole="button"
+                    accessibilityLabel={`포토카드 사진 ${
+                      coverPhoto ? '변경' : '추가'
+                    }`}
+                    accessibilityState={{ disabled: isSavingTicketBook }}
+                  >
+                    {!coverPhoto && (
+                      <Plus size={18} color={colors.textSecondary} />
+                    )}
+                  </Pressable>
+                </View>
+              </View>
 
               <View style={styles.colorGrid}>
                 {COVER_COLORS.map(colorOption => {
                   const isSelected = selectedCoverColorId === colorOption.id;
 
                   return (
-                    <Pressable
-                      key={colorOption.id}
-                      style={[
-                        styles.colorSwatchButton,
-                        isSelected && styles.colorSwatchButtonSelected,
-                      ]}
-                      onPress={() => setSelectedCoverColorId(colorOption.id)}
-                      hitSlop={8}
-                    >
-                      <View
+                    <View key={colorOption.id} style={styles.colorCell}>
+                      <Pressable
                         style={[
-                          styles.colorSwatch,
-                          { backgroundColor: colorOption.color },
+                          styles.colorSwatchButton,
+                          isSelected && styles.colorSwatchButtonSelected,
                         ]}
+                        onPress={() => setSelectedCoverColorId(colorOption.id)}
+                        disabled={isSavingTicketBook}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${colorOption.label} 표지`}
+                        accessibilityState={{
+                          selected: isSelected,
+                          disabled: isSavingTicketBook,
+                        }}
                       >
-                        {colorOption.type === 'stripe' && (
-                          <>
-                            {[3, 8, 13, 18, 23, 28].map(left => (
-                              <View
-                                key={`stripe-${left}`}
-                                style={[styles.stripeLine, { left }]}
-                              />
-                            ))}
-                          </>
-                        )}
-                      </View>
-                    </Pressable>
+                        <View
+                          style={[
+                            styles.colorSwatch,
+                            { backgroundColor: colorOption.color },
+                          ]}
+                        >
+                          {colorOption.type === 'stripe' && (
+                            <>
+                              {[3, 8, 13, 18, 23, 28].map(left => (
+                                <View
+                                  key={`stripe-${left}`}
+                                  style={[styles.stripeLine, { left }]}
+                                />
+                              ))}
+                            </>
+                          )}
+                        </View>
+                      </Pressable>
+                    </View>
                   );
                 })}
               </View>
             </View>
 
             <View style={styles.formSection}>
-              <AppText style={styles.sectionTitle}>포토카드</AppText>
+              <View style={styles.sectionHeader}>
+                <AppText style={styles.sectionTitle}>포토카드</AppText>
+                <AppText style={styles.photoCardOptionalText}>선택사항</AppText>
+              </View>
 
-              <Pressable
-                onPress={handlePressSelectPhoto}
-                style={styles.photoCardRow}
-              >
-                <AppText style={styles.photoCardText}>
-                  {coverPhoto ? '이미지 변경' : '이미지 추가'}
-                </AppText>
-                <AppText style={styles.photoCardOptionalText}>
-                  {coverPhoto ? '선택됨' : '선택사항'}
-                </AppText>
-              </Pressable>
+              <View style={styles.photoCardRow}>
+                <Pressable
+                  onPress={handlePressSelectPhoto}
+                  style={styles.photoCardButton}
+                  disabled={isSavingTicketBook}
+                  accessibilityRole="button"
+                  accessibilityLabel={coverPhoto ? '사진 변경' : '사진 추가'}
+                  accessibilityState={{ disabled: isSavingTicketBook }}
+                >
+                  <ImagePlus size={20} color={colors.textSecondary} />
+                  <AppText style={styles.photoCardText}>
+                    {coverPhoto ? '사진 변경' : '사진 추가'}
+                  </AppText>
+                  <ChevronRight size={18} color={colors.textSecondary} />
+                </Pressable>
+                {coverPhoto && (
+                  <Pressable
+                    onPress={() => setCoverPhoto(null)}
+                    style={styles.removePhotoButton}
+                    disabled={isSavingTicketBook}
+                    accessibilityRole="button"
+                    accessibilityLabel="사진 제거"
+                    accessibilityState={{ disabled: isSavingTicketBook }}
+                  >
+                    <AppText style={styles.removePhotoText}>제거</AppText>
+                  </Pressable>
+                )}
+              </View>
             </View>
           </>
         ) : (
-          <View style={styles.readySoonBox}>
+          <View style={styles.formSection}>
             <AppText style={styles.readySoonTitle}>
-              {selectedSport?.label} 티켓북은 준비중이에요
+              이 종목의 티켓북은 아직 수정할 수 없어요
             </AppText>
           </View>
         )}
@@ -322,9 +370,9 @@ function AddDiaryScreen() {
         <AppButton
           style={[
             styles.createButton,
-            !isSelectedSportReady && styles.createButtonDisabled,
+            !isSupportedSport && styles.createButtonDisabled,
           ]}
-          disabled={!isSelectedSportReady || isSavingTicketBook}
+          disabled={!isSupportedSport || isSavingTicketBook}
           isLoading={isSavingTicketBook}
           onPress={handleSaveTicketBook}
           accessibilityRole="button"
@@ -336,13 +384,13 @@ function AddDiaryScreen() {
               : '티켓북 만들기'
           }
           accessibilityState={{
-            disabled: !isSelectedSportReady || isSavingTicketBook,
+            disabled: !isSupportedSport || isSavingTicketBook,
           }}
         >
           <AppText
             style={[
               styles.createButtonText,
-              !isSelectedSportReady && styles.createButtonTextDisabled,
+              !isSupportedSport && styles.createButtonTextDisabled,
             ]}
           >
             {isEditing ? '수정하기' : '티켓북 만들기'}
@@ -365,40 +413,69 @@ const styles = StyleSheet.create({
   },
 
   previewSection: {
-    paddingTop: 20,
+    paddingTop: 8,
+    paddingBottom: 16,
     alignItems: 'center',
+  },
+  previewPhotoButton: {
+    // DiaryCover의 포토카드 슬롯 위치와 크기에 맞춰 사진 추가 진입점을 겹친다.
+    position: 'absolute',
+    left: PREVIEW_SIZE * 0.398,
+    top: PREVIEW_SIZE * 0.584,
+    width: PREVIEW_SIZE * 0.256,
+    height: PREVIEW_SIZE * 0.38,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sportSection: {
+    minHeight: 52,
+    paddingTop: 12,
+    paddingHorizontal: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 16,
+  },
+  sportOptions: {
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-end',
+    gap: 8,
   },
 
   formSection: {
-    marginTop: 28,
+    marginTop: 24,
     paddingHorizontal: 24,
   },
   sectionTitle: {
-    marginBottom: 12,
-    fontSize: 16,
-    fontFamily: fonts.bold,
-    fontWeight: '700',
+    fontSize: 14,
+    fontFamily: fonts.medium,
     color: colors.text,
   },
-  sportList: {
+  sectionHeader: {
+    marginBottom: 12,
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
 
   colorGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    columnGap: 14,
-    rowGap: 16,
+    rowGap: 8,
+  },
+  colorCell: {
+    width: '20%',
+    alignItems: 'center',
   },
   colorSwatchButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     borderWidth: 1,
-    borderColor: '#E7E7E7',
-    backgroundColor: '#FFFFFF',
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -424,45 +501,40 @@ const styles = StyleSheet.create({
   },
 
   photoCardRow: {
-    height: 52,
-    paddingHorizontal: 16,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#E7E7E7',
-    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderColor: colors.border,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+  },
+  photoCardButton: {
+    flex: 1,
+    minHeight: 52,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   photoCardText: {
+    flex: 1,
     fontSize: 14,
-    fontFamily: fonts.bold,
-    fontWeight: '700',
-    color: '#222222',
+    color: colors.text,
   },
   photoCardOptionalText: {
     fontSize: 12,
-    fontFamily: fonts.bold,
-    fontWeight: '700',
-    color: '#A0A0A0',
+    color: colors.textSecondary,
   },
-  readySoonBox: {
-    marginTop: 28,
-    marginHorizontal: 24,
-    minHeight: 124,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#EEEEEE',
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
+  removePhotoButton: {
+    minHeight: 52,
+    paddingLeft: 20,
+    paddingRight: 4,
     justifyContent: 'center',
-    paddingHorizontal: 20,
+  },
+  removePhotoText: {
+    fontSize: 14,
+    color: colors.textSecondary,
   },
   readySoonTitle: {
     fontSize: 15,
-    fontFamily: fonts.bold,
-    fontWeight: '700',
-    color: '#777777',
+    color: colors.textSecondary,
     textAlign: 'center',
   },
 
@@ -471,8 +543,8 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 8,
     borderTopWidth: 1,
-    borderTopColor: '#F1F1F1',
-    backgroundColor: '#FFFFFF',
+    borderTopColor: colors.border,
+    backgroundColor: colors.surface,
   },
   createButton: {
     height: 54,
@@ -481,7 +553,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   createButtonDisabled: {
-    backgroundColor: '#E8E8E8',
+    backgroundColor: colors.disabled,
   },
   createButtonText: {
     fontSize: 16,
@@ -490,6 +562,6 @@ const styles = StyleSheet.create({
     color: colors.onPrimary,
   },
   createButtonTextDisabled: {
-    color: '#AAAAAA',
+    color: colors.textSecondary,
   },
 });

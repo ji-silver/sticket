@@ -21,7 +21,8 @@ interface UpdateTicketBookParams {
   ticketBookId: string;
   coverColor: string;
   coverPattern: TicketBookCoverPattern;
-  coverImageBase64?: string;
+  // undefined는 기존 사진 유지, null은 사진 제거, 문자열은 새 사진으로 교체한다.
+  coverImageBase64?: string | null;
 }
 
 interface UploadTicketBookCoverParams {
@@ -206,20 +207,37 @@ export async function updateTicketBook({
   coverImageBase64,
 }: UpdateTicketBookParams) {
   const user = await getAuthenticatedUser();
-  const coverPhotoPath = coverImageBase64
-    ? await uploadTicketBookCover({
-        userId: user.id,
-        ticketBookId,
-        base64: coverImageBase64,
-      })
-    : undefined;
+  let previousCoverPath: string | null = null;
+  if (coverImageBase64 === null) {
+    const { data: currentBook, error: readError } = await supabase
+      .from('ticket_books')
+      .select('cover_photo_path')
+      .eq('id', ticketBookId)
+      .eq('user_id', user.id)
+      .single();
+    if (readError) throw readError;
+    previousCoverPath = currentBook.cover_photo_path;
+  }
+
+  const coverPhotoPath =
+    coverImageBase64 === null
+      ? null
+      : coverImageBase64
+      ? await uploadTicketBookCover({
+          userId: user.id,
+          ticketBookId,
+          base64: coverImageBase64,
+        })
+      : undefined;
 
   const { data, error } = await supabase
     .from('ticket_books')
     .update({
       cover_color: coverColor,
       cover_pattern: coverPattern,
-      ...(coverPhotoPath ? { cover_photo_path: coverPhotoPath } : {}),
+      ...(coverPhotoPath !== undefined
+        ? { cover_photo_path: coverPhotoPath }
+        : {}),
     })
     .eq('id', ticketBookId)
     .eq('user_id', user.id)
@@ -228,6 +246,19 @@ export async function updateTicketBook({
 
   if (error) {
     throw error;
+  }
+
+  // DB 저장 실패 시 사진을 잃지 않도록 연결 해제 후 파일을 정리한다.
+  // 파일 정리 실패는 저장 성공을 되돌리지 않으며 다음 업로드가 같은 경로를 덮어쓴다.
+  if (previousCoverPath) {
+    try {
+      const { error: removeError } = await supabase.storage
+        .from(COVER_BUCKET)
+        .remove([previousCoverPath]);
+      if (removeError) throw removeError;
+    } catch (removeError) {
+      console.error('제거한 포토카드 파일을 정리하지 못했습니다.', removeError);
+    }
   }
 
   return data;
