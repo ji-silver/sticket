@@ -171,15 +171,39 @@ describe('HomeScreen', () => {
       await waitFor(() => {
         expect(screen.getByText('야구장 가서 치킨 먹기')).toBeVisible();
       });
+      expect(screen.getByText('내 티켓북')).toBeVisible();
+      expect(
+        screen.queryByRole('button', { name: '티켓북 만들기' }),
+      ).toBeNull();
       expect(screen.queryByText('다이어리 추가')).toBeNull();
     });
 
-    it('티켓북 데이터가 비어있을 경우 빈 상태에 맞게 화면을 처리한다', async () => {
+    it('티켓북이 없으면 목록 제목 대신 생성 안내와 만들기 버튼을 표시한다', async () => {
       await render(<HomeScreen />);
 
-      await waitFor(() => {
-        expect(screen.queryByText('다이어리 추가')).toBeNull();
+      expect(screen.queryByText('내 티켓북')).toBeNull();
+      expect(
+        screen.getByText(
+          '티켓북을 만든 뒤\n직관한 경기 티켓을 추가할 수 있어요.',
+        ),
+      ).toBeVisible();
+      expect(
+        screen.getByRole('button', { name: '티켓북 만들기' }),
+      ).toBeVisible();
+    });
+
+    it('티켓북을 불러오는 동안에는 생성 버튼을 표시하지 않는다', async () => {
+      (useGetTicketBooks as jest.Mock).mockReturnValue({
+        data: [],
+        isLoading: true,
+        isError: false,
       });
+
+      await render(<HomeScreen />);
+
+      expect(
+        screen.queryByRole('button', { name: '티켓북 만들기' }),
+      ).toBeNull();
     });
 
     it('데이터 로딩 중 서버 통신 에러가 발생하면 안내 팝업을 띄운다', async () => {

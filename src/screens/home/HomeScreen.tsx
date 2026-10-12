@@ -78,6 +78,7 @@ function HomeScreen() {
   });
 
   const selectedDiary = diaryList[selectedDiaryIndex];
+  const isEmptyHome = !isLoadingTicketBooks && diaryList.length === 0;
   const selectedBuckets = selectedDiary
     ? bucketsByDiaryId[selectedDiary.id] ?? []
     : [];
@@ -219,8 +220,12 @@ function HomeScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        // 플로팅 바 뒤로 스크롤하되 마지막 항목은 바 위까지 올릴 수 있게 한다.
-        contentContainerStyle={{ paddingBottom: tabBarHeight + 24 }}
+        // 빈 상태도 탭 바를 제외한 높이를 채워 안내가 화면 위쪽에 몰리지 않게 한다.
+        // 내용이 길어지면 기존처럼 스크롤하여 마지막 항목을 바 위로 올릴 수 있다.
+        contentContainerStyle={[
+          isEmptyHome && styles.emptyContent,
+          { paddingBottom: tabBarHeight + 24 },
+        ]}
       >
         <View style={styles.header}>
           <View style={styles.headerRow}>
@@ -244,7 +249,7 @@ function HomeScreen() {
             </Pressable>
           </View>
 
-          <View style={styles.headerDivider} />
+          {!isEmptyHome && <View style={styles.headerDivider} />}
         </View>
 
         <DiarySection
@@ -327,6 +332,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.surface,
+  },
+  emptyContent: {
+    flexGrow: 1,
   },
   header: {
     paddingHorizontal: 24,

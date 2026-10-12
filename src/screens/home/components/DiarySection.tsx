@@ -37,6 +37,7 @@ function DiarySection({
   onPressDiary,
 }: DiarySectionProps) {
   const hasDiaries = diaries.length > 0;
+  const isEmpty = !isLoading && !hasDiaries;
   const { width } = useWindowDimensions();
   const menuButtonRef = useRef<View>(null);
 
@@ -53,11 +54,11 @@ function DiarySection({
   };
 
   return (
-    <View style={styles.ticketBookSection}>
-      <View style={styles.sectionHeader}>
-        <AppText style={styles.sectionTitle}>내 티켓북</AppText>
+    <View style={[styles.ticketBookSection, isEmpty && styles.emptySection]}>
+      {hasDiaries && (
+        <View style={styles.sectionHeader}>
+          <AppText style={styles.sectionTitle}>내 티켓북</AppText>
 
-        {hasDiaries && (
           <Pressable
             ref={menuButtonRef}
             style={styles.sectionMenuButton}
@@ -70,8 +71,8 @@ function DiarySection({
           >
             <MoreHorizontal size={22} color="#777777" strokeWidth={2.5} />
           </Pressable>
-        )}
-      </View>
+        </View>
+      )}
       {isLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator color={colors.primary} />
@@ -147,11 +148,12 @@ function DiaryCard({
 
 function EmptyDiaryState({ onPressAddDiary }: { onPressAddDiary: () => void }) {
   return (
-    <View style={styles.emptyDiaryCard}>
-      <DiaryCover coverColor="#F1F1F1" size={96} />
+    <View style={styles.emptyDiaryState}>
+      {/* 무채색 표지는 아직 만들어진 티켓북이 없다는 의미를 유지한다. */}
+      <DiaryCover coverColor="#F1F1F1" size={168} />
 
-      <AppText style={styles.emptyDiaryTitle}>
-        아직 만든 티켓북이 없어요
+      <AppText style={styles.emptyDiaryDescription}>
+        {'티켓북을 만든 뒤\n직관한 경기 티켓을 추가할 수 있어요.'}
       </AppText>
 
       <AppButton style={styles.emptyDiaryButton} onPress={onPressAddDiary}>
@@ -167,6 +169,13 @@ export default DiarySection;
 const styles = StyleSheet.create({
   ticketBookSection: {
     paddingTop: 24,
+  },
+  emptySection: {
+    // 작은 화면에서는 내용 높이를 유지해 만들기 버튼까지 스크롤할 수 있게 한다.
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingTop: 0,
+    paddingBottom: 32,
   },
   sectionHeader: {
     marginBottom: 16,
@@ -249,36 +258,30 @@ const styles = StyleSheet.create({
   pageDotActive: {
     width: 18,
   },
-  emptyDiaryCard: {
-    marginHorizontal: 24,
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: '#EEEEEE',
-    backgroundColor: colors.surface,
+  emptyDiaryState: {
+    marginHorizontal: 32,
     alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingTop: 28,
-    paddingBottom: 26,
+    paddingVertical: 24,
   },
-  emptyDiaryTitle: {
-    marginTop: 18,
-    fontSize: 16,
-    fontFamily: fonts.bold,
-    fontWeight: '700',
-    color: colors.text,
+  emptyDiaryDescription: {
+    marginTop: 24,
+    fontSize: 14,
+    lineHeight: 22,
+    color: colors.textSecondary,
     textAlign: 'center',
   },
   emptyDiaryButton: {
-    marginTop: 22,
-    height: 46,
-    paddingHorizontal: 18,
+    marginTop: 24,
+    height: 52,
+    paddingHorizontal: 22,
     backgroundColor: colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 6,
   },
   emptyDiaryButtonText: {
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: fonts.bold,
     fontWeight: '700',
     color: colors.onPrimary,
