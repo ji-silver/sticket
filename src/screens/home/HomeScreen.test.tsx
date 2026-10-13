@@ -4,6 +4,7 @@ import {
   screen,
   userEvent,
   waitFor,
+  within,
 } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import HomeScreen from './HomeScreen';
@@ -171,7 +172,7 @@ describe('HomeScreen', () => {
       await waitFor(() => {
         expect(screen.getByText('야구장 가서 치킨 먹기')).toBeVisible();
       });
-      expect(screen.getByText('내 티켓북')).toBeVisible();
+      expect(screen.getByText('야구')).toBeVisible();
       expect(
         screen.queryByRole('button', { name: '티켓북 만들기' }),
       ).toBeNull();
@@ -275,6 +276,84 @@ describe('HomeScreen', () => {
         '기록이 있는 티켓북은 삭제할 수 없어요.',
       );
       expect(mockDeleteTicketBookMutateAsync).not.toHaveBeenCalled();
+    });
+
+    it('티켓이 없는 홈에서도 추가 버튼 없이 티켓북을 열 수 있다', async () => {
+      const user = userEvent.setup();
+      (useGetTicketBooks as jest.Mock).mockReturnValue({
+        data: [
+          {
+            id: 'ticket-1',
+            sport: 'baseball',
+            recordCount: 0,
+            coverColor: '#DF9EAF',
+            coverPattern: 'solid',
+          },
+        ],
+        isLoading: false,
+        isError: false,
+      });
+      await render(<HomeScreen />);
+
+      expect(screen.getByText('티켓 0장')).toBeVisible();
+      expect(screen.queryByRole('button', { name: '티켓 추가' })).toBeNull();
+      await user.press(
+        screen.getByRole('button', { name: '야구 티켓 목록 보기' }),
+      );
+      expect(mockNavigate).toHaveBeenCalledWith('TicketList');
+    });
+
+    it('표지와 열기 안내를 하나의 열기 동선으로 제공한다', async () => {
+      const user = userEvent.setup();
+      (useGetTicketBooks as jest.Mock).mockReturnValue({
+        data: [
+          {
+            id: 'ticket-1',
+            sport: 'baseball',
+            recordCount: 3,
+            coverColor: '#DF9EAF',
+            coverPattern: 'solid',
+          },
+        ],
+        isLoading: false,
+        isError: false,
+      });
+      await render(<HomeScreen />);
+
+      expect(screen.getByText('티켓 3장')).toBeVisible();
+      expect(screen.getByText('열기')).toBeVisible();
+      expect(screen.queryByText('티켓 목록 보기')).toBeNull();
+      expect(
+        screen.queryByRole('button', { name: '야구 티켓북 열기' }),
+      ).toBeNull();
+      const openActions = screen.getAllByRole('button', {
+        name: '야구 티켓 목록 보기',
+      });
+      expect(openActions).toHaveLength(1);
+      expect(within(openActions[0]).getByText('열기')).toBeVisible();
+      await user.press(openActions[0]);
+      expect(mockNavigate).toHaveBeenCalledWith('TicketList');
+      expect(mockNavigate).toHaveBeenCalledTimes(1);
+    });
+
+    it('다른 종목의 티켓북에 야구 티켓 추가 버튼을 표시하지 않는다', async () => {
+      (useGetTicketBooks as jest.Mock).mockReturnValue({
+        data: [
+          {
+            id: 'ticket-2',
+            sport: 'soccer',
+            recordCount: 0,
+            coverColor: '#DF9EAF',
+            coverPattern: 'solid',
+          },
+        ],
+        isLoading: false,
+        isError: false,
+      });
+      await render(<HomeScreen />);
+
+      expect(screen.getByText('축구')).toBeVisible();
+      expect(screen.queryByRole('button', { name: '티켓 추가' })).toBeNull();
     });
   });
 

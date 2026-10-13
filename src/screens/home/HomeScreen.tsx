@@ -248,8 +248,6 @@ function HomeScreen() {
               )}
             </Pressable>
           </View>
-
-          {!isEmptyHome && <View style={styles.headerDivider} />}
         </View>
 
         <DiarySection
@@ -267,7 +265,6 @@ function HomeScreen() {
         {selectedDiary && (
           <BucketListSection
             diaryId={selectedDiary.id}
-            diaryTitle={selectedDiary.title}
             buckets={selectedBuckets}
             onAddBucket={handleAddBucket}
             onToggleBucket={handleToggleBucket}
@@ -345,10 +342,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  headerDivider: {
-    height: 1,
-    backgroundColor: '#F1F1F1',
   },
   settingsButton: {
     width: 44,

@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { useRef, type RefObject } from 'react';
-import { MoreHorizontal, Plus } from 'lucide-react-native';
+import { ChevronRight, MoreHorizontal, Plus } from 'lucide-react-native';
 import DiaryCover from '../../../components/DiaryCover';
 import type { Diary } from '../types';
 import { fonts } from '../../../styles/fonts.ts';
@@ -40,6 +40,7 @@ function DiarySection({
   const isEmpty = !isLoading && !hasDiaries;
   const { width } = useWindowDimensions();
   const menuButtonRef = useRef<View>(null);
+  const selectedDiary = diaries[selectedIndex] ?? diaries[0];
 
   const handleMomentumScrollEnd = (
     event: NativeSyntheticEvent<NativeScrollEvent>,
@@ -54,24 +55,24 @@ function DiarySection({
   };
 
   return (
-    <View style={[styles.ticketBookSection, isEmpty && styles.emptySection]}>
-      {hasDiaries && (
-        <View style={styles.sectionHeader}>
-          <AppText style={styles.sectionTitle}>내 티켓북</AppText>
-
-          <Pressable
-            ref={menuButtonRef}
-            style={styles.sectionMenuButton}
-            onPress={() =>
-              onPressDiaryMenu(diaries[selectedIndex], menuButtonRef)
-            }
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel={`${diaries[selectedIndex].title} 티켓북 메뉴`}
-          >
-            <MoreHorizontal size={22} color="#777777" strokeWidth={2.5} />
-          </Pressable>
-        </View>
+    <View
+      style={[
+        styles.ticketBookSection,
+        hasDiaries && styles.populatedSection,
+        isEmpty && styles.emptySection,
+      ]}
+    >
+      {selectedDiary && !isLoading && (
+        <Pressable
+          ref={menuButtonRef}
+          style={styles.sectionMenuButton}
+          onPress={() => onPressDiaryMenu(selectedDiary, menuButtonRef)}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={`${selectedDiary.title} 티켓북 메뉴`}
+        >
+          <MoreHorizontal size={22} color={colors.textSecondary} />
+        </Pressable>
       )}
       {isLoading ? (
         <View style={styles.loadingContainer}>
@@ -93,17 +94,19 @@ function DiarySection({
             onMomentumScrollEnd={handleMomentumScrollEnd}
           />
 
-          <View style={styles.pageDots}>
-            {diaries.map((diary, index) => (
-              <View
-                key={String(diary.id)}
-                style={[
-                  styles.pageDot,
-                  index === selectedIndex && styles.pageDotActive,
-                ]}
-              />
-            ))}
-          </View>
+          {diaries.length > 1 && (
+            <View style={styles.pageDots}>
+              {diaries.map((diary, index) => (
+                <View
+                  key={String(diary.id)}
+                  style={[
+                    styles.pageDot,
+                    index === selectedIndex && styles.pageDotActive,
+                  ]}
+                />
+              ))}
+            </View>
+          )}
         </>
       ) : (
         <EmptyDiaryState onPressAddDiary={onPressAddDiary} />
@@ -119,27 +122,38 @@ function DiaryCard({
   diary: Diary;
   onPressDiary: (diary: Diary) => void;
 }) {
-  const recordText =
-    diary.recordCount > 0 ? `${diary.recordCount}개의 기록` : '기록 없음';
+  const recordText = `티켓 ${diary.recordCount ?? 0}장`;
 
   return (
     <View style={styles.diaryCard}>
+      <View style={styles.diaryHeader}>
+        <AppText style={styles.diaryTitle}>{diary.title}</AppText>
+        <AppText style={styles.recordCount}>{recordText}</AppText>
+      </View>
+      {/* 표지와 열기 안내를 한 터치 영역으로 묶어 같은 이동 동선을 중복 제공하지 않는다. */}
       <Pressable
-        style={styles.diaryPressArea}
+        style={({ pressed }) => [
+          styles.diaryPressArea,
+          pressed && styles.coverPressed,
+        ]}
         onPress={() => onPressDiary(diary)}
+        accessibilityRole="button"
+        accessibilityLabel={`${diary.title} 티켓 목록 보기`}
+        accessibilityHint="저장한 티켓 목록을 엽니다"
       >
         <View style={styles.coverContainer}>
-          <DiaryCover
-            size={168}
-            coverColor={diary.coverColor}
-            coverPattern={diary.coverPattern}
-            photoUri={diary.photoUri}
-          />
+          <View style={styles.coverFrame}>
+            <DiaryCover
+              size={224}
+              coverColor={diary.coverColor}
+              coverPattern={diary.coverPattern}
+              photoUri={diary.photoUri}
+            />
+          </View>
         </View>
-
-        <View style={styles.diaryTextBox}>
-          <AppText style={styles.diaryTitle}>{diary.title}</AppText>
-          <AppText style={styles.recordCount}>{recordText}</AppText>
+        <View pointerEvents="none" style={styles.openBookHint}>
+          <AppText style={styles.openBookText}>열기</AppText>
+          <ChevronRight size={15} color={colors.text} strokeWidth={2} />
         </View>
       </Pressable>
     </View>
@@ -168,7 +182,12 @@ export default DiarySection;
 
 const styles = StyleSheet.create({
   ticketBookSection: {
-    paddingTop: 24,
+    paddingTop: 8,
+  },
+  populatedSection: {
+    paddingTop: 20,
+    paddingBottom: 20,
+    backgroundColor: colors.background,
   },
   emptySection: {
     // 작은 화면에서는 내용 높이를 유지해 만들기 버튼까지 스크롤할 수 있게 한다.
@@ -177,24 +196,13 @@ const styles = StyleSheet.create({
     paddingTop: 0,
     paddingBottom: 32,
   },
-  sectionHeader: {
-    marginBottom: 16,
-    paddingHorizontal: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-
-  sectionTitle: {
-    fontSize: 22,
-    fontFamily: fonts.bold,
-    fontWeight: '700',
-    color: colors.text,
-  },
   sectionMenuButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    position: 'absolute',
+    top: 20,
+    right: 24,
+    zIndex: 1,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -205,42 +213,73 @@ const styles = StyleSheet.create({
   },
 
   diaryPage: {
+    paddingHorizontal: 24,
     alignItems: 'center',
   },
   diaryCard: {
-    width: 192,
+    width: '100%',
     alignItems: 'center',
     position: 'relative',
   },
   diaryPressArea: {
-    width: 192,
+    width: 264,
     alignItems: 'center',
   },
+  coverPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.985 }],
+  },
   coverContainer: {
-    width: 192,
-    height: 198,
+    width: '100%',
+    marginTop: 8,
+    height: 256,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  diaryTextBox: {
-    width: 192,
-    paddingHorizontal: 18,
+  coverFrame: {
+    width: 224 * 1.06,
+    // SVG 하단의 빈 여백만 잘라 표지와 열기 안내의 간격을 맞춘다.
+    height: 256,
+    overflow: 'hidden',
+    // SVG 오른쪽의 스트랩 여백을 보정해 표지 앞면이 화면 중앙에 오도록 한다.
+    transform: [{ translateX: 8 }],
+  },
+  openBookHint: {
+    minHeight: 36,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  openBookText: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontFamily: fonts.bold,
+    color: colors.text,
+  },
+  diaryHeader: {
+    width: '100%',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'baseline',
+    paddingRight: 44,
+    minHeight: 44,
+    columnGap: 10,
   },
   diaryTitle: {
-    fontSize: 15,
+    fontSize: 22,
+    lineHeight: 30,
     fontFamily: fonts.bold,
     fontWeight: '700',
     color: colors.text,
-    textAlign: 'center',
   },
   recordCount: {
-    marginTop: 4,
-    fontSize: 12,
+    fontSize: 13,
+    lineHeight: 20,
     fontFamily: fonts.medium,
     fontWeight: '500',
-    color: colors.textTertiary,
-    textAlign: 'center',
+    color: colors.textSecondary,
   },
 
   pageDots: {

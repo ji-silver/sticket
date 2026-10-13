@@ -17,7 +17,6 @@ import AppPopoverMenu from '../../../components/common/AppPopoverMenu.tsx';
 
 interface BucketListSectionProps {
   diaryId: string;
-  diaryTitle: string;
   buckets: Bucket[];
   onAddBucket: (ticketBookId: string, title: string) => Promise<boolean>;
   onToggleBucket: (bucket: Bucket) => Promise<boolean>;
@@ -32,7 +31,6 @@ interface BucketMenuTarget {
 
 function BucketListSection({
   diaryId,
-  diaryTitle,
   buckets,
   onAddBucket,
   onToggleBucket,
@@ -126,29 +124,23 @@ function BucketListSection({
     <View style={styles.bucketSection}>
       <View style={styles.bucketHeader}>
         <View>
-          <AppText style={styles.bucketTitle}>
-            {diaryTitle} 직관 버킷리스트
-          </AppText>
+          <AppText style={styles.bucketTitle}>직관 버킷리스트</AppText>
         </View>
 
         <InlineActionButton
           label="추가"
-          tone="primary"
-          icon={<Plus size={16} color={colors.primary} strokeWidth={2.5} />}
+          icon={
+            <Plus size={16} color={colors.textSecondary} strokeWidth={2.5} />
+          }
           onPress={openAddBucket}
         />
       </View>
 
-      <View style={styles.bucketCard}>
+      <View style={isBucketEmpty ? undefined : styles.bucketCard}>
         {isBucketEmpty ? (
-          <View style={styles.emptyBucketBox}>
-            <View style={styles.emptyIcon}>
-              <Plus size={18} color={colors.primary} strokeWidth={2.5} />
-            </View>
-            <AppText style={styles.emptyBucketTitle}>
-              첫 직관 목표를 추가해보세요
-            </AppText>
-          </View>
+          <AppText style={styles.emptyBucketTitle}>
+            등록한 목표가 없어요.
+          </AppText>
         ) : (
           <>
             {visibleBuckets.map((bucket, index) => (
@@ -300,17 +292,17 @@ export default BucketListSection;
 
 const styles = StyleSheet.create({
   bucketSection: {
-    marginTop: 46,
-    paddingHorizontal: 24,
+    marginHorizontal: 24,
+    paddingTop: 20,
   },
   bucketHeader: {
-    marginBottom: 14,
+    marginBottom: 4,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   bucketTitle: {
-    fontSize: 22,
+    fontSize: 16,
     fontFamily: fonts.bold,
     fontWeight: '700',
     color: colors.text,
@@ -325,23 +317,9 @@ const styles = StyleSheet.create({
     paddingTop: 6,
     paddingBottom: 8,
   },
-  emptyBucketBox: {
-    minHeight: 108,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    paddingHorizontal: 20,
-  },
-  emptyIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.primary50,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   emptyBucketTitle: {
-    fontSize: 15,
+    fontSize: 14,
+    lineHeight: 22,
     fontFamily: fonts.medium,
     color: colors.textSecondary,
   },
