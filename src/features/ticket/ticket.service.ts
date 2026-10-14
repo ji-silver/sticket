@@ -566,7 +566,7 @@ export async function updateTicketFoods(ticketId: string, foods: string[]) {
 
   if (normalizedFoods.length > MAX_FOOD_COUNT) {
     throw new Error(
-      `야구 푸드는 최대 ${MAX_FOOD_COUNT}개까지 등록할 수 있습니다.`,
+      `직관 푸드는 최대 ${MAX_FOOD_COUNT}개까지 등록할 수 있습니다.`,
     );
   }
 

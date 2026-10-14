@@ -127,9 +127,9 @@ function TicketReviewSection({
       setFoodDraft('');
       setIsAddingFood(false);
     } catch (error) {
-      console.error('야구 푸드를 저장하지 못했습니다.', error);
+      console.error('직관 푸드를 저장하지 못했습니다.', error);
       Alert.alert(
-        '야구 푸드를 저장하지 못했어요',
+        '직관 푸드를 저장하지 못했어요',
         '잠시 후 다시 시도해 주세요.',
       );
     }
@@ -142,9 +142,9 @@ function TicketReviewSection({
       await updateFoodsMutation.mutateAsync({ ticketId, foods: nextFoods });
       setFoods(nextFoods);
     } catch (error) {
-      console.error('야구 푸드를 삭제하지 못했습니다.', error);
+      console.error('직관 푸드를 삭제하지 못했습니다.', error);
       Alert.alert(
-        '야구 푸드를 삭제하지 못했어요',
+        '직관 푸드를 삭제하지 못했어요',
         '잠시 후 다시 시도해 주세요.',
       );
     }
@@ -288,7 +288,7 @@ function TicketReviewSection({
 
         <View style={styles.foodBlock}>
           <View style={styles.blockHeader}>
-            <AppText style={styles.blockTitle}>야구 푸드</AppText>
+            <AppText style={styles.blockTitle}>직관 푸드</AppText>
 
             {isAddingFood || isEditingFoods || foods.length > 0 ? (
               <InlineActionButton
@@ -301,10 +301,10 @@ function TicketReviewSection({
                 }
                 accessibilityLabel={
                   isAddingFood
-                    ? '야구 푸드 추가 취소'
+                    ? '직관 푸드 추가 취소'
                     : isEditingFoods
-                    ? '야구 푸드 편집 완료'
-                    : '야구 푸드 편집'
+                    ? '직관 푸드 편집 완료'
+                    : '직관 푸드 편집'
                 }
               />
             ) : null}
@@ -344,7 +344,7 @@ function TicketReviewSection({
               ]}
               onPress={handleStartAddingFood}
               accessibilityRole="button"
-              accessibilityLabel="야구 푸드 추가"
+              accessibilityLabel="직관 푸드 추가"
             >
               <Plus size={15} color={colors.primary} strokeWidth={2.5} />
               <AppText style={styles.foodAddChipText}>먹은 메뉴 추가</AppText>
@@ -365,7 +365,7 @@ function TicketReviewSection({
                 onSubmitEditing={handleAddFood}
                 autoFocus
                 maxLength={30}
-                accessibilityLabel="야구장 푸드 이름"
+                accessibilityLabel="직관 푸드 이름"
               />
 
               <AppButton
@@ -377,7 +377,7 @@ function TicketReviewSection({
                 onPress={handleAddFood}
                 disabled={!canAddFood}
                 accessibilityRole="button"
-                accessibilityLabel="야구장 푸드 추가"
+                accessibilityLabel="직관 푸드 추가"
                 accessibilityState={{ disabled: !canAddFood }}
               >
                 <Plus
