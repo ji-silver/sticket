@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import type { KboGame } from './types.ts';
 
 import {
   enrichGamesWithKboScores,
@@ -143,3 +144,70 @@ test('KBO 경기 목록의 점수와 종료 상태를 갱신한다', async t => 
   assert.equal(game.homeScore, 1);
   assert.equal(game.status, 'FINISHED');
 });
+
+for (const { date, awayScore, homeScore, apiAwayScore, apiHomeScore } of [
+  {
+    date: '2026-10-14',
+    awayScore: 1,
+    homeScore: 4,
+    apiAwayScore: '0',
+    apiHomeScore: '0',
+  },
+  {
+    date: '2026-10-15',
+    awayScore: 0,
+    homeScore: 0,
+    apiAwayScore: '2',
+    apiHomeScore: '1',
+  },
+]) {
+  test(`일정의 종료 결과 ${awayScore}:${homeScore}를 경기 목록의 다른 점수로 덮어쓰지 않는다`, async t => {
+    const dateKey = date.replaceAll('-', '');
+    const sourceGameId = `${dateKey}OBLG0`;
+    t.mock.method(
+      globalThis,
+      'fetch',
+      async () =>
+        new Response(
+          JSON.stringify({
+            game: [
+              {
+                G_ID: sourceGameId,
+                SR_ID: 4,
+                G_DT: dateKey,
+                G_TM: '18:30',
+                AWAY_NM: '두산',
+                HOME_NM: 'LG',
+                GAME_STATE_SC: '3',
+                GAME_RESULT_CK: 0,
+                T_SCORE_CN: apiAwayScore,
+                B_SCORE_CN: apiHomeScore,
+              },
+            ],
+          }),
+        ),
+    );
+    const scheduleGame: KboGame = {
+      gameKey: `${dateKey}-doosan-lg-1`,
+      sourceGameId: null,
+      season: 2026,
+      seriesType: 'POSTSEASON',
+      gameDate: date,
+      startTime: '18:30',
+      awayTeamId: 'doosan',
+      homeTeamId: 'lg',
+      awayScore,
+      homeScore,
+      stadiumName: '잠실',
+      status: 'FINISHED',
+      cancellationReason: null,
+    };
+
+    const [game] = await enrichGamesWithKboScores([scheduleGame]);
+
+    assert.equal(game.awayScore, awayScore);
+    assert.equal(game.homeScore, homeScore);
+    assert.equal(game.status, 'FINISHED');
+    assert.equal(game.sourceGameId, sourceGameId);
+  });
+}

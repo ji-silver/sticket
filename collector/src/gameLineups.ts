@@ -83,6 +83,20 @@ export async function enrichGamesWithKboScores(
 
   return games.map(game => {
     const source = resolveKboGameSource(game, responses.get(game.gameDate));
+
+    // 경기 목록 API가 종료 경기에도 초기 점수를 반환할 수 있어 일정의 확정 점수를 우선한다.
+    // 경기 ID 보완은 유지해 이후 라인업 수집에 같은 경기를 사용할 수 있게 한다.
+    if (
+      game.status === 'FINISHED' &&
+      game.awayScore !== null &&
+      game.homeScore !== null
+    ) {
+      return {
+        ...game,
+        sourceGameId: game.sourceGameId ?? source?.gameId ?? null,
+      };
+    }
+
     const needsScore =
       game.status === 'IN_PROGRESS' || game.status === 'FINISHED';
 
