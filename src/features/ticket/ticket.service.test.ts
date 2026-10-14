@@ -162,6 +162,7 @@ describe('getTicketById', () => {
           page_orientation: null,
           created_at: '2026-08-05T00:00:00Z',
           game: {
+            series_type: 'WILDCARD',
             game_date: '2026-08-05',
             start_time: '18:30:00',
             stadium_name: '잠실',
@@ -194,8 +195,10 @@ describe('getTicketById', () => {
 
     await expect(getTicketById('ticket-1')).resolves.toMatchObject({
       id: 'ticket-1',
+      seriesType: 'WILDCARD',
       originalTicketImageUri: 'https://example.com/ticket-1.jpg',
     });
+    expect(select.mock.calls[0][0]).toContain('series_type');
     expect(eq).toHaveBeenCalledWith('id', 'ticket-1');
     expect(createSignedUrls).toHaveBeenCalledWith(
       ['user-1/book-1/ticket-1/original.jpg'],
@@ -205,10 +208,11 @@ describe('getTicketById', () => {
 });
 
 describe('getTicketGameSnapshot', () => {
-  it('사진 정보 없이 해당 티켓의 최신 점수와 라인업만 조회한다', async () => {
+  it('사진 정보 없이 해당 티켓의 최신 경기 단계와 점수, 라인업을 조회한다', async () => {
     const single = jest.fn().mockResolvedValue({
       data: {
         game: {
+          series_type: 'SEMI_PLAYOFF',
           status: 'IN_PROGRESS',
           last_collected_at: '2026-09-09T09:47:00Z',
           away_score: 2,
@@ -227,6 +231,7 @@ describe('getTicketGameSnapshot', () => {
     (supabase.from as jest.Mock).mockReturnValue({ select });
 
     await expect(getTicketGameSnapshot('ticket-1')).resolves.toEqual({
+      seriesType: 'SEMI_PLAYOFF',
       gameStatus: 'IN_PROGRESS',
       gameUpdatedAt: '2026-09-09T09:47:00Z',
       isCancelled: false,
@@ -239,6 +244,7 @@ describe('getTicketGameSnapshot', () => {
     });
 
     expect(eq).toHaveBeenCalledWith('id', 'ticket-1');
+    expect(select.mock.calls[0][0]).toContain('series_type');
     expect(select.mock.calls[0][0]).not.toContain('original_photo_path');
   });
 });

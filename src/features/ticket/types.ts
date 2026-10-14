@@ -26,6 +26,7 @@ export interface Ticket {
   matchDate: string;
   matchTime: string;
   stadiumName: string;
+  seriesType?: string;
 
   seatName: string | null;
   seatDetail: string | null;

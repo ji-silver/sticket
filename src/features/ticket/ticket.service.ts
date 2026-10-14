@@ -256,6 +256,7 @@ async function fetchTickets({
 
         game:games!tickets_game_key_fkey!inner (
           season,
+          series_type,
           game_date,
           start_time,
           stadium_name,
@@ -338,6 +339,7 @@ async function fetchTickets({
         matchDate: game.game_date,
         matchTime: game.start_time?.slice(0, 5) ?? '시간 미정',
         stadiumName: game.stadium_name ?? '경기장 미정',
+        seriesType: game.series_type,
         seatName: ticket.seat_name,
         seatDetail: ticket.seat_detail,
         rating: ticket.rating,
@@ -385,6 +387,7 @@ export async function getTicketGameSnapshot(ticketId: string) {
     .select(
       `
         game:games!tickets_game_key_fkey!inner (
+          series_type,
           status,
           last_collected_at,
           away_lineup,
@@ -404,6 +407,8 @@ export async function getTicketGameSnapshot(ticketId: string) {
   const game = data.game;
 
   return {
+    // 전체 티켓이 캐시에 있어도 경기 갱신으로 뒤늦게 확정된 단계를 반영한다.
+    seriesType: game.series_type,
     gameStatus: game.status,
     gameUpdatedAt: game.last_collected_at,
     isCancelled: game.status === 'CANCELLED',
