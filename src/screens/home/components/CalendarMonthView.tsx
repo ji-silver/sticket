@@ -2,9 +2,13 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import type { CalendarProps, DateData } from 'react-native-calendars';
 import AppText from '../../../components/common/AppText.tsx';
 import AppCalendar from '../../../components/common/AppCalendar.tsx';
+import AppButton from '../../../components/common/AppButton.tsx';
 import { colors } from '../../../styles/colors.ts';
 import { fonts } from '../../../styles/fonts.ts';
 import type { TeamCalendarGame } from '../../../features/game/types.ts';
+
+// 직관 표시는 오늘 테두리와 같은 색상을 낮은 농도로 사용한다.
+const attendanceFill = `${colors.primary}26`;
 
 type CalendarDayProps = {
   date?: DateData;
@@ -12,6 +16,7 @@ type CalendarDayProps = {
 };
 
 interface CalendarMonthViewProps {
+  visibleMonth: string;
   selectedDate: string;
   today: string;
   gamesByDate: Record<string, TeamCalendarGame[]>;
@@ -19,6 +24,7 @@ interface CalendarMonthViewProps {
   isLoadingTeamGames: boolean;
   onPressDay: (day: DateData) => void;
   onMonthChange: (month: DateData) => void;
+  onPressToday: () => void;
 }
 
 const getGameSummary = (games: TeamCalendarGame[]) => {
@@ -63,6 +69,13 @@ const getGameSummary = (games: TeamCalendarGame[]) => {
 const calendarTheme = {
   calendarBackground: colors.surface,
   weekVerticalMargin: 0,
+  arrowStyle: {
+    width: 44,
+    height: 44,
+    padding: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
   'stylesheet.calendar.header': {
     week: {
@@ -118,6 +131,7 @@ const calendarTheme = {
 } as CalendarProps['theme'];
 
 function CalendarMonthView({
+  visibleMonth,
   selectedDate,
   today,
   gamesByDate,
@@ -125,6 +139,7 @@ function CalendarMonthView({
   isLoadingTeamGames,
   onPressDay,
   onMonthChange,
+  onPressToday,
 }: CalendarMonthViewProps) {
   const renderCalendarDay = ({ date, state }: CalendarDayProps) => {
     if (!date) {
@@ -176,6 +191,7 @@ function CalendarMonthView({
       : '';
 
     const accessibilityAttendanceText = hasAttendance ? ', 직관 기록 있음' : '';
+    const accessibilityTodayText = isToday ? ', 오늘' : '';
 
     return (
       <Pressable
@@ -188,36 +204,36 @@ function CalendarMonthView({
         onPress={() => onPressDay(date)}
         disabled={isInactive}
         accessibilityRole="button"
-        accessibilityLabel={`${date.month}월 ${date.day}일${accessibilityGameText}${accessibilityAttendanceText}`}
+        accessibilityLabel={`${date.month}월 ${date.day}일${accessibilityTodayText}${accessibilityGameText}${accessibilityAttendanceText}`}
         accessibilityState={{
           selected: isSelected,
           disabled: isInactive,
         }}
       >
+        {/* H/A가 없는 날에도 같은 공간을 남겨 날짜 위치가 움직이지 않게 한다. */}
         <View style={styles.calendarDayTopRow}>
-          <View
-            style={[
-              styles.calendarDate,
-              isToday && styles.calendarTodayDate,
-            ]}
-          >
-            {hasAttendance && !isToday ? (
-              <View pointerEvents="none" style={styles.calendarAttendanceDate} />
-            ) : null}
+          <View style={styles.calendarDateColumn}>
+            <View style={styles.calendarDate}>
+              {/* 직관 배경과 오늘 테두리를 분리해 두 상태가 겹쳐도 하나를 숨기지 않는다. */}
+              {hasAttendance ? (
+                <View
+                  pointerEvents="none"
+                  style={styles.calendarAttendanceDate}
+                />
+              ) : null}
+              {isToday ? (
+                <View pointerEvents="none" style={styles.calendarTodayDate} />
+              ) : null}
 
-            <AppText
-              style={[
-                styles.calendarDayNumber,
-                isInactive && styles.calendarInactiveText,
-                isToday && styles.calendarTodayText,
-              ]}
-            >
-              {date.day}
-            </AppText>
-
-            {hasAttendance && isToday ? (
-              <View pointerEvents="none" style={styles.calendarAttendanceDot} />
-            ) : null}
+              <AppText
+                style={[
+                  styles.calendarDayNumber,
+                  isInactive && styles.calendarInactiveText,
+                ]}
+              >
+                {date.day}
+              </AppText>
+            </View>
           </View>
 
           {firstGame ? (
@@ -231,7 +247,9 @@ function CalendarMonthView({
             >
               {firstGame.homeAway}
             </AppText>
-          ) : null}
+          ) : (
+            <View style={styles.calendarSideColumn} accessible={false} />
+          )}
         </View>
 
         {gameSummary && gameResult ? (
@@ -241,7 +259,13 @@ function CalendarMonthView({
               isInactive && styles.calendarInactiveResult,
             ]}
           >
-            <AppText style={styles.calendarResultScore} numberOfLines={1}>
+            {/* 좁은 날짜 칸의 두 자리 점수는 살짝 축소해 끝자리가 생략되지 않게 한다. */}
+            <AppText
+              style={styles.calendarResultScore}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={10 / 11}
+            >
               {gameSummaryText}
             </AppText>
 
@@ -253,32 +277,61 @@ function CalendarMonthView({
             </AppText>
           </View>
         ) : gameSummary ? (
-          <AppText
-            style={[
-              styles.calendarGameSummary,
-              isInactive && styles.calendarInactiveText,
-            ]}
-            numberOfLines={1}
-          >
-            {gameSummary}
-          </AppText>
+          <View style={styles.calendarResultRow}>
+            <AppText
+              style={[
+                styles.calendarGameSummary,
+                isInactive && styles.calendarInactiveText,
+              ]}
+              numberOfLines={1}
+            >
+              {gameSummary}
+            </AppText>
+          </View>
         ) : null}
       </Pressable>
     );
   };
 
   return (
-    <View style={styles.calendarCard}>
-      <AppCalendar
-        key="team-calendar-rounded-grid-v6"
-        contained={false}
-        current={selectedDate}
-        firstDay={0}
-        dayComponent={renderCalendarDay}
-        onMonthChange={onMonthChange}
-        displayLoadingIndicator={isLoadingTeamGames}
-        theme={calendarTheme}
-      />
+    <View>
+      <View style={styles.calendarCard}>
+        {/* current는 최초 표시 월에만 쓰이므로 월이 바뀔 때 달력을 새로 만든다. 같은 달의 날짜 선택은 유지한다. */}
+        <AppCalendar
+          key={`team-calendar-${visibleMonth}`}
+          contained={false}
+          current={selectedDate}
+          firstDay={0}
+          arrowsHitSlop={0}
+          dayComponent={renderCalendarDay}
+          onMonthChange={onMonthChange}
+          displayLoadingIndicator={isLoadingTeamGames}
+          theme={calendarTheme}
+        />
+        {/* 기본 달력 헤더는 접근성에서 자식을 숨긴다. 오늘 버튼은 형제 요소로 두어 VoiceOver에서도 누를 수 있게 한다. */}
+        <AppButton
+          onPress={onPressToday}
+          accessibilityLabel="오늘 날짜로 이동"
+          style={({ pressed }) => [
+            styles.calendarTodayButton,
+            pressed && styles.calendarTodayButtonPressed,
+          ]}
+        >
+          <View style={styles.calendarTodayButtonOutline}>
+            <AppText style={styles.calendarTodayButtonText}>오늘</AppText>
+          </View>
+        </AppButton>
+      </View>
+      <View style={styles.calendarLegend}>
+        <View style={styles.calendarLegendItem}>
+          <View style={styles.calendarTodayLegend} accessible={false} />
+          <AppText style={styles.calendarLegendText}>오늘</AppText>
+        </View>
+        <View style={styles.calendarLegendItem}>
+          <View style={styles.calendarAttendanceLegend} accessible={false} />
+          <AppText style={styles.calendarLegendText}>직관 기록</AppText>
+        </View>
+      </View>
     </View>
   );
 }
@@ -293,11 +346,41 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 
+  calendarTodayButton: {
+    position: 'absolute',
+    top: 6,
+    right: 54,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  calendarTodayButtonPressed: {
+    opacity: 0.5,
+  },
+
+  calendarTodayButtonOutline: {
+    width: 44,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  calendarTodayButtonText: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.primary,
+  },
+
   calendarDay: {
     alignSelf: 'stretch',
     height: 56,
-    paddingHorizontal: 8,
-    paddingVertical: 7,
+    paddingHorizontal: 6,
+    paddingVertical: 6,
     borderRightWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
   },
@@ -315,63 +398,59 @@ const styles = StyleSheet.create({
   },
 
   calendarDayTopRow: {
-    height: 18,
+    height: 24,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 2,
+  },
+
+  calendarDateColumn: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: 'center',
+  },
+
+  calendarSideColumn: {
+    width: 12,
   },
 
   calendarDate: {
     position: 'relative',
-    minWidth: 18,
-    height: 18,
+    width: 22,
+    height: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   calendarTodayDate: {
-    width: 18,
-    borderRadius: 9,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: 22,
+    height: 22,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 11,
     borderCurve: 'continuous',
-    backgroundColor: colors.primary,
   },
 
   calendarAttendanceDate: {
     position: 'absolute',
     top: 2,
     left: 2,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     borderCurve: 'continuous',
-    backgroundColor: colors.accentYellow,
-  },
-
-  calendarAttendanceDot: {
-    position: 'absolute',
-    right: -3,
-    top: -2,
-    width: 7,
-    height: 7,
-    borderWidth: 1,
-    borderColor: colors.surface,
-    borderRadius: 3.5,
-    borderCurve: 'continuous',
-    backgroundColor: colors.accentYellow,
-    zIndex: 2,
+    backgroundColor: attendanceFill,
   },
 
   calendarDayNumber: {
-    fontSize: 10,
+    fontSize: 13,
     fontFamily: fonts.regular,
-    lineHeight: 14,
+    lineHeight: 18,
     color: colors.text,
     zIndex: 1,
-  },
-
-  calendarTodayText: {
-    color: colors.onPrimary,
-    fontFamily: fonts.bold,
   },
 
   calendarInactiveText: {
@@ -379,9 +458,11 @@ const styles = StyleSheet.create({
   },
 
   calendarHomeAway: {
+    width: 12,
     fontSize: 10,
     fontFamily: fonts.regular,
     lineHeight: 14,
+    textAlign: 'center',
   },
 
   calendarHome: {
@@ -393,9 +474,10 @@ const styles = StyleSheet.create({
   },
 
   calendarGameSummary: {
-    alignSelf: 'stretch',
-    marginTop: 6,
-    fontSize: 10,
+    flex: 1,
+    minWidth: 0,
+    fontSize: 11,
+    lineHeight: 16,
     fontFamily: fonts.regular,
     color: colors.textSecondary,
     textAlign: 'center',
@@ -403,10 +485,10 @@ const styles = StyleSheet.create({
 
   calendarResultRow: {
     alignSelf: 'stretch',
-    marginTop: 5,
+    marginTop: 4,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     gap: 2,
   },
 
@@ -415,15 +497,19 @@ const styles = StyleSheet.create({
   },
 
   calendarResultScore: {
-    fontSize: 10,
+    minWidth: 0,
+    flex: 1,
+    fontSize: 11,
+    lineHeight: 16,
     fontFamily: fonts.regular,
     color: colors.textSecondary,
+    textAlign: 'center',
   },
 
   calendarResultBadge: {
-    minWidth: 14,
+    width: 12,
     height: 14,
-    paddingHorizontal: 3,
+    paddingHorizontal: 2,
     borderRadius: 4,
     borderCurve: 'continuous',
     overflow: 'hidden',
@@ -444,5 +530,42 @@ const styles = StyleSheet.create({
 
   calendarDrawResult: {
     backgroundColor: colors.infoSoft,
+  },
+
+  calendarLegend: {
+    marginTop: 10,
+    paddingHorizontal: 8,
+    minHeight: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 14,
+  },
+
+  calendarLegendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+
+  calendarTodayLegend: {
+    width: 12,
+    height: 12,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 6,
+  },
+
+  calendarAttendanceLegend: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: attendanceFill,
+  },
+
+  calendarLegendText: {
+    fontSize: 11,
+    fontFamily: fonts.regular,
+    color: colors.textSecondary,
   },
 });

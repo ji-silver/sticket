@@ -202,15 +202,15 @@ describe('CalendarScreen', () => {
     });
 
     await render(<CalendarScreen />);
-    const todayButton = screen.getByRole('button', { name: '8월 3일' });
+    const todayButton = screen.getByRole('button', { name: '8월 3일, 오늘' });
     expect(todayButton).toBeEnabled();
     expect(todayButton).toBeSelected();
 
     await user.press(screen.getByRole('button', { name: '8월 4일' }));
     expect(screen.getByText('8월 4일 화요일')).toBeVisible();
 
-    await user.press(screen.getByRole('button', { name: '8월 3일' }));
-    expect(screen.getByRole('button', { name: '8월 3일' })).toBeSelected();
+    await user.press(screen.getByRole('button', { name: '8월 3일, 오늘' }));
+    expect(screen.getByRole('button', { name: '8월 3일, 오늘' })).toBeSelected();
     expect(screen.getByText('8월 3일 월요일')).toBeVisible();
 
     await user.press(
@@ -237,6 +237,62 @@ describe('CalendarScreen', () => {
       screen.queryByRole('button', { name: '선택한 날짜에 티켓 추가' }),
     ).toBeNull();
   });
+
+  it('같은 달의 다른 날짜에서 오늘 버튼을 누르면 오늘 경기와 날짜가 다시 선택된다', async () => {
+    const user = userEvent.setup();
+    await render(<CalendarScreen />);
+
+    await user.press(screen.getByRole('button', { name: '8월 4일' }));
+    expect(screen.getByText('8월 4일 화요일')).toBeVisible();
+
+    await user.press(
+      screen.getByRole('button', { name: '오늘 날짜로 이동' }),
+    );
+
+    expect(screen.getByRole('button', { name: /^8월 3일/ })).toBeSelected();
+    expect(screen.getByText('8월 3일 월요일')).toBeVisible();
+    expect(
+      screen.getByRole('button', { name: '선택한 경기에 직관 기록 추가' }),
+    ).toBeVisible();
+  });
+
+  for (const { description, action, count, firstDay } of [
+    {
+      description: '두 달 전',
+      action: 'decrement',
+      count: 2,
+      firstDay: '6월 1일',
+    },
+    {
+      description: '다음 해',
+      action: 'increment',
+      count: 5,
+      firstDay: '1월 1일',
+    },
+  ]) {
+    it(`${description}에서 오늘 버튼을 누르면 실제 달력과 경기 목록이 이번 달의 오늘로 돌아온다`, async () => {
+      const user = userEvent.setup();
+      await render(<CalendarScreen />);
+
+      for (let i = 0; i < count; i += 1) {
+        await fireEvent(screen.getByRole('adjustable'), 'accessibilityAction', {
+          nativeEvent: { actionName: action },
+        });
+      }
+      expect(screen.getByRole('button', { name: firstDay })).toBeSelected();
+
+      await user.press(
+        screen.getByRole('button', { name: '오늘 날짜로 이동' }),
+      );
+
+      expect(screen.getByRole('button', { name: /^8월 3일/ })).toBeEnabled();
+      expect(screen.getByRole('button', { name: /^8월 3일/ })).toBeSelected();
+      expect(screen.getByText('8월 3일 월요일')).toBeVisible();
+      expect(
+        screen.getByRole('button', { name: '선택한 경기에 직관 기록 추가' }),
+      ).toBeVisible();
+    });
+  }
 
   it('경기가 없는 지난달도 1일을 자동 선택하고 다시 선택한 날짜로 티켓을 추가할 수 있다', async () => {
     const user = userEvent.setup();

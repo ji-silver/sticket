@@ -91,9 +91,8 @@ function AttendanceStatsSection({
             </AppText>
           </View>
           <AppText style={styles.caption}>
-            {attendanceSummary.totalGames === 0
-              ? '이번 시즌 응원팀의 종료 경기 기록이 없어요.'
-              : '무승부는 승률에서 제외돼요.'}
+            {attendanceSummary.totalGames === 0 &&
+              '이번 시즌 응원팀의 종료 경기 기록이 없어요.'}
           </AppText>
         </View>
       )}

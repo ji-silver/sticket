@@ -161,6 +161,11 @@ function CalendarScreen() {
     );
   };
 
+  const handlePressToday = () => {
+    setVisibleMonth(today.slice(0, 7));
+    setSelectedDate(today);
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
@@ -206,6 +211,7 @@ function CalendarScreen() {
           </View>
 
           <CalendarMonthView
+            visibleMonth={visibleMonth}
             selectedDate={selectedDate}
             today={today}
             gamesByDate={gamesByDate}
@@ -213,6 +219,7 @@ function CalendarScreen() {
             isLoadingTeamGames={isLoadingTeamGames}
             onPressDay={handlePressDay}
             onMonthChange={handleMonthChange}
+            onPressToday={handlePressToday}
           />
 
           <CalendarTicketList

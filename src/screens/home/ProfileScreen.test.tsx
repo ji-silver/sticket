@@ -95,9 +95,7 @@ describe('프로필과 직관 성적', () => {
       const nicknameText = screen.getByText(nickname);
       expect(nicknameText.props.numberOfLines).toBe(1);
       expect(nicknameText.props.adjustsFontSizeToFit).toBe(true);
-      expect(
-        screen.getByRole('button', { name: '프로필 수정' }),
-      ).toBeVisible();
+      expect(screen.getByRole('button', { name: '프로필 수정' })).toBeVisible();
     },
   );
 
@@ -106,10 +104,11 @@ describe('프로필과 직관 성적', () => {
     expect(await screen.findByText('75%')).toBeVisible();
     expect(screen.getByText('응원팀 종료 경기 5경기')).toBeVisible();
     expect(screen.getByRole('header', { name: '야구' })).toBeVisible();
-    expect(screen.getByRole('header', { name: '야구 직관 성적' })).toBeVisible();
+    expect(
+      screen.getByRole('header', { name: '야구 직관 성적' }),
+    ).toBeVisible();
     expect(screen.getByText('2026 시즌')).toBeVisible();
     expect(screen.queryByText('2026 시즌 · LG 직관 성적')).toBeNull();
-    expect(screen.getByText('무승부는 승률에서 제외돼요.')).toBeVisible();
   });
 
   it('조회 실패를 기록 없음으로 표시하지 않고 다시 불러올 수 있다', async () => {
