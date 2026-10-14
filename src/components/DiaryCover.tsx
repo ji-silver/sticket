@@ -4,6 +4,8 @@ import Svg, {
   Circle,
   ClipPath,
   Defs,
+  FeGaussianBlur,
+  Filter,
   G,
   Image as SvgImage,
   Line,
@@ -14,6 +16,7 @@ import Svg, {
   Stop,
 } from 'react-native-svg';
 import AppSkeleton from './common/AppSkeleton.tsx';
+import { colors } from '../styles/colors.ts';
 
 type CoverPattern = 'solid' | 'stripe';
 
@@ -72,6 +75,24 @@ function DiaryCover({
     <View style={[styles.container, { width: w, height: h }]}>
       <Svg width={w} height={h} viewBox="-12 0 250 300">
         <Defs>
+          {/* 단면을 추가하지 않고 표지 바로 아래의 짧은 그림자로 케이스와 구분한다. */}
+          <Filter
+            id="coverContactShadow"
+            x="-10%"
+            y="-5%"
+            width="120%"
+            height="110%"
+          >
+            <FeGaussianBlur stdDeviation="1.5" />
+          </Filter>
+          {/* PVC의 반사는 얇은 필름 위에만 얹는다. 표지 색과 패턴이 그대로 비쳐야 한다. */}
+          <LinearGradient id="pvcFilm" x1="0" y1="0" x2="1" y2="0">
+            <Stop offset="0" stopColor={colors.surface} stopOpacity="0.22" />
+            <Stop offset="0.2" stopColor={colors.surface} stopOpacity="0.07" />
+            <Stop offset="0.6" stopColor={colors.surface} stopOpacity="0.025" />
+            <Stop offset="0.9" stopColor={colors.surface} stopOpacity="0.10" />
+            <Stop offset="1" stopColor="#8E959C" stopOpacity="0.04" />
+          </LinearGradient>
           {/* 금속은 왼쪽의 좁은 반사와 오른쪽의 어두운 면으로 입체감을 준다. */}
           <LinearGradient id="barGrad" x1="0" y1="0" x2="1" y2="0">
             <Stop offset="0" stopColor="rgb(60,75,85)" />
@@ -102,6 +123,16 @@ function DiaryCover({
           </ClipPath>
         </Defs>
 
+        <Rect
+          x="39"
+          y="17.5"
+          width="148"
+          height="238"
+          rx="3"
+          fill={colors.shadow}
+          fillOpacity="0.16"
+          filter="url(#coverContactShadow)"
+        />
         <Rect x="38" y="16" width="148" height="238" rx="3" fill={coverColor} />
         {coverPattern === 'stripe' && (
           <G clipPath="url(#coverClip)" opacity="0.7">
@@ -127,12 +158,6 @@ function DiaryCover({
           fill="none"
           stroke="rgba(82,98,108,0.12)"
           strokeWidth="0.6"
-        />
-        <Path
-          d="M 38.5 251 V 19 Q 38.5 16.5, 41 16.5 H 183"
-          fill="none"
-          stroke="rgba(255,255,255,0.35)"
-          strokeWidth="0.7"
         />
 
         {/* 흰 속지가 없는 상태에서는 금속판의 위아래 끝을 색 표지와 맞춘다. */}
@@ -174,16 +199,34 @@ function DiaryCover({
           </G>
         ))}
 
-        {/* 바깥 표지는 한 겹의 투명한 면과 외곽선만 남긴다. */}
+        {/* 단면 없이 필름 면과 가장자리의 접합선으로 PVC 재질을 표현한다. */}
         <Rect
           x="4"
           y="4"
           width="200"
           height="260"
           rx="16"
-          fill="rgba(255,255,255,0.06)"
-          stroke="rgba(145,155,165,0.55)"
+          fill="url(#pvcFilm)"
+          stroke="rgba(145,155,165,0.42)"
+          strokeWidth="1.2"
+        />
+        <Rect
+          x="5.5"
+          y="5.5"
+          width="197"
+          height="257"
+          rx="14.5"
+          fill="none"
+          stroke="rgba(82,98,108,0.08)"
+          strokeWidth="2.4"
+        />
+        <Path
+          d="M 7 84 V 22 Q 7 7, 22 7 H 90 M 201 206 V 246 Q 201 261, 186 261 H 157"
+          fill="none"
+          stroke={colors.surface}
+          strokeOpacity="0.75"
           strokeWidth="1"
+          strokeLinecap="round"
         />
 
         {/* 사진 좌표는 사진 선택 버튼과 로딩 표시가 공유하므로 그대로 유지한다.
@@ -225,9 +268,17 @@ function DiaryCover({
         <Path
           d="M 213 114 Q 220 114, 220 121 V 150 Q 220 157, 213 157 H 185
              C 173 157, 164 147, 164 135.5 C 164 124, 173 114, 185 114 Z"
-          fill="rgba(255,255,255,0.15)"
+          fill="url(#pvcFilm)"
           stroke="rgba(145,155,165,0.45)"
           strokeWidth="0.8"
+        />
+        <Line
+          x1="215"
+          y1="121"
+          x2="215"
+          y2="150"
+          stroke="rgba(82,98,108,0.16)"
+          strokeWidth="0.6"
         />
         <Path
           d="M 185 115.5 C 174 115.5, 165.5 124.5, 165.5 135.5"
