@@ -214,11 +214,14 @@ function CalendarMonthView({
         <View style={styles.calendarDayTopRow}>
           <View style={styles.calendarDateColumn}>
             <View style={styles.calendarDate}>
-              {/* 직관 배경과 오늘 테두리를 분리해 두 상태가 겹쳐도 하나를 숨기지 않는다. */}
+              {/* 단독 표시는 같은 크기로 맞추고, 오늘과 직관이 겹치면 안쪽 원을 줄여 테두리와 분리한다. */}
               {hasAttendance ? (
                 <View
                   pointerEvents="none"
-                  style={styles.calendarAttendanceDate}
+                  style={[
+                    styles.calendarAttendanceDate,
+                    isToday && styles.calendarAttendanceInsideToday,
+                  ]}
                 />
               ) : null}
               {isToday ? (
@@ -424,25 +427,33 @@ const styles = StyleSheet.create({
 
   calendarTodayDate: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    width: 22,
-    height: 22,
+    top: 1,
+    left: 1,
+    width: 20,
+    height: 20,
     borderWidth: 1,
     borderColor: colors.primary,
-    borderRadius: 11,
+    borderRadius: 10,
     borderCurve: 'continuous',
   },
 
   calendarAttendanceDate: {
     position: 'absolute',
-    top: 2,
-    left: 2,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
+    top: 1,
+    left: 1,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     borderCurve: 'continuous',
     backgroundColor: attendanceFill,
+  },
+
+  calendarAttendanceInsideToday: {
+    top: 3,
+    left: 3,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
   },
 
   calendarDayNumber: {
