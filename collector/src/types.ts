@@ -12,7 +12,17 @@ export type KboTeamId =
   | 'kt'
   | 'nc';
 
-export type KboSeriesType = 'PRESEASON' | 'REGULAR' | 'POSTSEASON';
+export type KboPostseasonType =
+  | 'WILDCARD'
+  | 'SEMI_PLAYOFF'
+  | 'PLAYOFF'
+  | 'KOREAN_SERIES';
+
+export type KboSeriesType =
+  | 'PRESEASON'
+  | 'REGULAR'
+  | 'POSTSEASON'
+  | KboPostseasonType;
 
 export type KboGameStatus =
   | 'SCHEDULED'

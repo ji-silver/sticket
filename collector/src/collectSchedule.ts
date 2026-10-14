@@ -15,6 +15,7 @@ import {
   syncMissingGameLineups,
 } from './gameLineups.ts';
 import { parseGameStatus } from './gameStatus.ts';
+import { parseKboPostseasonType } from './gameSeries.ts';
 import { assertScheduleCollectionHealth } from './scheduleCollectionHealth.ts';
 import { upsertGames } from './saveGames.ts';
 
@@ -447,7 +448,11 @@ function parseScheduleRows(
       gameKey,
       sourceGameId: extractGameId(row.gameHref),
       season,
-      seriesType,
+      // 미래 일정도 공식 비고로 분류한다. 미상이면 POSTSEASON으로 두고,
+      // 재저장 시 이미 확인된 DB 세부 단계는 보존 트리거가 유지한다.
+      seriesType: seriesType === 'POSTSEASON'
+        ? parseKboPostseasonType(row.note) ?? seriesType
+        : seriesType,
       gameDate,
       startTime: row.time,
       awayTeamId: matchup.awayTeamId,

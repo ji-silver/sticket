@@ -1,4 +1,5 @@
-import type { KboGame, KboLineupPlayer, KboTeamId } from './types.ts';
+import type { KboGame, KboLineupPlayer, KboPostseasonType, KboTeamId } from './types.ts';
+import { parseKboPostseasonType } from './gameSeries.ts';
 
 const KBO_GAME_LIST_URL =
   'https://www.koreabaseball.com/ws/Main.asmx/GetKboGameList';
@@ -63,6 +64,7 @@ type LineupGame = Pick<
 interface KboGameSource {
   gameId: string;
   seriesId: number;
+  postseasonType: KboPostseasonType | null;
   awayScore: number | null;
   homeScore: number | null;
   isFinished: boolean;
@@ -83,6 +85,8 @@ export async function enrichGamesWithKboScores(
 
   return games.map(game => {
     const source = resolveKboGameSource(game, responses.get(game.gameDate));
+    // 점수가 이미 확정된 종료 경기에도 공식 단계 정보는 보완한다.
+    const seriesType = source?.postseasonType ?? game.seriesType;
 
     // 경기 목록 API가 종료 경기에도 초기 점수를 반환할 수 있어 일정의 확정 점수를 우선한다.
     // 경기 ID 보완은 유지해 이후 라인업 수집에 같은 경기를 사용할 수 있게 한다.
@@ -93,6 +97,7 @@ export async function enrichGamesWithKboScores(
     ) {
       return {
         ...game,
+        seriesType,
         sourceGameId: game.sourceGameId ?? source?.gameId ?? null,
       };
     }
@@ -113,11 +118,12 @@ export async function enrichGamesWithKboScores(
         throw new Error(`${game.gameKey}의 KBO 점수를 확인하지 못했습니다.`);
       }
 
-      return { ...game, sourceGameId: source.gameId };
+      return { ...game, seriesType, sourceGameId: source.gameId };
     }
 
     return {
       ...game,
+      seriesType,
       sourceGameId: source.gameId,
       awayScore: source.awayScore,
       homeScore: source.homeScore,
@@ -281,6 +287,7 @@ function toKboGameSource(source: Record<string, unknown>): KboGameSource {
   return {
     gameId: source.G_ID as string,
     seriesId: source.SR_ID as number,
+    postseasonType: parseKboPostseasonType(source.GAME_SC_NM),
     awayScore: parseKboScore(source.T_SCORE_CN),
     homeScore: parseKboScore(source.B_SCORE_CN),
     isFinished: source.GAME_STATE_SC === '3',

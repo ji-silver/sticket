@@ -88,6 +88,7 @@ test('일정에 경기 ID가 없어도 KBO 경기 목록에서 같은 경기를 
     {
       gameId: '20260909SKOB0',
       seriesId: 0,
+      postseasonType: null,
       awayScore: 2,
       homeScore: 3,
       isFinished: false,
@@ -174,6 +175,7 @@ for (const { date, awayScore, homeScore, apiAwayScore, apiHomeScore } of [
               {
                 G_ID: sourceGameId,
                 SR_ID: 4,
+                GAME_SC_NM: 'WC1',
                 G_DT: dateKey,
                 G_TM: '18:30',
                 AWAY_NM: '두산',
@@ -209,5 +211,6 @@ for (const { date, awayScore, homeScore, apiAwayScore, apiHomeScore } of [
     assert.equal(game.homeScore, homeScore);
     assert.equal(game.status, 'FINISHED');
     assert.equal(game.sourceGameId, sourceGameId);
+    assert.equal(game.seriesType, 'WILDCARD');
   });
 }
