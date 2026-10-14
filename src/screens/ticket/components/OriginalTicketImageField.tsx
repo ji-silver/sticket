@@ -166,7 +166,7 @@ function OriginalTicketImageField({
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
         <View style={styles.sectionTitleGroup}>
-          <AppText style={styles.sectionTitle}>원본 티켓</AppText>
+          <AppText style={styles.sectionTitle}>티켓 사진</AppText>
           {value ? (
             <InlineActionButton
               label="변경"
@@ -206,14 +206,19 @@ function OriginalTicketImageField({
           ]}
           onPress={openSourceSheet}
           accessibilityRole="button"
-          accessibilityLabel="원본 티켓 사진 추가"
-          accessibilityHint="카메라 촬영 또는 앨범 선택 방법을 엽니다"
+          accessibilityLabel="티켓 사진 추가"
+          accessibilityHint="티켓 사진에서 날짜와 경기, 좌석 정보를 읽어옵니다. 카메라 촬영 또는 앨범 선택 방법을 엽니다"
         >
           <View style={styles.uploadIcon}>
             <Ticket size={22} color={colors.primary} strokeWidth={2} />
           </View>
 
-          <AppText style={styles.uploadTitle}>사진 추가</AppText>
+          <View style={styles.uploadTextGroup}>
+            <AppText style={styles.uploadTitle}>티켓 사진 추가</AppText>
+            <AppText style={styles.uploadDescription}>
+              날짜와 경기, 좌석을 읽어와요
+            </AppText>
+          </View>
 
           <ChevronRight
             size={20}
@@ -225,7 +230,7 @@ function OriginalTicketImageField({
 
       <AppBottomSheet
         visible={isSourceSheetVisible}
-        title="티켓 사진 추가"
+        title={value ? '티켓 사진 변경' : '티켓 사진 추가'}
         description="티켓 앞면이 잘 보이는 사진을 선택해 주세요"
         onClose={closeSourceSheet}
         onClosed={handleSourceSheetDismiss}
@@ -333,7 +338,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   uploadCard: {
-    height: 82,
+    minHeight: 82,
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderWidth: 1,
@@ -358,12 +363,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  uploadTitle: {
+  uploadTextGroup: {
     flex: 1,
     minWidth: 0,
+    gap: 4,
+  },
+  uploadTitle: {
     fontSize: 15,
     fontFamily: fonts.bold,
     color: colors.text,
+  },
+  uploadDescription: {
+    fontSize: 13,
+    lineHeight: 19,
+    fontFamily: fonts.regular,
+    color: colors.textSecondary,
   },
   previewImage: {
     height: 82,

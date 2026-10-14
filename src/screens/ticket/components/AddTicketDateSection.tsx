@@ -42,7 +42,6 @@ export default function AddTicketDateSection({
       {selectedDate ? (
         <View style={styles.dateSummaryCard}>
           <View style={styles.dateSummaryTextArea}>
-            <AppText style={styles.dateSummaryLabel}>선택한 날짜</AppText>
             <AppText style={styles.dateSummaryText}>{selectedDateText}</AppText>
           </View>
 
@@ -88,10 +87,10 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   dateSummaryCard: {
-    minHeight: 82,
+    minHeight: 64,
     marginBottom: 16,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 18,
@@ -100,18 +99,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 12,
   },
   dateSummaryTextArea: {
     flex: 1,
-  },
-  dateSummaryLabel: {
-    fontSize: 12,
-    fontFamily: fonts.regular,
-    color: colors.textSecondary,
+    minWidth: 0,
   },
   dateSummaryText: {
-    marginTop: 6,
-    fontSize: 18,
+    fontSize: 17,
     fontFamily: fonts.bold,
     color: colors.text,
   },

@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { Check, ChevronDown } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
 import AppSkeleton from '../../../components/common/AppSkeleton.tsx';
 import AppText from '../../../components/common/AppText.tsx';
@@ -23,6 +25,12 @@ export default function AddTicketGameSection({
   selectedGameId,
   onPressGame,
 }: AddTicketGameSectionProps) {
+  const [isChoosingGame, setIsChoosingGame] = useState(false);
+  const selectedGame = games.find(game => game.id === selectedGameId);
+  // 자동 선택이나 OCR로 정해진 경기도 같은 요약을 사용한다.
+  // 선택 목록을 여는 상태만 여기서 관리하고 실제 경기 선택은 부모 화면에 맡긴다.
+  const isSummary = Boolean(selectedGame) && !isChoosingGame;
+  const visibleGames = isSummary && selectedGame ? [selectedGame] : games;
   const matchupCounts = games.reduce<Record<string, number>>((counts, game) => {
     const matchup = `${game.awayTeamName}-${game.homeTeamName}`;
     counts[matchup] = (counts[matchup] ?? 0) + 1;
@@ -43,12 +51,15 @@ export default function AddTicketGameSection({
           style={styles.gameList}
         >
           {Array.from({ length: GAME_SKELETON_COUNT }, (_, index) => (
-            <AppSkeleton
+            <View
               key={`game-skeleton-${index}`}
-              width="100%"
-              height={122}
-              borderRadius={18}
-            />
+              style={[
+                styles.gameRow,
+                index === GAME_SKELETON_COUNT - 1 && styles.lastRow,
+              ]}
+            >
+              <AppSkeleton width="100%" height={40} borderRadius={6} />
+            </View>
           ))}
         </View>
       ) : gameLoadError ? (
@@ -59,7 +70,7 @@ export default function AddTicketGameSection({
         />
       ) : games.length > 0 ? (
         <View style={styles.gameList}>
-          {games.map(game => {
+          {visibleGames.map((game, index) => {
             const isSelected = selectedGameId === game.id;
             const matchup = `${game.awayTeamName}-${game.homeTeamName}`;
             const gameNumber =
@@ -74,42 +85,55 @@ export default function AddTicketGameSection({
               <Pressable
                 key={game.id}
                 style={({ pressed }) => [
-                  styles.gameCard,
-                  isSelected && styles.gameCardSelected,
-                  pressed && styles.gameCardPressed,
+                  styles.gameRow,
+                  index === visibleGames.length - 1 && styles.lastRow,
+                  pressed && styles.gameRowPressed,
                 ]}
-                onPress={() => onPressGame(game.id)}
+                onPress={() => {
+                  if (isSummary) {
+                    setIsChoosingGame(true);
+                    return;
+                  }
+                  onPressGame(game.id);
+                  setIsChoosingGame(false);
+                }}
                 accessibilityRole="button"
-                accessibilityLabel={`${game.awayTeamName} 원정 대 ${game.homeTeamName} 홈, ${timeText}, ${game.stadiumName}`}
+                accessibilityLabel={`${game.awayTeamName} 원정 대 ${
+                  game.homeTeamName
+                } 홈, ${timeText}, ${game.stadiumName}${
+                  isSummary ? ', 경기 변경' : ''
+                }`}
                 accessibilityState={{ selected: isSelected }}
               >
-                <View style={styles.matchupRow}>
-                  <View style={styles.teamSide}>
-                    <AppText style={styles.teamRole}>AWAY</AppText>
+                <View style={styles.gameInfo}>
+                  <View style={styles.matchupRow}>
                     <AppText style={styles.teamName} numberOfLines={1}>
                       {game.awayTeamName}
                     </AppText>
-                  </View>
-
-                  <AppText style={styles.vsText}>VS</AppText>
-
-                  <View style={styles.teamSide}>
-                    <AppText style={styles.teamRole}>HOME</AppText>
+                    <AppText style={styles.vsText}>vs</AppText>
                     <AppText style={styles.teamName} numberOfLines={1}>
                       {game.homeTeamName}
                     </AppText>
                   </View>
-                </View>
-
-                <View style={styles.gameMetaRow}>
-                  <View style={styles.gameMetaContent}>
+                  <View style={styles.gameMetaRow}>
                     <AppText style={styles.gameTime}>{timeText}</AppText>
-
                     <AppText style={styles.stadiumName} numberOfLines={1}>
                       {game.stadiumName}
                     </AppText>
                   </View>
                 </View>
+                {isSummary ? (
+                  <View style={styles.changeAction}>
+                    <AppText style={styles.changeText}>변경</AppText>
+                    <ChevronDown
+                      size={16}
+                      color={colors.primary}
+                      strokeWidth={2}
+                    />
+                  </View>
+                ) : isSelected ? (
+                  <Check size={20} color={colors.primary} strokeWidth={2} />
+                ) : null}
               </Pressable>
             );
           })}
@@ -138,47 +162,60 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   gameList: {
-    gap: 10,
-  },
-  gameCard: {
-    minHeight: 122,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    borderRadius: 18,
-    borderCurve: 'continuous',
     borderWidth: 1,
     borderColor: colors.border,
+    borderRadius: 12,
+    borderCurve: 'continuous',
+    overflow: 'hidden',
     backgroundColor: colors.surface,
-    justifyContent: 'center',
-    gap: 14,
   },
-  gameCardSelected: {
-    borderColor: colors.primary,
-    // backgroundColor: colors.primary50,
+  gameRow: {
+    minHeight: 72,
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
-  gameCardPressed: {
-    opacity: 0.78,
+  lastRow: {
+    borderBottomWidth: 0,
+  },
+  gameRowPressed: {
+    backgroundColor: colors.background,
+  },
+  gameInfo: {
+    flex: 1,
+    minWidth: 0,
+    gap: 6,
+  },
+  matchupRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  teamName: {
+    flexShrink: 1,
+    fontSize: 17,
+    fontFamily: fonts.bold,
+    color: colors.text,
+  },
+  vsText: {
+    fontSize: 12,
+    fontFamily: fonts.regular,
+    color: colors.textSecondary,
   },
   gameMetaRow: {
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gameMetaContent: {
-    maxWidth: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
     gap: 8,
   },
   gameTime: {
     flexShrink: 0,
-    fontSize: 12,
-    fontFamily: fonts.bold,
-    color: colors.text,
+    fontSize: 13,
+    fontFamily: fonts.regular,
+    color: colors.textSecondary,
   },
   stadiumName: {
     flexShrink: 1,
@@ -186,34 +223,15 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     color: colors.textSecondary,
   },
-  matchupRow: {
-    minHeight: 44,
+  changeAction: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
   },
-  teamSide: {
-    flex: 1,
-    minWidth: 0,
-    alignItems: 'center',
-    gap: 3,
-  },
-  teamRole: {
-    fontSize: 10,
+  changeText: {
+    fontSize: 13,
     fontFamily: fonts.bold,
-    color: colors.textSecondary,
-  },
-  teamName: {
-    fontSize: 20,
-    fontFamily: fonts.bold,
-    color: colors.text,
-    textAlign: 'center',
-  },
-  vsText: {
-    width: 36,
-    fontSize: 11,
-    fontFamily: fonts.bold,
-    color: colors.textSecondary,
-    textAlign: 'center',
+    color: colors.primary,
   },
   emptyCard: {
     minHeight: 156,

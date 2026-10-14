@@ -5,6 +5,7 @@ import {
   fireEvent,
   render,
   screen,
+  userEvent,
   waitFor,
 } from '../../test-utils';
 import { Alert } from 'react-native';
@@ -182,6 +183,7 @@ describe('AddTicketScreen', () => {
     });
 
     it('응원 구단 경기를 목록의 가장 위에 표시한다', async () => {
+      const user = userEvent.setup();
       mockUseAuth.mockReturnValue({
         profile: { favorite_team: { short_name: 'LG' } },
       });
@@ -205,6 +207,9 @@ describe('AddTicketScreen', () => {
       await setup();
       await fireEvent.press(screen.getByText('Mock Date 1'));
 
+      await user.press(
+        await screen.findByRole('button', { name: /경기 변경/ }),
+      );
       const gameButtons = await screen.findAllByRole('button', {
         name: /원정 대/,
       });
@@ -215,6 +220,7 @@ describe('AddTicketScreen', () => {
     });
 
     it('응원 구단 경기가 하나면 자동 선택하고 다른 경기로 변경할 수 있다', async () => {
+      const user = userEvent.setup();
       mockUseAuth.mockReturnValue({
         profile: { favorite_team: { short_name: 'LG' } },
       });
@@ -241,17 +247,19 @@ describe('AddTicketScreen', () => {
       const favoriteGame = await screen.findByRole('button', {
         name: /두산 원정 대 LG 홈/,
       });
-      const otherGame = screen.getByRole('button', {
-        name: /키움 원정 대 KIA 홈/,
-      });
-
       await waitFor(() => {
         expect(favoriteGame.props.accessibilityState).toMatchObject({
           selected: true,
         });
       });
 
-      await fireEvent.press(otherGame);
+      expect(
+        screen.queryByRole('button', { name: /키움 원정 대 KIA 홈/ }),
+      ).toBeNull();
+      await user.press(screen.getByRole('button', { name: /경기 변경/ }));
+      await user.press(
+        screen.getByRole('button', { name: /키움 원정 대 KIA 홈/ }),
+      );
 
       await waitFor(() => {
         expect(
@@ -260,14 +268,19 @@ describe('AddTicketScreen', () => {
           }).props.accessibilityState,
         ).toMatchObject({ selected: true });
         expect(
-          screen.getByRole('button', {
+          screen.queryByRole('button', {
             name: /두산 원정 대 LG 홈/,
-          }).props.accessibilityState,
-        ).toMatchObject({ selected: false });
+          }),
+        ).toBeNull();
       });
+      await user.press(screen.getByRole('button', { name: '티켓 추가' }));
+      expect(mockMutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({ gameKey: 'other-game' }),
+      );
     });
 
     it('현재 시즌 정규 홈경기에는 시즌권 좌석을 채우고 다른 좌석으로 바꿀 수 있다', async () => {
+      const user = userEvent.setup();
       mockUseAuth.mockReturnValue({
         profile: {
           favorite_team_id: 'lg',
@@ -316,6 +329,7 @@ describe('AddTicketScreen', () => {
         );
       });
 
+      await user.press(screen.getByRole('button', { name: /경기 변경/ }));
       await fireEvent.press(
         screen.getByRole('button', { name: /LG 원정 대 두산 홈/ }),
       );
@@ -323,6 +337,7 @@ describe('AddTicketScreen', () => {
         expect(screen.getByLabelText('좌석명').props.value).toBe('');
       });
 
+      await user.press(screen.getByRole('button', { name: /경기 변경/ }));
       await fireEvent.press(
         screen.getByRole('button', { name: /두산 원정 대 LG 홈/ }),
       );
@@ -342,9 +357,7 @@ describe('AddTicketScreen', () => {
         );
       });
 
-      await fireEvent.press(
-        screen.getByRole('button', { name: '티켓 추가' }),
-      );
+      await fireEvent.press(screen.getByRole('button', { name: '티켓 추가' }));
 
       await waitFor(() => {
         expect(mockMutateAsync).toHaveBeenCalledWith({
@@ -813,9 +826,8 @@ describe('AddTicketScreen', () => {
             .accessibilityState,
         ).toMatchObject({ selected: true });
         expect(
-          screen.getByRole('button', { name: /두산 원정 대 LG 홈/ }).props
-            .accessibilityState,
-        ).toMatchObject({ selected: false });
+          screen.queryByRole('button', { name: /두산 원정 대 LG 홈/ }),
+        ).toBeNull();
       });
     });
 
