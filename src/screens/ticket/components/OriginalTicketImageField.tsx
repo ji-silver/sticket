@@ -172,7 +172,7 @@ function OriginalTicketImageField({
               label="변경"
               tone="primary"
               onPress={openSourceSheet}
-              accessibilityLabel="원본 티켓 사진 변경"
+              accessibilityLabel="티켓 사진 변경"
             />
           ) : (
             <AppText style={styles.optionalLabel}>선택</AppText>
@@ -196,7 +196,7 @@ function OriginalTicketImageField({
           source={{ uri: value.uri }}
           style={[styles.previewImage, { aspectRatio: previewAspectRatio }]}
           resizeMode="contain"
-          accessibilityLabel="선택한 원본 티켓 미리보기"
+          accessibilityLabel="선택한 티켓 사진 미리보기"
         />
       ) : (
         <Pressable
@@ -234,7 +234,7 @@ function OriginalTicketImageField({
         description="티켓 앞면이 잘 보이는 사진을 선택해 주세요"
         onClose={closeSourceSheet}
         onClosed={handleSourceSheetDismiss}
-        closeAccessibilityLabel="원본 티켓 추가 닫기"
+        closeAccessibilityLabel="티켓 사진 선택 닫기"
       >
         <View style={styles.sourceList}>
           <SourceRow

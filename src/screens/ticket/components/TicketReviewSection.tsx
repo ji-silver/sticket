@@ -19,6 +19,7 @@ interface TicketReviewSectionProps {
 }
 
 const recordInputHeight = 111;
+const recordMaxLength = 300;
 
 function TicketReviewSection({
   ticketId,
@@ -30,8 +31,9 @@ function TicketReviewSection({
   const [record, setRecord] = useState(initialMemo ?? '');
   const [recordDraft, setRecordDraft] = useState(initialMemo ?? '');
   const [isEditingRecord, setIsEditingRecord] = useState(false);
-  const [isRecordLimitExceeded, setIsRecordLimitExceeded] = useState(false);
-  const previousRecordDraft = useRef(initialMemo ?? '');
+  const [isRecordExpanded, setIsRecordExpanded] = useState(false);
+  const [recordLineCount, setRecordLineCount] = useState(0);
+  const isSavingRecord = useRef(false);
   const [foods, setFoods] = useState(() => [...initialFoods]);
   const [foodDraft, setFoodDraft] = useState('');
   const [isAddingFood, setIsAddingFood] = useState(false);
@@ -64,39 +66,41 @@ function TicketReviewSection({
     }
   };
 
-  const handlePressRecordAction = async () => {
-    if (!isEditingRecord) {
-      previousRecordDraft.current = record;
-      setRecordDraft(record);
-      setIsRecordLimitExceeded(false);
-      setIsEditingRecord(true);
-      return;
-    }
-
-    try {
-      await updateMemoMutation.mutateAsync({ ticketId, memo: recordDraft });
-
-      setRecord(recordDraft);
-      setIsEditingRecord(false);
-      setIsRecordLimitExceeded(false);
-    } catch (error) {
-      console.error('오늘의 기록을 저장하지 못했습니다.', error);
-      Alert.alert(
-        '오늘의 기록을 저장하지 못했어요',
-        '잠시 후 다시 시도해 주세요.',
-      );
-    }
+  const handleStartEditingRecord = () => {
+    setRecordDraft(record);
+    setIsEditingRecord(true);
   };
 
-  const handleChangeRecordDraft = (value: string) => {
-    if (value.split('\n').length > 3) {
-      setIsRecordLimitExceeded(true);
-      return;
-    }
+  const handleCancelEditingRecord = () => {
+    if (isSavingRecord.current) return;
 
-    previousRecordDraft.current = recordDraft;
-    setRecordDraft(value);
-    setIsRecordLimitExceeded(false);
+    setRecordDraft(record);
+    setIsEditingRecord(false);
+  };
+
+  const handleSaveRecord = async () => {
+    // React Query의 저장 상태가 화면에 반영되기 전 연속 탭도 중복 요청으로 보내지 않는다.
+    if (isSavingRecord.current) return;
+
+    isSavingRecord.current = true;
+
+    try {
+      const savedMemo = await updateMemoMutation.mutateAsync({
+        ticketId,
+        memo: recordDraft,
+      });
+
+      // 서버가 앞뒤 공백을 정리하거나 빈 메모를 null로 저장한 결과를 그대로 표시한다.
+      setRecord(savedMemo ?? '');
+      setIsRecordExpanded(false);
+      setRecordLineCount(0);
+      setIsEditingRecord(false);
+    } catch (error) {
+      console.error('메모를 저장하지 못했습니다.', error);
+      Alert.alert('기록을 저장하지 못했어요', '잠시 후 다시 시도해 주세요.');
+    } finally {
+      isSavingRecord.current = false;
+    }
   };
 
   const handleToggleFoodEditor = () => {
@@ -151,7 +155,7 @@ function TicketReviewSection({
       <View style={styles.card}>
         <View style={styles.ratingBlock}>
           <View style={styles.blockHeader}>
-            <AppText style={styles.blockTitle}>오늘 경기는 어땠나요?</AppText>
+            <AppText style={styles.blockTitle}>경기 평가</AppText>
           </View>
 
           <TicketStarRating value={rating} onChange={handleChangeRating} />
@@ -163,18 +167,43 @@ function TicketReviewSection({
           <View style={styles.blockHeader}>
             <AppText style={styles.blockTitle}>오늘의 기록</AppText>
 
-            <InlineActionButton
-              label={isEditingRecord ? '완료' : record ? '수정' : '기록하기'}
-              tone="primary"
-              onPress={handlePressRecordAction}
-              accessibilityLabel={
-                isEditingRecord
-                  ? '오늘의 기록 입력 완료'
-                  : record
-                  ? '오늘의 기록 수정'
-                  : '오늘의 기록 작성하기'
-              }
-            />
+            {isEditingRecord ? (
+              <View style={styles.recordActions}>
+                <AppButton
+                  style={({ pressed }) => [
+                    styles.recordActionButton,
+                    (pressed || updateMemoMutation.isPending) &&
+                      styles.recordActionMuted,
+                  ]}
+                  disabled={updateMemoMutation.isPending}
+                  onPress={handleCancelEditingRecord}
+                  accessibilityLabel="편집 취소"
+                >
+                  <AppText style={styles.recordCancelText}>취소</AppText>
+                </AppButton>
+                <AppButton
+                  style={({ pressed }) => [
+                    styles.recordActionButton,
+                    pressed && styles.recordActionMuted,
+                  ]}
+                  isLoading={updateMemoMutation.isPending}
+                  loadingColor={colors.primary}
+                  onPress={handleSaveRecord}
+                  accessibilityLabel="오늘의 기록 저장"
+                >
+                  <AppText style={styles.recordSaveText}>저장</AppText>
+                </AppButton>
+              </View>
+            ) : (
+              <InlineActionButton
+                label={record ? '수정' : '작성하기'}
+                tone="primary"
+                onPress={handleStartEditingRecord}
+                accessibilityLabel={
+                  record ? '오늘의 기록 수정' : '오늘의 기록 작성하기'
+                }
+              />
+            )}
           </View>
 
           {isEditingRecord ? (
@@ -182,57 +211,76 @@ function TicketReviewSection({
               <TextInput
                 allowFontScaling={false}
                 value={recordDraft}
-                onChangeText={handleChangeRecordDraft}
-                maxLength={300}
+                onChangeText={setRecordDraft}
+                maxLength={recordMaxLength}
                 style={styles.recordInput}
-                placeholder="오늘의 기록을 작성해주세요"
+                placeholder="기록을 입력해 주세요"
                 placeholderTextColor={colors.textSecondary}
                 selectionColor={colors.primary}
                 multiline
-                numberOfLines={3}
-                scrollEnabled={false}
+                scrollEnabled
+                editable={!updateMemoMutation.isPending}
                 autoFocus
                 textAlignVertical="top"
                 accessibilityLabel="오늘의 기록 입력"
               />
 
+              <AppText style={styles.recordCharacterCount}>
+                {recordDraft.length} / {recordMaxLength}
+              </AppText>
+            </View>
+          ) : record ? (
+            <View style={styles.recordContent}>
+              <AppText
+                style={styles.recordText}
+                numberOfLines={isRecordExpanded ? undefined : 3}
+              >
+                {record}
+              </AppText>
+
+              {/* iOS의 3줄 미리보기는 잘린 뒤의 줄 수를 알려준다. 같은 너비로 전체 글을
+                  별도 측정해 긴 메모에만 펼치기를 제공하며 입력 제한에는 사용하지 않는다. */}
               <View
-                style={styles.recordMeasure}
+                style={styles.recordLineMeasure}
                 pointerEvents="none"
                 accessibilityElementsHidden
                 importantForAccessibility="no-hide-descendants"
               >
                 <AppText
-                  style={styles.recordMeasureText}
-                  onTextLayout={event => {
-                    if (event.nativeEvent.lines.length > 3) {
-                      setRecordDraft(previousRecordDraft.current);
-                      setIsRecordLimitExceeded(true);
-                    }
-                  }}
+                  testID="record-line-measure"
+                  style={styles.recordText}
+                  onTextLayout={event =>
+                    setRecordLineCount(event.nativeEvent.lines.length)
+                  }
                 >
-                  {recordDraft || ' '}
+                  {record}
                 </AppText>
               </View>
 
-              {isRecordLimitExceeded ? (
-                <AppText
-                  style={styles.recordLimitText}
-                  accessibilityLiveRegion="polite"
-                >
-                  최대 3줄까지 작성할 수 있어요
-                </AppText>
+              {recordLineCount > 3 ? (
+                <View style={styles.recordExpandAction}>
+                  <AppButton
+                    style={({ pressed }) => [
+                      styles.recordActionButton,
+                      pressed && styles.recordActionMuted,
+                    ]}
+                    onPress={() => setIsRecordExpanded(current => !current)}
+                    accessibilityLabel={
+                      isRecordExpanded
+                        ? '오늘의 기록 접기'
+                        : '오늘의 기록 전체 보기'
+                    }
+                    accessibilityState={{ expanded: isRecordExpanded }}
+                  >
+                    <AppText style={styles.recordExpandText}>
+                      {isRecordExpanded ? '접기' : '전체 보기'}
+                    </AppText>
+                  </AppButton>
+                </View>
               ) : null}
             </View>
           ) : (
-            <View style={styles.recordContent}>
-              <AppText
-                style={[styles.recordText, !record && styles.placeholderText]}
-                numberOfLines={3}
-              >
-                {record || '아직 기록하지 않았어요'}
-              </AppText>
-            </View>
+            <AppText style={styles.emptyRecordText}>아직 기록이 없어요</AppText>
           )}
         </View>
 
@@ -389,6 +437,31 @@ const styles = StyleSheet.create({
   recordBlock: {
     minHeight: 74,
   },
+  recordActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  recordActionButton: {
+    minWidth: 44,
+    minHeight: 44,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recordActionMuted: {
+    opacity: 0.55,
+  },
+  recordCancelText: {
+    fontSize: 14,
+    fontFamily: fonts.bold,
+    color: colors.textSecondary,
+  },
+  recordSaveText: {
+    fontSize: 14,
+    fontFamily: fonts.bold,
+    color: colors.primary,
+  },
   recordContent: {
     minHeight: 82,
     marginTop: 12,
@@ -403,6 +476,22 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     fontFamily: fonts.regular,
     color: colors.text,
+  },
+  recordLineMeasure: {
+    position: 'absolute',
+    top: 12,
+    left: 14,
+    right: 14,
+    opacity: 0,
+  },
+  recordExpandAction: {
+    marginTop: 4,
+    alignItems: 'flex-end',
+  },
+  recordExpandText: {
+    fontSize: 13,
+    fontFamily: fonts.regular,
+    color: colors.textSecondary,
   },
   recordInput: {
     height: recordInputHeight,
@@ -420,25 +509,15 @@ const styles = StyleSheet.create({
     color: colors.text,
     overflow: 'hidden',
   },
-  recordMeasure: {
-    position: 'absolute',
-    top: 12,
-    right: 15,
-    left: 15,
-    opacity: 0,
-  },
-  recordMeasureText: {
-    fontSize: 15,
-    lineHeight: 22,
-    fontFamily: fonts.regular,
-  },
-  recordLimitText: {
+  recordCharacterCount: {
     marginTop: 8,
     fontSize: 12,
     fontFamily: fonts.regular,
-    color: colors.primary,
+    textAlign: 'right',
+    color: colors.textSecondary,
   },
-  placeholderText: {
+  emptyRecordText: {
+    marginTop: 4,
     fontSize: 14,
     lineHeight: 21,
     fontFamily: fonts.regular,

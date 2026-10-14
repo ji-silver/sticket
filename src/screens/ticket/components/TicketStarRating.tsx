@@ -24,7 +24,7 @@ function TicketStarRating({ value, onChange }: TicketStarRatingProps) {
       style={styles.container}
       accessible
       accessibilityRole="adjustable"
-      accessibilityLabel="경기 만족도"
+      accessibilityLabel="경기 평가"
       accessibilityValue={{
         min: 0,
         max: 5,

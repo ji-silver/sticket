@@ -535,7 +535,7 @@ export async function updateTicketMemo(ticketId: string, memo: string) {
   const normalizedMemo = memo.trim();
 
   if (normalizedMemo.length > MAX_MEMO_LENGTH) {
-    throw new Error(`오늘의 기록은 ${MAX_MEMO_LENGTH}자 이하로 입력해 주세요.`);
+    throw new Error(`메모는 ${MAX_MEMO_LENGTH}자 이하로 입력해 주세요.`);
   }
 
   const { data, error } = await supabase

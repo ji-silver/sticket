@@ -199,14 +199,14 @@ function TicketVisitInfoSection({
                 !seatDisplay && styles.placeholderText,
               ]}
             >
-              {seatDisplay ?? '오늘 앉은 좌석을 남겨보세요'}
+              {seatDisplay ?? '좌석을 추가해 주세요'}
             </AppText>
           </View>
 
           <View style={styles.divider} />
 
           <View style={styles.blockHeader}>
-            <AppText style={styles.blockTitle}>원본 티켓</AppText>
+            <AppText style={styles.blockTitle}>티켓 사진</AppText>
 
             <InlineActionButton
               label={originalTicketImageUri ? '보기' : '추가'}
@@ -214,8 +214,8 @@ function TicketVisitInfoSection({
               onPress={handlePressOriginalTicket}
               accessibilityLabel={
                 originalTicketImageUri
-                  ? '원본 티켓 전체 보기'
-                  : '원본 티켓 사진 추가'
+                  ? '티켓 사진 전체 보기'
+                  : '티켓 사진 추가'
               }
             />
           </View>
@@ -243,10 +243,10 @@ function TicketVisitInfoSection({
 
       <AppBottomSheet
         visible={isOriginalTicketEditSheetVisible}
-        title="원본 티켓 편집"
+        title="티켓 사진 편집"
         onClose={() => setIsOriginalTicketEditSheetVisible(false)}
         onClosed={handleOriginalTicketEditSheetClosed}
-        closeAccessibilityLabel="원본 티켓 편집 닫기"
+        closeAccessibilityLabel="티켓 사진 편집 닫기"
       >
         <View style={styles.ticketActionList}>
           <TicketPhotoActionRow
@@ -289,7 +289,7 @@ function TicketVisitInfoSection({
 
       <ConfirmDialog
         visible={isOriginalTicketDeleteDialogVisible}
-        title="원본 티켓 사진을 삭제할까요?"
+        title="티켓 사진을 삭제할까요?"
         description="삭제한 사진은 되돌릴 수 없어요."
         confirmLabel="삭제"
         confirmTone="destructive"
@@ -316,7 +316,7 @@ function TicketVisitInfoSection({
 
             <View style={styles.originalTicketViewerHeader}>
               <AppText style={styles.originalTicketViewerTitle}>
-                원본 티켓
+                티켓 사진
               </AppText>
 
               <Pressable
@@ -326,7 +326,7 @@ function TicketVisitInfoSection({
                 ]}
                 onPress={() => setIsOriginalTicketVisible(false)}
                 accessibilityRole="button"
-                accessibilityLabel="원본 티켓 닫기"
+                accessibilityLabel="티켓 사진 닫기"
               >
                 <X size={24} color={colors.text} strokeWidth={2.2} />
               </Pressable>
@@ -336,7 +336,7 @@ function TicketVisitInfoSection({
                   label="편집"
                   tone="primary"
                   onPress={handlePressOriginalTicketEdit}
-                  accessibilityLabel="원본 티켓 사진 편집"
+                  accessibilityLabel="티켓 사진 편집"
                 />
               </View>
             </View>
@@ -345,7 +345,7 @@ function TicketVisitInfoSection({
               source={{ uri: originalTicketImageUri }}
               style={styles.originalTicketImage}
               resizeMode="contain"
-              accessibilityLabel="원본 티켓 이미지"
+              accessibilityLabel="티켓 사진"
             />
           </View>
         </Modal>
