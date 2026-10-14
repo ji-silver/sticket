@@ -61,7 +61,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   header: {
-    minHeight: 52,
+    minHeight: 62,
+    paddingTop: 18,
     paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
