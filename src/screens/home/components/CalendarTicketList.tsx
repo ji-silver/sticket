@@ -223,6 +223,7 @@ const styles = StyleSheet.create({
 
   selectedDateText: {
     fontSize: 17,
+    lineHeight: 26,
     fontFamily: fonts.bold,
     color: colors.text,
   },

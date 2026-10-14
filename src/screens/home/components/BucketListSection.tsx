@@ -302,7 +302,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   bucketTitle: {
-    fontSize: 16,
+    fontSize: 17,
+    lineHeight: 26,
     fontFamily: fonts.bold,
     fontWeight: '700',
     color: colors.text,

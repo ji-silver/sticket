@@ -210,10 +210,15 @@ function CalendarMonthView({
           disabled: isInactive,
         }}
       >
-        {/* H/A가 없는 날에도 같은 공간을 남겨 날짜 위치가 움직이지 않게 한다. */}
+        {/* 숫자 자체를 왼쪽에 맞추고 원은 자릿수별 숫자 영역의 가운데에 둔다. H/A는 오른쪽에 고정한다. */}
         <View style={styles.calendarDayTopRow}>
           <View style={styles.calendarDateColumn}>
-            <View style={styles.calendarDate}>
+            <View
+              style={[
+                styles.calendarDate,
+                date.day >= 10 && styles.calendarDoubleDigitDate,
+              ]}
+            >
               {/* 단독 표시는 같은 크기로 맞추고, 오늘과 직관이 겹치면 안쪽 원을 줄여 테두리와 분리한다. */}
               {hasAttendance ? (
                 <View
@@ -250,9 +255,7 @@ function CalendarMonthView({
             >
               {firstGame.homeAway}
             </AppText>
-          ) : (
-            <View style={styles.calendarSideColumn} accessible={false} />
-          )}
+          ) : null}
         </View>
 
         {gameSummary && gameResult ? (
@@ -404,31 +407,34 @@ const styles = StyleSheet.create({
     height: 24,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
   },
 
   calendarDateColumn: {
     flex: 1,
     minWidth: 0,
-    alignItems: 'center',
-  },
-
-  calendarSideColumn: {
-    width: 12,
+    // 한 자리 날짜의 원도 칸 밖으로 나가지 않도록 숫자 앞에 2pt를 확보한다.
+    paddingLeft: 2,
+    alignItems: 'flex-start',
   },
 
   calendarDate: {
     position: 'relative',
-    width: 22,
+    // 12pt 고정폭 숫자에 맞춰 한 자리당 8pt를 확보하고 원의 중심도 같은 영역을 기준으로 계산한다.
+    width: 8,
     height: 22,
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'center',
+  },
+
+  calendarDoubleDigitDate: {
+    width: 16,
   },
 
   calendarTodayDate: {
     position: 'absolute',
     top: 1,
-    left: 1,
+    left: '50%',
+    transform: [{ translateX: -10 }],
     width: 20,
     height: 20,
     borderWidth: 1,
@@ -440,7 +446,8 @@ const styles = StyleSheet.create({
   calendarAttendanceDate: {
     position: 'absolute',
     top: 1,
-    left: 1,
+    left: '50%',
+    transform: [{ translateX: -10 }],
     width: 20,
     height: 20,
     borderRadius: 10,
@@ -450,16 +457,18 @@ const styles = StyleSheet.create({
 
   calendarAttendanceInsideToday: {
     top: 3,
-    left: 3,
+    transform: [{ translateX: -8 }],
     width: 16,
     height: 16,
     borderRadius: 8,
   },
 
   calendarDayNumber: {
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: fonts.regular,
+    fontVariant: ['tabular-nums'],
     lineHeight: 18,
+    textAlign: 'left',
     color: colors.text,
     zIndex: 1,
   },
@@ -469,6 +478,9 @@ const styles = StyleSheet.create({
   },
 
   calendarHomeAway: {
+    position: 'absolute',
+    right: 0,
+    top: 5,
     width: 12,
     fontSize: 10,
     fontFamily: fonts.regular,
@@ -487,7 +499,7 @@ const styles = StyleSheet.create({
   calendarGameSummary: {
     flex: 1,
     minWidth: 0,
-    fontSize: 11,
+    fontSize: 10,
     lineHeight: 16,
     fontFamily: fonts.regular,
     color: colors.textSecondary,
@@ -518,13 +530,13 @@ const styles = StyleSheet.create({
   },
 
   calendarResultBadge: {
-    width: 12,
+    width: 14,
     height: 14,
     paddingHorizontal: 2,
     borderRadius: 4,
     borderCurve: 'continuous',
     overflow: 'hidden',
-    fontSize: 8,
+    fontSize: 9,
     fontFamily: fonts.bold,
     color: colors.textSecondary,
     lineHeight: 14,
