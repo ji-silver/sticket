@@ -5,6 +5,7 @@ import { colors } from '../../../styles/colors.ts';
 import { fonts } from '../../../styles/fonts.ts';
 import { Ticket } from '../../../features/ticket/types.ts';
 import { formatTicketSeat } from '../../../features/ticket/seatCatalog.ts';
+import { getKboSeriesLabel } from '../../../features/game/gameSeries.ts';
 
 interface TicketCardProps {
   ticket: Ticket;
@@ -34,6 +35,7 @@ const teamColors: Record<string, string> = {
 function TicketCard({ ticket, onPress }: TicketCardProps) {
   const [perforationWidth, setPerforationWidth] = useState(0);
   const seatDisplay = formatTicketSeat(ticket.seatName, ticket.seatDetail);
+  const seriesLabel = getKboSeriesLabel(ticket.seriesType);
   const date = new Date(ticket.matchDate);
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
@@ -53,7 +55,9 @@ function TicketCard({ ticket, onPress }: TicketCardProps) {
       accessibilityRole="button"
       accessibilityLabel={`${month}월 ${day}일 ${ticket.awayTeamName} 대 ${
         ticket.homeTeamName
-      }${ticket.isCancelled ? ', 경기 취소' : ''}, 직관 기록 보기`}
+      }${seriesLabel ? `, ${seriesLabel}` : ''}${
+        ticket.isCancelled ? ', 경기 취소' : ''
+      }, 직관 기록 보기`}
       accessibilityHint="직관 기록 상세 화면으로 이동합니다"
     >
       <View style={styles.contentArea}>
@@ -101,6 +105,11 @@ function TicketCard({ ticket, onPress }: TicketCardProps) {
           </View>
 
           <View style={styles.matchupCenter}>
+            {seriesLabel ? (
+              <View style={styles.seriesStamp}>
+                <AppText style={styles.seriesStampText}>{seriesLabel}</AppText>
+              </View>
+            ) : null}
             <AppText
               style={[
                 styles.vsText,
@@ -280,8 +289,23 @@ const styles = StyleSheet.create({
   },
 
   matchupCenter: {
-    width: 56,
+    width: 88,
     alignItems: 'center',
+  },
+
+  seriesStamp: {
+    marginBottom: 5,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 2,
+    backgroundColor: colors.primarySoft,
+  },
+
+  seriesStampText: {
+    fontSize: 10,
+    lineHeight: 13,
+    fontFamily: fonts.bold,
+    color: colors.text,
   },
 
   vsText: {

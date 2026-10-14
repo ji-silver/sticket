@@ -12,6 +12,7 @@ import { useAuth } from '../../../features/auth/AuthProvider.tsx';
 import { colors } from '../../../styles/colors.ts';
 import { fonts } from '../../../styles/fonts.ts';
 import type { TicketDiaryOrientation } from '../../../features/ticket/types.ts';
+import { getKboSeriesLabel } from '../../../features/game/gameSeries.ts';
 import { Ticket } from '../../../features/ticket/types.ts';
 import TicketLineupSection from './TicketLineupSection.tsx';
 import TicketReviewSection from './TicketReviewSection.tsx';
@@ -60,6 +61,7 @@ function TicketRecordPage({ ticket, orientation }: TicketRecordPageProps) {
   const { profile } = useAuth();
   const favoriteTeamName = profile?.favorite_team?.short_name;
   const matchDateText = formatMatchDate(ticket.matchDate);
+  const seriesLabel = getKboSeriesLabel(ticket.seriesType);
   const isFinished = ticket.gameStatus === 'FINISHED';
   const isInProgress = ticket.gameStatus === 'IN_PROGRESS';
   const hasStarted = isInProgress || isFinished;
@@ -134,6 +136,9 @@ function TicketRecordPage({ ticket, orientation }: TicketRecordPageProps) {
         keyboardDismissMode="on-drag"
       >
         <View style={styles.matchSummary}>
+          {seriesLabel ? (
+            <AppText style={styles.seriesLabel}>{seriesLabel}</AppText>
+          ) : null}
           <AppText style={styles.matchMeta} numberOfLines={1}>
             {matchDateText} {ticket.matchTime} {ticket.stadiumName}
           </AppText>
@@ -325,6 +330,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: fonts.regular,
     color: colors.textSecondary,
+    textAlign: 'center',
+  },
+  seriesLabel: {
+    marginBottom: 4,
+    fontSize: 13,
+    lineHeight: 18,
+    fontFamily: fonts.semiBold,
+    color: colors.text,
     textAlign: 'center',
   },
   scoreBoard: {

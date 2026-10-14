@@ -7,9 +7,7 @@ jest.mock('../../../features/auth/AuthProvider.tsx', () => ({
   useAuth: () => ({ profile: null }),
 }));
 
-jest.mock('./TicketVisitInfoSection.tsx', () => () => null);
-jest.mock('./TicketReviewSection.tsx', () => () => null);
-jest.mock('./TicketLineupSection.tsx', () => () => null);
+jest.mock('../../../lib/supabase.ts', () => ({ supabase: {} }));
 
 const ticket: Ticket = {
   id: 'ticket-1',
@@ -43,6 +41,40 @@ describe('TicketRecordPage 경기 현황', () => {
 
     expect(screen.getByText('09.09(수) 18:30 잠실')).toBeVisible();
   });
+
+  it.each([
+    ['WILDCARD', '와일드카드'],
+    ['SEMI_PLAYOFF', '준플레이오프'],
+    ['PLAYOFF', '플레이오프'],
+    ['KOREAN_SERIES', '한국시리즈'],
+    ['PRESEASON', '시범경기'],
+  ])('%s 경기에는 경기 종류를 표시한다', async (seriesType, label) => {
+    await render(
+      <TicketRecordPage
+        ticket={{ ...ticket, seriesType }}
+        orientation="portrait"
+      />,
+    );
+
+    expect(screen.getByText(label)).toBeVisible();
+    expect(screen.getByText('09.09(수) 18:30 잠실')).toBeVisible();
+  });
+
+  it.each(['REGULAR', 'POSTSEASON', undefined, 'UNKNOWN'])(
+    '정규시즌이나 종류가 확인되지 않은 경기(%s)는 별도 문구를 표시하지 않는다',
+    async seriesType => {
+      await render(
+        <TicketRecordPage
+          ticket={{ ...ticket, seriesType }}
+          orientation="portrait"
+        />,
+      );
+
+      expect(screen.queryByText(
+        /^(정규시즌|포스트시즌|시범경기|와일드카드|준플레이오프|플레이오프|한국시리즈)$/,
+      )).not.toBeOnTheScreen();
+    },
+  );
 
   it('경기 전에는 DB 점수가 0이어도 예정 점수로 표시한다', async () => {
     await render(<TicketRecordPage ticket={ticket} orientation="portrait" />);
